@@ -1,0 +1,22 @@
+{
+  "name": "@libre-ai/bun-app-template",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun scripts/build.ts",
+    "start": "bun src/server/index.ts",
+    "test": "bun test",
+    "test:e2e": "bun run build && playwright test"
+  },
+  "dependencies": {
+    "@libre-ai/design-system": "workspace:*",
+    "@libre-ai/web-platform": "workspace:*",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@libre-ai/contracts": "workspace:*",
+    "@playwright/test": "catalog:testing"
+  }
+}
