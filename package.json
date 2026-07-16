@@ -41,6 +41,7 @@
     "check:source": "bun tools/quality/check-source-policy.ts",
     "check:objects": "bun tools/quality/validate-knowledge-objects.ts",
     "check:objectives": "bun tools/quality/check-objectives.ts",
+    "check:specifications": "bun tools/quality/check-specification-lock.ts",
     "check:licenses": "bun tools/quality/check-js-licenses.ts",
     "audit": "bun audit",
     "typecheck": "tsc --noEmit -p tsconfig.json",
@@ -48,7 +49,7 @@
     "format": "biome check --write .",
     "test": "bun test",
     "build": "bun run check:toolchain && bun run typecheck",
-    "check": "bun run check:toolchain && bun run check:source && bun run check:objects && bun run check:objectives && bun run check:licenses && bun run lint && bun run typecheck && bun test"
+    "check": "bun run check:toolchain && bun run check:source && bun run check:objects && bun run check:objectives && bun run check:specifications && bun run check:licenses && bun run lint && bun run typecheck && bun test"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.3",
