@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!ecosystem/projections/public.v1.json"]
+    "includes": ["**", "!ecosystem/projections/public.v1.json", "!toolchains/vendor/biscuit-auth"]
   },
   "formatter": {
     "enabled": true,
