@@ -1,0 +1,10 @@
+# Temporary bootstrap ownership. Replace groups when the canonical forge is created.
+* @libre-ai/core
+/ecosystem/ @libre-ai/architecture
+/contracts/ @libre-ai/architecture @libre-ai/security
+/apps/ @libre-ai/product
+/packages/auth-web/ @libre-ai/security
+/crates/authz-biscuit/ @libre-ai/security
+/crates/proof/ @libre-ai/security
+/crates/artifact/ @libre-ai/release
+/infrastructure/ @libre-ai/operations @libre-ai/security

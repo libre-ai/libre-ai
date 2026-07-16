@@ -1,0 +1,61 @@
+{
+  "name": "@libre-ai/root",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "bun@1.4.0-canary.1",
+  "engines": {
+    "bun": "1.4.0"
+  },
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*",
+      "distribution/templates/*"
+    ],
+    "catalog": {
+      "react": "19.2.7",
+      "react-dom": "19.2.7",
+      "react-aria-components": "1.19.0",
+      "tailwindcss": "4.3.2",
+      "ajv": "8.20.0",
+      "ajv-formats": "3.0.1"
+    },
+    "catalogs": {
+      "testing": {
+        "@playwright/test": "1.61.1"
+      },
+      "types": {
+        "@types/bun": "1.3.14",
+        "@types/react": "19.2.17",
+        "@types/react-dom": "19.2.3",
+        "typescript": "7.0.2"
+      },
+      "quality": {
+        "@biomejs/biome": "2.5.3"
+      }
+    }
+  },
+  "scripts": {
+    "check:toolchain": "bun tools/quality/check-toolchain.ts",
+    "check:source": "bun tools/quality/check-source-policy.ts",
+    "check:objects": "bun tools/quality/validate-knowledge-objects.ts",
+    "check:licenses": "bun tools/quality/check-js-licenses.ts",
+    "audit": "bun audit",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "biome ci .",
+    "format": "biome check --write .",
+    "test": "bun test",
+    "build": "bun run check:toolchain && bun run typecheck",
+    "check": "bun run check:toolchain && bun run check:source && bun run check:objects && bun run check:licenses && bun run lint && bun run typecheck && bun test"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.3",
+    "@playwright/test": "1.61.1",
+    "@types/bun": "1.3.14",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "typescript": "7.0.2"
+  }
+}
