@@ -4,6 +4,13 @@ members = ["crates/*"]
 
 [workspace.dependencies]
 biscuit-parser = "=0.2.0"
+chrono = { version = "=0.4.45", default-features = false, features = ["serde", "std"] }
+jsonschema = { version = "=0.47.0", default-features = false }
+regress = { version = "=0.11.1", default-features = false, features = ["backend-pikevm", "prohibit-unsafe", "std"] }
+schemars = "=0.8.22"
+serde = { version = "=1.0.228", features = ["derive"] }
+serde_json = "=1.0.150"
+typify = { version = "=0.7.0", default-features = false }
 wit-parser = { version = "=0.253.0", default-features = false, features = ["std"] }
 
 [workspace.package]

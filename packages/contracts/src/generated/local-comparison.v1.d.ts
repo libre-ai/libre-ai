@@ -1,0 +1,24 @@
+/**
+ * Generated from canonical Libre AI JSON Schema.
+ * DO NOT EDIT: run `bun run generate` in packages/contracts.
+ * Runtime schema validation remains authoritative.
+ */
+
+export type LibreAiLocalComparisonV1 = {
+  schemaVersion: "libre-ai.local-comparison.v1";
+  datasetId: string;
+  datasetDigest: string;
+  methodId: string;
+  methodDigest: string;
+  responseSetDigest: string;
+  score: number;
+  denominator: number;
+  omitted: number;
+  contributions: Array<{
+    statementId: string;
+    contribution: number;
+    votesConsidered: number;
+    votesOmitted: number;
+  }>;
+  computedAt: string;
+};
