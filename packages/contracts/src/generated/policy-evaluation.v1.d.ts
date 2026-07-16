@@ -18,7 +18,13 @@ export type LibreAiPolicyEvaluationV1 = {
   ruleResults: Array<{
     ruleId: string;
     status: "satisfied" | "failed" | "unknown";
-    reasonCode: string;
+    reasonCode:
+      | "policy.rule_satisfied"
+      | "policy.rule_failed"
+      | "policy.fact_absent"
+      | "policy.fact_type_mismatch"
+      | "policy.snapshot_stale"
+      | "policy.source_from_future";
   }>;
   evaluatedAt: string;
   digest: string;
