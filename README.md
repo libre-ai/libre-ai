@@ -28,4 +28,4 @@ Lire dans cet ordre :
 
 ## État
 
-Les 18 repositories historiques sont figés et archivés aux SHAs enregistrés dans `ecosystem/LEGACY-MANIFEST.yaml`. G0 est fermé et Specification Lock est en cours. Le monorepo reste en préproduction : aucun produit historique n’est encore reconstruit et aucune disponibilité produit n’est revendiquée.
+Les 18 repositories historiques sont figés et archivés aux SHAs enregistrés dans `ecosystem/LEGACY-MANIFEST.yaml`. G0 et Specification Lock sont fermés ; Foundation Build démarre par la qualification de la toolchain. Le monorepo reste en préproduction : aucun produit historique n’est encore reconstruit et aucune disponibilité produit n’est revendiquée.
