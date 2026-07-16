@@ -1,0 +1,19 @@
+{
+  "name": "@libre-ai/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./generated/*": "./src/generated/*"
+  },
+  "scripts": {
+    "generate": "bun scripts/generate-types.ts",
+    "generate:check": "bun scripts/generate-types.ts --check",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "ajv": "catalog:",
+    "ajv-formats": "catalog:"
+  }
+}
