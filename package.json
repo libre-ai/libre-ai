@@ -43,6 +43,7 @@
     "check:objectives": "bun tools/quality/check-objectives.ts",
     "check:specifications": "bun tools/quality/check-specification-lock.ts",
     "check:contracts": "bun tools/quality/check-contracts.ts",
+    "check:notebook-core-v2-candidate": "bun tools/quality/check-notebook-core-v2-candidate.ts",
     "check:generated-contracts": "bun run --cwd packages/contracts generate:check",
     "check:work-packages": "bun tools/quality/check-work-packages.ts",
     "check:licenses": "bun tools/quality/check-js-licenses.ts",
@@ -52,7 +53,7 @@
     "format": "biome check --write .",
     "test": "bun test",
     "build": "bun run check:toolchain && bun run typecheck",
-    "check": "bun run check:toolchain && bun run check:source && bun run check:objects && bun run check:objectives && bun run check:specifications && bun run check:contracts && bun run check:generated-contracts && bun run check:work-packages && bun run check:licenses && bun run lint && bun run typecheck && bun test"
+    "check": "bun run check:toolchain && bun run check:source && bun run check:objects && bun run check:objectives && bun run check:specifications && bun run check:contracts && bun run check:notebook-core-v2-candidate && bun run check:generated-contracts && bun run check:work-packages && bun run check:licenses && bun run lint && bun run typecheck && bun test"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.3",
