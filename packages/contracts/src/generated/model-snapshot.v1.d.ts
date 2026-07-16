@@ -12,8 +12,12 @@ export type LibreAiModelSnapshotV1 = {
   capturedAt: string;
   facts: Array<{
     name: string;
-    value: string | number | boolean | Array<string | number | boolean>;
+    value: string | number | boolean;
     source: { uri: string; retrievedAt: string; digest: string; licence: string };
   }>;
   digest: string;
 };
+
+export type Factscalar = string | number | boolean;
+
+export type Factsource = { uri: string; retrievedAt: string; digest: string; licence: string };

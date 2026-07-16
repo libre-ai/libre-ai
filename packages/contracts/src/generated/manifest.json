@@ -83,7 +83,7 @@
     },
     {
       "schema": "model-snapshot.v1.schema.json",
-      "schemaSha256": "c8e82872dab2e490154e53ec2c6ee0ccaaa01631768db2ea7780357aeed0165d",
+      "schemaSha256": "3e15661a15f1a8c8de1501706a9e8d509d8e48fde1b2c5440378dc1cb9e16090",
       "declaration": "model-snapshot.v1.d.ts"
     },
     {
@@ -98,13 +98,18 @@
     },
     {
       "schema": "policy-definition.v1.schema.json",
-      "schemaSha256": "997fa8d96de5cffadacaf48715d5903174fe788b0d9cae4da47db0a0ca785b84",
+      "schemaSha256": "3ae56712729cf48bff4a2432343173d5e1f01b2eb612917243816067d4776960",
       "declaration": "policy-definition.v1.d.ts"
     },
     {
       "schema": "policy-evaluation.v1.schema.json",
-      "schemaSha256": "da9be8e6e98a51301d477de451907aa6dc5f69d9c3d0b3eea0ef350d5ca8786d",
+      "schemaSha256": "85464d9114e67422e87724dfbca36a4dd9720402349c05b03b697d6aa9cf5223",
       "declaration": "policy-evaluation.v1.d.ts"
+    },
+    {
+      "schema": "policy-need.v1.schema.json",
+      "schemaSha256": "4ffd9d7f13654a779f0f28d0f87cba786a2f2c4e492683d5e499be8377ebe5de",
+      "declaration": "policy-need.v1.d.ts"
     },
     {
       "schema": "practice-progress-export.v1.schema.json",
