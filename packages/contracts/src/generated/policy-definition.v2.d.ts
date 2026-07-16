@@ -32,6 +32,10 @@ export type LibreAiPolicyDefinitionV2 = {
   };
 };
 
+export type Opaqueprincipalid = string;
+
+export type Opaqueuserid = string;
+
 export type Factscalar = string | number | boolean;
 
 export type Factset = Array<string> | Array<number> | Array<boolean>;
