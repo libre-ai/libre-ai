@@ -1,4 +1,4 @@
-# Temporary bootstrap ownership. Replace groups when the canonical forge is created.
+# Bootstrap ownership. Create these teams in the canonical GitHub organization before enforcing reviews.
 * @libre-ai/core
 /ecosystem/ @libre-ai/architecture
 /contracts/ @libre-ai/architecture @libre-ai/security

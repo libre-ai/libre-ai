@@ -2,7 +2,9 @@
 
 ## Authority
 
-This monorepo is the only target architecture. Historical sibling repositories are read-only evidence after the global freeze. Do not add compatibility layers unless an accepted external dependency is recorded.
+This monorepo is the only target architecture and GitHub remains the canonical collaboration surface. Historical sibling repositories are read-only evidence after the global freeze. Do not add compatibility layers unless an accepted external dependency is recorded.
+
+Before acting, read `GOALS.md`, `STATUS.md`, `docs/decisions/DECISION-REGISTER.md` and the prompt for the current phase. Do not work on a later phase while its upstream gate is open.
 
 ## Stack
 
@@ -27,7 +29,8 @@ This monorepo is the only target architecture. Historical sibling repositories a
 - Biscuit is the internal deny-by-default authorization mechanism; tenant facts are mandatory.
 - Never log secrets, tokens or PII.
 - Secrets are runtime-only.
-- No US hyperscaler dependency.
+- No US hyperscaler dependency for application runtime or data. GitHub is the accepted code collaboration surface.
+- Clever Cloud is deliberately unconfigured until global integration; do not provision it during cleanup/specification.
 
 ## Quality gates
 

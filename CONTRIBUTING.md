@@ -1,6 +1,6 @@
 # Contributing
 
-The canonical Forgejo instance is the merge authority; GitHub is a public mirror.
+The `libre-ai/libre-ai` GitHub repository is the canonical merge authority.
 
 During the Big Bang reconstruction:
 
