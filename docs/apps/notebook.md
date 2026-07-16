@@ -51,7 +51,7 @@ Failure never uploads data or drops the previous valid local revision.
 
 ## Data
 
-IndexedDB owns encrypted block revisions, links, local index, export metadata and settings. L'inventaire local distingue contenu chiffré, clés, index et métadonnées d'exports ; chacun est supprimé lors de `DeleteWorkspace`, tandis qu'une copie exportée hors de l'application reste sous le contrôle explicite de l'utilisateur et ne peut pas être révoquée à distance. Workspace content encryption uses a non-exportable device key where available; portable backup uses `libre-ai.recovery-secret-code.v1` (16 local CSPRNG bytes displayed as 32 lowercase hex characters) by default, with memory-hard KDF parameters encoded in the envelope; any separately approved text-secret mode applies `libre-ai.recovery-secret-text.v1` exactly. Retention is until explicit local deletion. Delete removes records and keys; browser/storage limitations are disclosed. No historical notebook database is migrated automatically; v1 migration input is only validated portable export/backup.
+IndexedDB owns encrypted block revisions, links, local index, export metadata and settings. L'inventaire local distingue contenu chiffré, clés, index et métadonnées d'exports ; chacun est supprimé lors de `DeleteWorkspace`, tandis qu'une copie exportée hors de l'application reste sous le contrôle explicite de l'utilisateur et ne peut pas être révoquée à distance. Workspace content encryption uses a non-exportable device key where available; portable backup uses only `libre-ai.recovery-secret-code.v1` (16 local CSPRNG bytes displayed as 32 lowercase hex characters) with memory-hard KDF parameters encoded in the envelope. Passphrases and free-text recovery are not supported in v2. Retention is until explicit local deletion. Delete removes records and keys; browser/storage limitations are disclosed. No historical notebook database is migrated automatically; v1 migration input is only validated portable export/backup.
 
 ## Authentication and authorization
 
@@ -59,7 +59,7 @@ No server account or session is required in local-only v1. Workspace unlock is l
 
 ## Runtime boundaries
 
-TypeScript owns block graph, UI, IndexedDB, local index, export selection and generation of fresh opaque 128-bit backup/context IDs plus fresh salt/nonce bytes. Any product timestamp belongs inside the encrypted plaintext and never in the clear envelope. Notebook Core v2 is a candidate Rust/WASM boundary for canonical context bytes and Argon2id/AES-256-GCM sealing/opening; this amendment implements no engine. Promotion requires independent cryptography and privacy agent verdicts. The future component imports no host capability. No native FFI or server service is allowed in v1; sensitive bytes cross transiently, DOM and IndexedDB handles do not.
+TypeScript owns block graph, UI, IndexedDB, local index, export selection and generation of fresh opaque 128-bit backup/context IDs plus fresh salt/nonce bytes. Before Context export it remaps every selected local block ID to a fresh export-scoped CSPRNG ID, rewrites roots/links, and keeps revisions and exclusions only in the local preview/receipt. Any product timestamp belongs inside the encrypted plaintext or local receipt, never in the portable payload. Notebook Core v2 is a candidate Rust/WASM boundary for canonical context bytes and Argon2id/AES-256-GCM sealing/opening; this amendment implements no engine. Promotion requires separate architecture, security, cryptography and privacy agent verdicts, followed by the owner’s merge authorization, which is not a technical review. The future component imports no host capability. No native FFI or server service is allowed in v1; sensitive bytes cross transiently, DOM and IndexedDB handles do not.
 
 ## Accessibility and degraded mode
 
@@ -77,7 +77,7 @@ No OpenAPI contract exists for v1 local data.
 
 ## Evidence
 
-Unit tests cover graph closure, exclusions, revisions, canonical hashes and conflicts. Contract vectors cover corrupt ciphertext, unknown KDF, missing dependencies and old versions. Browser tests cover offline reload, quota errors, export/import/delete and keyboard/screen reader. Security review proves no content network requests and no plaintext persistence/logging. Cross-browser backup vectors must round-trip.
+Unit tests cover graph closure, local-only exclusions/revisions, export-scoped ID remapping, canonical hashes and conflicts. Contract vectors cover corrupt ciphertext, unknown KDF, missing dependencies and old versions. Browser tests cover offline reload, quota errors, export/import/delete and keyboard/screen reader. Security review proves no content network requests and no plaintext persistence/logging. Cross-browser backup vectors must round-trip.
 
 ## Work packages
 
