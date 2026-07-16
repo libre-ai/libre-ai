@@ -1,7 +1,7 @@
 # WP-G2-T01 — Bun production toolchain qualification
 
 - **Checkpoint:** 2026-07-16
-- **Status:** awaiting human gate
+- **Status:** completed negative checkpoint; human gate accepted 2026-07-16
 - **Current pin:** `1.4.0-canary.1+57f349f63` (bootstrap/shared CI only)
 - **Latest upstream stable:** `1.3.14+0d9b296af`
 - **Production status:** blocked
@@ -37,6 +37,6 @@ Accept `WP-G2-T01` as a **completed negative qualification checkpoint**:
 
 Halting all G2 work until upstream publishes a stable is safer but provides no additional evidence and leaves the accepted architecture unimplemented. Replacing the pin with another canary is not recommended.
 
-## Human gate
+## Human gate outcome
 
-The recommendation does **not** approve production. Human acceptance only decides whether the negative checkpoint unlocks development package `WP-G2-C01` while production remains blocked.
+Human continuation on 2026-07-16 accepted the recommended negative-checkpoint disposition. `WP-G2-C01` is unlocked for development against the exact bootstrap toolchain. This acceptance does **not** approve production, another canary or Clever provisioning.

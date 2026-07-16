@@ -40,7 +40,7 @@ The release is a technical compliance and reproducibility record, not legal advi
 
 `WP-G2-T01` rechecked upstream on 2026-07-16. Stable remains `1.3.14+0d9b296af`, 903 commits behind the selected Rust-line commit and without a root `Cargo.toml`. No stable Rust-line release exists. Evidence and the proposed negative-checkpoint disposition are recorded in [`G2-T01-QUALIFICATION.md`](G2-T01-QUALIFICATION.md).
 
-Human acceptance may unlock development foundation work while the exact canary remains bootstrap-only; it cannot approve production or Clever provisioning.
+Human continuation accepted the negative checkpoint on 2026-07-16 and unlocked development foundation work while the exact canary remains bootstrap-only. It did not approve production, another canary or Clever provisioning.
 
 ## Replacement rule
 

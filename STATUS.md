@@ -31,9 +31,9 @@
 
 ## Current G2 entry
 
-- `WP-G2-T01` checked upstream: stable `1.3.14` predates the Rust line by 903 commits and no qualifying stable exists ;
-- human gate pending on the recommended negative-checkpoint disposition before `WP-G2-C01` ;
-- production and Clever Cloud remain blocked.
+- `WP-G2-T01` completed as a human-accepted negative checkpoint: stable `1.3.14` predates the Rust line by 903 commits ;
+- `WP-G2-C01` contract SDK and boundary validators is unlocked ;
+- production, another canary and Clever Cloud remain blocked.
 
 ## Explicitly deferred
 
