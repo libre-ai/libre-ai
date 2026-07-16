@@ -11,6 +11,8 @@ const requiredFiles = [
   "docs/transformation/G0-CANONICAL-BOOTSTRAP.md",
   "docs/transformation/BIG-BANG.md",
   "docs/toolchain/BUN-QUALIFICATION.md",
+  "docs/specifications/SPECIFICATION-STANDARD.md",
+  "docs/specifications/DECISION-QUEUE.md",
   "prompts/00-cleanup.md",
   "prompts/01-specification-lock.md",
   "prompts/02-foundation-build.md",

@@ -21,11 +21,12 @@
 - canonical public GitHub repository created and initial history pushed ;
 - Bun canary binaries, exact source, notices and checksums published in a durable prerelease ;
 - shared GitHub CI runs `29491575814` and `29491734252` green for exact Bun and Rust gates ;
-- protected `main`, private vulnerability reporting, secret scanning/push protection and dependency alerts enabled.
+- protected `main`, private vulnerability reporting, secret scanning/push protection and dependency alerts enabled ;
+- nine application specifications expanded to the G1 standard with an executable structure gate.
 
 ## Pending in G1
 
-- complete application behavior and refusal specifications ;
+- resolve human decision queue Q1–Q5: tenancy, OIDC boundary, retention, Notebook sync and Boussole release authority ;
 - lock JSON Schema, OpenAPI and WIT contract inventory ;
 - lock data ownership, retention and deletion rules ;
 - lock browser session and Biscuit authorization contracts ;
