@@ -168,18 +168,18 @@ Elle autorise uniquement :
 
 1. le merge de ce dossier comme proposition de revue ;
 2. la préparation machine-checkable du candidat dans `contracts/` avec statut `candidate` ;
-3. la reproduction externe du protocole et des vecteurs en vue de Gate A.
+3. la reproduction du protocole et des vecteurs par un agent/session indépendant en vue de Gate A.
 
 Elle n'autorise ni statut `locked`, ni implémentation, ni compatibilité publique, ni sauvegarde utilisateur, ni release. Toute modification normative impose de régénérer les vecteurs et de réexécuter le challenge.
 
-## 10. Gates A/B — revues externes avant implémentation puis release
+## 10. Gates A/B — revues agentiques indépendantes avant implémentation puis release
 
-Avant tout moteur, un cryptographe externe complète la Gate A de [`INDEPENDENT-REVIEW.md`](INDEPENDENT-REVIEW.md) et vérifie :
+Avant tout moteur, un agent cryptographie indépendant complète la Gate A de [`INDEPENDENT-REVIEW.md`](INDEPENDENT-REVIEW.md) et vérifie :
 
 1. la reproduction indépendante de la clé, des AAD, du ciphertext/tag, du digest, du golden et des mutations ;
 2. l’exactitude du protocole, des bornes, de la migration et du modèle anti-oracle.
 
-Une fois un composant construit, le reviewer complète séparément Gate B et vérifie :
+Une fois un composant construit, un agent cryptographie indépendant complète séparément Gate B et vérifie :
 
 1. la conformité WIT/schémas/golden dans les runtimes Rust/WASM et navigateur ;
 2. le choix, les versions, la provenance et la configuration des primitives ;

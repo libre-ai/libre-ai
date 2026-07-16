@@ -59,7 +59,7 @@ No server account or session is required in local-only v1. Workspace unlock is l
 
 ## Runtime boundaries
 
-TypeScript owns block graph, UI, IndexedDB, local index, export selection and generation of local backup ID/time plus fresh salt/nonce bytes. Notebook Core v2 is a candidate Rust/WASM boundary for canonical context bytes and Argon2id/AES-256-GCM sealing/opening; this amendment implements no engine. Promotion requires independent cryptography and privacy review. The future component imports no host capability. No native FFI or server service is allowed in v1; sensitive bytes cross transiently, DOM and IndexedDB handles do not.
+TypeScript owns block graph, UI, IndexedDB, local index, export selection and generation of local backup ID/time plus fresh salt/nonce bytes. Notebook Core v2 is a candidate Rust/WASM boundary for canonical context bytes and Argon2id/AES-256-GCM sealing/opening; this amendment implements no engine. Promotion requires independent cryptography and privacy agent verdicts. The future component imports no host capability. No native FFI or server service is allowed in v1; sensitive bytes cross transiently, DOM and IndexedDB handles do not.
 
 ## Accessibility and degraded mode
 
@@ -87,7 +87,7 @@ Unit tests cover graph closure, exclusions, revisions, canonical hashes and conf
 4. PWA offline/storage/accessibility shell — Web Platform ;
 5. restore/delete/privacy/browser qualification — Infrastructure and Release.
 
-The Rust boundary remains justified because memory-hard Argon2id is not supplied by browser Web Crypto, but implementation is NO-GO until an independent cryptographer reproduces the vectors and validates browser budgets, AAD, anti-oracle behavior and zeroization. Golden vectors and zeroized transient key material remain release gates.
+The Rust boundary remains justified because memory-hard Argon2id is not supplied by browser Web Crypto, but implementation is NO-GO until an independent cryptography review agent reproduces the vectors and validates browser budgets, AAD, anti-oracle behavior and zeroization. Golden vectors and zeroized transient key material remain release gates.
 
 ## Release and rollback
 

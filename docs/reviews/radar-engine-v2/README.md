@@ -1,9 +1,11 @@
-# Independent review dossier — Radar engine v2 contract
+# Independent agent review dossier — Radar engine v2 contract
 
-**State:** `pending-independent-review`
+**State:** `pending-independent-agent-review`
 
-**Required reviewers:** one Security reviewer and one Architecture reviewer, both independent from
-the author of this candidate.
+**Protocol:** [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md)
+
+**Required reviewers:** one Security agent and one Architecture agent, each using an identity and
+session distinct from the authoring agent.
 
 **Decision recorded here:** none. This dossier is a review request and does not approve, release or
 authorize implementation of the contract.
@@ -28,8 +30,8 @@ Normative artifacts:
 
 The normalized schemas and all incompatible v2 Radar authorities are marked `candidate` in
 `contracts/catalog.v1.json`; v1 remains locked and unchanged. Promotion to `locked` requires explicit
-independent Security and Architecture verdicts. The implementation author must not perform that
-promotion alone.
+independent Security and Architecture agent verdicts. The authoring agent must not review or perform
+that promotion alone.
 
 ## Contract decisions to review
 
@@ -86,10 +88,10 @@ its own raw inputs and exact output bytes.
 
 ## Expected independent evidence
 
-Security review should return a separate verdict covering `SECURITY.md`. Architecture review should
-return a separate verdict covering `ARCHITECTURE.md`. Each verdict should identify the reviewed Git
-commit and the SHA-256 of `golden-vectors.v1.json`, list blocking findings, and explicitly state
-`approve` or `reject`. A conditional or missing verdict keeps every candidate entry pending.
+Security and Architecture review agents return separate verdicts covering `SECURITY.md` and
+`ARCHITECTURE.md`. Each record includes the agent/session identity required by the shared protocol,
+the reviewed Git commit, the SHA-256 of `golden-vectors.v1.json`, findings and an explicit verdict.
+A self-review, conditional verdict or missing record keeps every candidate entry pending.
 
 ## Known residual work (not part of this candidate)
 

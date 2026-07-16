@@ -34,7 +34,7 @@
 - `WP-G2-T01` completed as a human-accepted negative checkpoint: stable `1.3.14` predates the Rust line by 903 commits ;
 - `WP-G2-C01` contract SDK and boundary validators is unlocked ;
 - ADR-0003 opens a strictly bounded contract amendment for WP-G2-S01: 23 v2/new candidate authorities extend the 47 locked baseline authorities ;
-- Radar, Notebook, Policy and Boussole profiles/vectors remain candidate-only pending their named architecture, security, cryptography, methodology and privacy reviews ;
+- Radar, Notebook, Policy and Boussole profiles/vectors remain candidate-only pending their named independent agent reviews for architecture, security, cryptography, methodology and privacy ;
 - no product engine, generic Context crate, Agent Orchestrator or Practices scorer is implemented ;
 - real Missions execution, production, another canary and Clever Cloud remain blocked.
 

@@ -3,8 +3,9 @@
 ## Status
 
 This is a contract candidate. It is not approved, locked for release or authorized
-for implementation until independent Architecture, Security and Privacy reviewers accept it.
-The author or future implementer cannot supply any of these acceptances.
+for implementation until independent Architecture, Security and Privacy review agents accept it.
+Each reviewer agent/session differs from the authoring agent/session and follows
+[`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md).
 
 ## Candidate authorities
 
@@ -39,7 +40,7 @@ The author or future implementer cannot supply any of these acceptances.
 
 ## Required independent checks
 
-Architecture review must:
+The Architecture review agent must:
 
 - challenge every operator/type/cardinality branch and verdict transition;
 - confirm that schema, OpenAPI, WIT and semantic profile describe one boundary;
@@ -48,7 +49,7 @@ Architecture review must:
 - confirm that no Rust engine or application implementation is hidden in this
   candidate.
 
-Security review must:
+The Security review agent must:
 
 - attempt tenant substitution, digest substitution, duplicate-key and duplicate-
   fact inputs;
@@ -58,11 +59,11 @@ Security review must:
   network/clock/storage/randomness capability;
 - confirm that no result grants authorization, purchasing power or approval.
 
-Privacy review must confirm tenant-bound minimization, sourced facts without personal fixture data, and that logs/errors expose neither fact values nor reviewer identity.
+The Privacy review agent must confirm tenant-bound minimization, sourced facts without personal fixture data, and that logs/errors expose neither fact values nor reviewer identity.
 
 ## Promotion rule
 
-Promotion from `candidate` to `locked` requires recorded, independent human
-acceptance from Architecture, Security and Privacy, followed by the full contract,
+Promotion from `candidate` to `locked` requires recorded, independent agent
+verdicts from Architecture, Security and Privacy, followed by the full contract,
 generated-projection and cross-runtime conformance gates. A generator, evaluator,
-CI job or author cannot promote this candidate automatically.
+CI job or authoring agent cannot promote this candidate automatically.

@@ -1,6 +1,6 @@
-# Procès-verbal de revue cryptographique externe — Gates A/B
+# Procès-verbal de revue cryptographique agentique — Gates A/B
 
-> **Statut initial : PENDING.** Ce document est un canevas, pas une approbation. La Gate S solo ne remplace aucune revue. Seul un cryptographe externe à la rédaction du candidat et au développement du moteur peut rendre les verdicts Gate A (protocole) puis Gate B (composant).
+> **Statut initial : PENDING.** Ce document est un canevas, pas une approbation. La Gate S solo ne remplace aucune revue. Seul un agent cryptographie dont l’identité et la session diffèrent de l’agent auteur peut rendre les verdicts Gate A (protocole) puis Gate B (composant), conformément à `docs/reviews/AGENT-REVIEW-PROTOCOL.md`.
 
 ## Portée de la décision
 
@@ -18,7 +18,9 @@ La Gate A examine le protocole, les schémas et les vecteurs catalogués ; son a
 - Gate B — digest du composant WASM construit : `<required-before-gate-b>` ;
 - dépôt : `https://github.com/libre-ai/libre-ai` ;
 - date UTC de revue : `<required>` ;
-- référence professionnelle publique ou interne du reviewer : `<required>`.
+- `authorAgentId` / `authorSessionId` : `<required>` ;
+- `reviewerAgentId` / `reviewerSessionId` : `<required>` ;
+- provider et modèle/version du reviewer : `<required>`.
 
 Le reviewer travaille sur des commits propres et consigne les commandes de liaison :
 
@@ -30,8 +32,9 @@ git status --short
 
 ## Indépendance
 
-- [ ] le reviewer n'a rédigé ni le candidat, ni ses golden vectors, ni le moteur principal ;
-- [ ] il ne s'auto-approuve pas et déclare les conflits d'intérêts éventuels ;
+- [ ] `reviewerAgentId != authorAgentId` et `reviewerSessionId != authorSessionId` ;
+- [ ] l’agent reviewer n'a rédigé ni le candidat, ni ses golden vectors, ni le moteur principal ;
+- [ ] il ne s'auto-approuve pas et travaille depuis un contexte neuf sur le commit immuable ;
 - [ ] ses preuves n'utilisent que le secret public de test, sans donnée personnelle ni clé réelle ;
 - [ ] sa chaîne de reproduction est indépendante des implémentations utilisées pendant la Gate S.
 
@@ -108,6 +111,6 @@ Pour chaque gate, cocher exactement une décision et préciser `A` ou `B` dans l
 
 Justification : `<required>`.
 
-Référence du commit attribuable contenant ce procès-verbal : `<required>`.
+Référence du commit attribuable contenant ce procès-verbal agentique : `<required>`.
 
 Toute modification normative du protocole après Gate A impose une nouvelle Gate A ; toute modification du composant examiné après Gate B impose une nouvelle Gate B.

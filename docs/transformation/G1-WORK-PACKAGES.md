@@ -15,6 +15,7 @@ G1 defines 26 bounded packages. A package is ready to schedule when its dependen
 - packages in one parallel group may run together only after their shared predecessors merge ;
 - every merge report lists files, contract impact, tests/evidence, security/PII impact and remaining debt ;
 - a high/critical package cannot self-approve its `humanGates` ;
+- for ADR-0003 in solo-maintainer mode, technical review evidence is produced by independent agents under `docs/reviews/AGENT-REVIEW-PROTOCOL.md`; the historical `humanGates` key records owner acceptance gates, not reviewer identity ;
 - no `infrastructure/clever-cloud` write or secret operation before `WP-G4-I01` ;
 - failed security, data, contract or rollback evidence blocks all dependent packages.
 

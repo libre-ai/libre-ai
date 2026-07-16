@@ -3,7 +3,7 @@
 - **Statut :** accepted-for-candidate-drafting
 - **Date :** 2026-07-16
 - **Portée :** contrats spécialisés uniquement
-- **Décision humaine :** recommandation v2 et réduction de S01 approuvées ; revues spécialisées encore requises
+- **Décision propriétaire solo :** recommandation v2 et réduction de S01 approuvées ; revues agentiques spécialisées encore requises
 
 ## Contexte
 
@@ -14,7 +14,7 @@ Les WIT v1 Radar, Notebook, Policy et Boussole étaient syntaxiquement valides m
 1. Les v1 existants restent inchangés et non ciblés par WP-G2-S01 ; aucune réinterprétation cassante n’est admise.
 2. Les quatre moteurs candidats utilisent des WIT v2 et des profils normatifs catalogués.
 3. Radar reçoit une identité de source, une URL de base/finale et un budget de sortie ; ses IDs sont source-scoped.
-4. Notebook v2 rend les métadonnées crypto explicites et authentifiées ; son implémentation attend une revue cryptographique indépendante.
+4. Notebook v2 rend les métadonnées crypto explicites et authentifiées ; son implémentation attend une revue cryptographique par un agent indépendant.
 5. Policy v2 introduit un besoin tenant-bound, des faits typés et la séparation humaine `approverId != proposedBy`.
 6. Boussole v2 fixe une formule candidate reproductible ; le scoring public reste désactivé sans revues méthodologique et vie privée distinctes liées aux hashes.
 7. `crates/context` et `crates/agent-orchestrator` sont retirés de WP-G2-S01. L’orchestrateur nécessite un RFC/Specification Lock séparé avec plan d’exécution, commandes, événements v2, budgets, harness et autorisation.
@@ -23,7 +23,7 @@ Les WIT v1 Radar, Notebook, Policy et Boussole étaient syntaxiquement valides m
 
 ## Autorité et approbations
 
-Les contrats v2 sont catalogués comme `candidate`. Un agent ne peut pas les promouvoir. Les approbations humaines nommées requises sont : architecture, sécurité, cryptographie pour Notebook, méthodologie pour Boussole et vie privée France/UE pour Notebook/Policy/Boussole. Les reviewers spécialisés sont distincts des auteurs et futurs implémenteurs.
+Les contrats v2 sont catalogués comme `candidate`. Les verdicts requis sont produits par des agents spécialisés en architecture, sécurité, cryptographie pour Notebook, méthodologie pour Boussole et vie privée France/UE pour Notebook/Policy/Boussole. Chaque reviewer utilise un identifiant et une session distincts de l’agent auteur, sur un commit immuable, conformément à `docs/reviews/AGENT-REVIEW-PROTOCOL.md`. L’agent auteur ne peut ni reviewer ni promouvoir seul son candidat ; un agent intégrateur séparé prépare la promotion après tous les verdicts.
 
 ## Compatibilité
 
@@ -33,7 +33,7 @@ Radar et Notebook changent de signature WIT ; Policy et Boussole changent la sig
 
 Le Specification Lock n’est refermé pour S01 que lorsque :
 
-- chaque candidat est approuvé par ses reviewers requis ;
+- chaque candidat reçoit les verdicts favorables de ses agents reviewers requis ;
 - schémas, OpenAPI, WIT, profils et vecteurs passent les gates ;
 - les types générés sont reproductibles ;
 - WP-G2-S01 ne possède que les quatre crates produit ;

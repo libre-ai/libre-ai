@@ -481,7 +481,9 @@
       "classification": "internal",
       "status": "candidate",
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security"],
         "dossier": "docs/reviews/radar-engine-v2/README.md"
       }
@@ -496,7 +498,9 @@
       "classification": "internal",
       "status": "candidate",
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security"],
         "dossier": "docs/reviews/radar-engine-v2/README.md"
       }
@@ -511,7 +515,9 @@
       "classification": "personal",
       "status": "candidate",
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security"],
         "dossier": "docs/reviews/radar-engine-v2/README.md"
       }
@@ -526,7 +532,9 @@
       "classification": "tenant-private",
       "status": "candidate",
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security"],
         "dossier": "docs/reviews/radar-engine-v2/README.md"
       }
@@ -541,7 +549,9 @@
       "classification": "personal",
       "status": "candidate",
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security"],
         "dossier": "docs/reviews/radar-engine-v2/README.md"
       }
@@ -556,7 +566,9 @@
       "classification": "local",
       "status": "candidate",
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security", "cryptography", "privacy"],
         "dossier": "docs/reviews/notebook-core-v2/README.md"
       }
@@ -571,7 +583,9 @@
       "classification": "local",
       "status": "candidate",
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security", "cryptography", "privacy"],
         "dossier": "docs/reviews/notebook-core-v2/README.md"
       }
@@ -586,7 +600,9 @@
       "classification": "local",
       "status": "candidate",
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security", "cryptography", "privacy"],
         "dossier": "docs/reviews/notebook-core-v2/README.md"
       }
@@ -601,7 +617,9 @@
       "classification": "tenant-private",
       "status": "candidate",
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security", "privacy"],
         "dossier": "docs/reviews/policy-core-v2/README.md"
       }
@@ -616,7 +634,9 @@
       "classification": "tenant-private",
       "status": "candidate",
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security", "privacy"],
         "dossier": "docs/reviews/policy-core-v2/README.md"
       }
@@ -631,7 +651,9 @@
       "classification": "tenant-private",
       "status": "candidate",
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security", "privacy"],
         "dossier": "docs/reviews/policy-core-v2/README.md"
       }
@@ -646,7 +668,9 @@
       "classification": "tenant-private",
       "status": "candidate",
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security", "privacy"],
         "dossier": "docs/reviews/policy-core-v2/README.md"
       }
@@ -661,7 +685,9 @@
       "classification": "public",
       "status": "candidate",
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security", "methodology", "privacy"],
         "dossier": "docs/reviews/boussole-scoring-v2/README.md"
       }
@@ -676,7 +702,9 @@
       "classification": "public",
       "status": "candidate",
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security", "methodology", "privacy"],
         "dossier": "docs/reviews/boussole-scoring-v2/README.md"
       }
@@ -691,7 +719,9 @@
       "classification": "local",
       "status": "candidate",
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security", "methodology", "privacy"],
         "dossier": "docs/reviews/boussole-scoring-v2/README.md"
       }
@@ -706,7 +736,9 @@
       "classification": "local",
       "status": "candidate",
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security", "methodology", "privacy"],
         "dossier": "docs/reviews/boussole-scoring-v2/README.md"
       }
@@ -721,7 +753,9 @@
       "classification": "internal",
       "status": "candidate",
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security"],
         "dossier": "docs/reviews/specialized-engine-v2/README.md"
       }
@@ -736,7 +770,9 @@
       "classification": "personal",
       "status": "candidate",
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security"],
         "dossier": "docs/reviews/radar-engine-v2/README.md"
       }
@@ -751,7 +787,9 @@
       "classification": "tenant-private",
       "status": "candidate",
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security", "privacy"],
         "dossier": "docs/reviews/policy-core-v2/README.md"
       }
@@ -768,7 +806,9 @@
       "profiles": ["contracts/wit/radar-engine-v2/PROFILE.md"],
       "vectors": ["contracts/fixtures/radar-engine-v2/golden-vectors.v1.json"],
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security"],
         "dossier": "docs/reviews/radar-engine-v2/README.md"
       }
@@ -785,7 +825,9 @@
       "profiles": ["contracts/wit/notebook-core-v2/SEMANTICS.md"],
       "vectors": ["contracts/fixtures/notebook-core-v2/golden-vectors.v1.json"],
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security", "cryptography", "privacy"],
         "dossier": "docs/reviews/notebook-core-v2/README.md"
       }
@@ -805,7 +847,9 @@
         "contracts/fixtures/policy-core-v2/golden.json"
       ],
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security", "privacy"],
         "dossier": "docs/reviews/policy-core-v2/README.md"
       }
@@ -822,7 +866,9 @@
       "profiles": ["contracts/wit/boussole-scoring-v2/SEMANTICS.md"],
       "vectors": ["contracts/fixtures/boussole-scoring-v2/golden-vectors.v1.json"],
       "review": {
-        "state": "pending-independent-review",
+        "state": "pending-independent-agent-review",
+        "reviewerKind": "agent",
+        "separation": "different-agent-and-session",
         "required": ["architecture", "security", "methodology", "privacy"],
         "dossier": "docs/reviews/boussole-scoring-v2/README.md"
       }

@@ -1,7 +1,8 @@
 # Radar engine v2 — Architecture review worksheet
 
-This worksheet is not a verdict. The independent Architecture reviewer should verify that the
-candidate closes semantics without moving product/network/tenant behavior into the Rust boundary.
+This worksheet is not a verdict. An Architecture review agent, distinct from the authoring
+agent/session, should verify that the candidate closes semantics without moving
+product/network/tenant behavior into the Rust boundary.
 
 ## Boundary checks
 
@@ -31,10 +32,10 @@ candidate closes semantics without moving product/network/tenant behavior into t
   existing domain authority.
 - Confirm source-local item identity is appropriate; a persisted global ID must remain scoped by the
   authorized Radar source ID.
-- Confirm candidate status and dual independent review do not silently alter the G1 locked inventory.
+- Confirm candidate status and dual independent agent review do not silently alter the G1 locked inventory.
 
 ## Required Architecture verdict content
 
 The separate verdict must include reviewed commit, vector-index SHA-256, compatibility assessment,
-blocking and non-blocking findings, reviewer identity/role and an explicit approve/reject decision.
-No entry may move from `candidate` to `locked` without that external verdict.
+blocking and non-blocking findings, reviewer agent/session identity and an explicit verdict under
+`docs/reviews/AGENT-REVIEW-PROTOCOL.md`. No entry may move from `candidate` to `locked` without it.
