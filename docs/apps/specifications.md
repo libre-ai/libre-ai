@@ -60,7 +60,7 @@ Opaque browser session maps OIDC subject to organization membership. Biscuit res
 
 ## Runtime boundaries
 
-TypeScript owns domain workflow, validation orchestration, persistence and UI. Canonical package hashing MAY use Rust shared Artifact core only if golden vectors require; schema validation remains contract-driven in both TS/Rust. Specifications never calls orchestrator execution APIs. It publishes accepted contract bytes/events for planner consumption.
+TypeScript owns domain workflow, validation orchestration, persistence and UI. Canonical package hashing uses the shared Rust Artifact core with cross-runtime golden vectors; schema validation remains contract-driven in both TS/Rust. Specifications never calls orchestrator execution APIs. It publishes accepted contract bytes/events for planner consumption.
 
 ## Accessibility and degraded mode
 

@@ -59,7 +59,7 @@ No server account or session is required in local-only v1. Workspace unlock is l
 
 ## Runtime boundaries
 
-TypeScript owns block graph, UI, IndexedDB and export selection. Rust/WASM MAY own encryption envelope, deterministic index primitives and canonical hashing only if Web Crypto/interoperability vectors demonstrate value. No native FFI or server service is allowed in v1. Contract bytes cross the boundary; DOM and IndexedDB handles do not.
+TypeScript owns block graph, UI, IndexedDB, local index and export selection. The audited Rust/WASM core owns canonical context bytes plus Argon2id/AES-256-GCM backup sealing/opening; Web Crypto supplies fresh salt/nonce bytes and the core imports no host capability. No native FFI or server service is allowed in v1. Contract/key bytes cross the boundary transiently; DOM and IndexedDB handles do not.
 
 ## Accessibility and degraded mode
 
@@ -69,7 +69,7 @@ All core journeys work offline and keyboard-only. Editor announces formatting/st
 
 - Notebook Backup v1 — `contracts/schemas/notebook-backup.v1.schema.json` ;
 - Context Document v1 — `contracts/schemas/context-document.v1.schema.json` ;
-- optional crypto/index core — `contracts/wit/notebook-core-v1/world.wit`.
+- required canonicalization/backup crypto core — `contracts/wit/notebook-core-v1/world.wit`.
 
 No OpenAPI contract exists for v1 local data.
 
@@ -81,11 +81,11 @@ Unit tests cover graph closure, exclusions, revisions, canonical hashes and conf
 
 1. backup/context contracts and crypto vectors — Canonical Core ;
 2. local block/revision/index domain — Experiences ;
-3. optional audited crypto/index WASM — Specialized Rust ;
+3. audited canonicalization and backup crypto WASM — Specialized Rust ;
 4. PWA offline/storage/accessibility shell — Web Platform ;
 5. restore/delete/privacy/browser qualification — Infrastructure and Release.
 
-The Rust package is conditional; v1 cannot wait on it unless cross-browser primitives fail an accepted invariant.
+The Rust package is required because the accepted memory-hard Argon2id envelope is not supplied by browser Web Crypto. Golden vectors and zeroized transient key material are release gates.
 
 ## Release and rollback
 
