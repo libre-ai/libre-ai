@@ -52,7 +52,7 @@ A rejected fetch records bounded metadata and rule ID, never the full hostile bo
 
 ## Data
 
-Radar owns tenant subscriptions, immutable rule versions, schedules, normalized items, decisions and exports. PostgreSQL is authoritative; Redis is lease/cache only. Raw bodies are processed in quarantine and discarded after normalization; failed quarantine expires after the approved Q3 duration. Normalized items/decisions follow Q3 retention. Blobs are permitted only for explicit user exports with expiry. Migration source is OPML/RSS/Atom/JSON Feed supplied by the user plus archived contract fixtures—not historical service tables.
+Radar owns tenant subscriptions, immutable rule versions, schedules, normalized items, decisions and exports. PostgreSQL is authoritative; Redis is lease/cache only. Raw bodies are processed in quarantine and discarded after normalization; failed quarantine and normalized items/decisions follow ADR-0002 section 3 retention. Blobs are permitted only for explicit user exports with expiry. Migration source is OPML/RSS/Atom/JSON Feed supplied by the user plus archived contract fixtures—not historical service tables.
 
 ## Authentication and authorization
 
@@ -86,7 +86,7 @@ Unit tests cover canonical URL, idempotency, deduplication and explanations. Con
 4. tenant data/API/UI — Experiences ;
 5. replay, RLS, SSRF and failure qualification — Infrastructure and Release.
 
-Network and parser packages can proceed in parallel against fixtures; persistence starts after event/retention decisions are accepted.
+Network and parser packages can proceed in parallel against fixtures; persistence starts from the accepted event and ADR-0002 retention rules.
 
 ## Release and rollback
 

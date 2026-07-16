@@ -52,7 +52,7 @@ Provider failure leaves an attributable failed draft request and allows manual o
 
 ## Data
 
-PostgreSQL owns organizations, spaces, memberships, sessions, source references, contribution metadata/content, append-only events, drafts, approvals and export manifests. Redis owns expiring presence, WebSocket fan-out and idempotent short leases only. Participant presence expires per Q3; session content/outcomes follow approved retention. Audience classification is stored with each contribution. Historical Sessions tables are not imported; migration source is reviewed contract fixtures and explicitly accepted public/session templates.
+PostgreSQL owns organizations, spaces, memberships, sessions, source references, contribution metadata/content, append-only events, drafts, approvals and export manifests. Redis owns expiring presence, WebSocket fan-out and idempotent short leases only. Participant presence and session content/outcomes follow ADR-0002 section 3 retention. Audience classification is stored with each contribution. Historical Sessions tables are not imported; migration source is reviewed contract fixtures and explicitly accepted public/session templates.
 
 ## Authentication and authorization
 

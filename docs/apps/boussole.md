@@ -22,7 +22,7 @@ Boussole lets a person compare locally expressed priorities with sourced public 
 - account, server response storage, telemetry or ad profile ;
 - model-generated statement publication without human review ;
 - hiding abstention, absence, dataset selection or denominator ;
-- public scoring before Q5 approvals.
+- public scoring before the two ADR-0002 approvals.
 
 ## Domain protocol
 
@@ -76,7 +76,7 @@ No API accepts responses.
 
 ## Evidence
 
-Golden scoring vectors run in Rust/WASM and independent reference implementation. Dataset tests validate sources, coverage, denominators, abstentions and licences. Network interception proves zero response/result transmission. Browser tests cover offline, upgrade preview, delete, keyboard and screen readers. Release evidence includes independent methodological and legal/privacy approvals defined by Q5.
+Golden scoring vectors run in Rust/WASM and independent reference implementation. Dataset tests validate sources, coverage, denominators, abstentions and licences. Network interception proves zero response/result transmission. Browser tests cover offline, upgrade preview, delete, keyboard and screen readers. Release evidence includes the independent methodological and legal/privacy approvals defined by ADR-0002.
 
 ## Work packages
 
@@ -90,4 +90,4 @@ Public scoring feature flag remains compile/release-disabled until package 5 suc
 
 ## Release and rollback
 
-Code/dataset previews may ship without public scoring. Public scoring release requires Q5 authority, fixed dataset/method hashes, golden equality, zero-transmission proof and accessibility review. Rollback restores previous app/dataset while retaining local responses under compatible statement IDs; incompatible upgrade requires user-confirmed export/reset. No release or rollback sends positions.
+Code/dataset previews may ship without public scoring. Public scoring release requires ADR-0002 authority, fixed dataset/method hashes, golden equality, zero-transmission proof and accessibility review. Rollback restores previous app/dataset while retaining local responses under compatible statement IDs; incompatible upgrade requires user-confirmed export/reset. No release or rollback sends positions.

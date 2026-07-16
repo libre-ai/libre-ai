@@ -54,9 +54,12 @@ if (!(await queue.exists())) {
   failures.push("Missing G1 decision queue");
 } else {
   const text = await queue.text();
+  if (!text.includes("**Status:** closed")) failures.push("G1 decision queue is not closed");
   for (let index = 1; index <= 5; index += 1) {
     if (!text.includes(`## Q${index} —`)) failures.push(`Decision queue is missing Q${index}`);
   }
+  const accepted = text.match(/\*\*Status:\*\* accepted\./g) ?? [];
+  if (accepted.length !== 5) failures.push("All five G1 decisions must be accepted");
 }
 
 if (failures.length > 0) {

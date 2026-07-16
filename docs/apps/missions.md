@@ -53,7 +53,7 @@ Unknown event types are quarantined, never projected as success.
 
 ## Data
 
-PostgreSQL owns mission aggregate, approvals, append-only events, decision requests, budgets and verdicts. Evidence/artifacts remain owned by Proof/Artifact and are referenced by digest. Orchestrator runtime state is not Missions authority. Retention follows Q3. Migration source is accepted mission/handoff contracts and selected archived test fixtures; historical execution logs are not imported as trusted evidence.
+PostgreSQL owns mission aggregate, approvals, append-only events, decision requests, budgets and verdicts. Evidence/artifacts remain owned by Proof/Artifact and are referenced by digest. Orchestrator runtime state is not Missions authority. Retention follows ADR-0002 section 3. Migration source is accepted mission/handoff contracts and selected archived test fixtures; historical execution logs are not imported as trusted evidence.
 
 ## Authentication and authorization
 

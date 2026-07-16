@@ -3,7 +3,7 @@
 - **Path:** `apps/notebook`
 - **Owner:** Experiences / Notebook
 - **Runtime:** Bun/React PWA with IndexedDB and Web Crypto
-- **Tenant model:** personal local workspace; local-only v1 is proposed in Q4
+- **Tenant model:** personal local-only workspace in v1, accepted by ADR-0002
 
 ## Purpose and actors
 

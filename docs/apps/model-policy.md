@@ -52,11 +52,11 @@ The UI may explain indeterminate but cannot override it to eligible.
 
 ## Data
 
-PostgreSQL owns organization policies, immutable accepted versions, source references, snapshot facts/provenance, needs and evaluation manifests. Restricted source payloads are not stored unless licence explicitly permits and owner approves; only citations/digests and derived allowed facts persist. Accepted policy/snapshot records follow Q3 retention and remain immutable while referenced. Migration source is selected public model-policy/policy contracts and accepted source datasets, not historical private tables.
+PostgreSQL owns organization policies, immutable accepted versions, source references, snapshot facts/provenance, needs and evaluation manifests. Restricted source payloads are not stored unless licence explicitly permits and owner approves; only citations/digests and derived allowed facts persist. Accepted policy/snapshot records follow ADR-0002 section 3 retention and remain immutable while referenced. Migration source is selected public model-policy/policy contracts and accepted source datasets, not historical private tables.
 
 ## Authentication and authorization
 
-Public reference policies MAY be readable without session. Organization editing/evaluation requires opaque session and tenant. Biscuit resources are `policy/<id>/<version>`, `snapshot/<id>` and `evaluation/<id>`; editor cannot approve own version unless organization policy explicitly permits dual control (v1 recommendation: forbidden). Rust policy core receives no token; Bun authorizes then passes canonical policy/need/snapshot bytes. RLS repeats tenant isolation.
+Public reference policies MAY be readable without session. Organization editing/evaluation requires opaque session and tenant. Biscuit resources are `policy/<id>/<version>`, `snapshot/<id>` and `evaluation/<id>`; an editor cannot approve their own version in v1. Rust policy core receives no token; Bun authorizes then passes canonical policy/need/snapshot bytes. RLS repeats tenant isolation.
 
 ## Runtime boundaries
 

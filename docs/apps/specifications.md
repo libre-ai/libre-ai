@@ -52,7 +52,7 @@ Validation returns stable rule IDs and paths; it never fills missing content aut
 
 ## Data
 
-PostgreSQL owns organization workspaces, draft revisions, decisions, reviews, accepted package manifests and handoff references. Large attachments live in Cellar only through Artifact manifests; raw secrets and production data are forbidden. Accepted packages follow Q3 retention and remain immutable while referenced. Migration source is accepted archived specifications/ADRs transformed into v1 contracts with human attribution; historical issue/task state is not imported as authority.
+PostgreSQL owns organization workspaces, draft revisions, decisions, reviews, accepted package manifests and handoff references. Large attachments live in Cellar only through Artifact manifests; raw secrets and production data are forbidden. Accepted packages follow ADR-0002 section 3 retention and remain immutable while referenced. Migration source is accepted archived specifications/ADRs transformed into v1 contracts with human attribution; historical issue/task state is not imported as authority.
 
 ## Authentication and authorization
 
