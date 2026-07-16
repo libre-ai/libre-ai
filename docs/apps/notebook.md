@@ -59,7 +59,7 @@ No server account or session is required in local-only v1. Workspace unlock is l
 
 ## Runtime boundaries
 
-TypeScript owns block graph, UI, IndexedDB, local index, export selection and generation of fresh opaque 128-bit backup/context IDs plus fresh salt/nonce bytes. Any product timestamp belongs inside the encrypted plaintext and never in the clear envelope. Notebook Core v2 is a candidate Rust/WASM boundary for canonical context bytes and Argon2id/AES-256-GCM sealing/opening; this amendment implements no engine. Promotion requires independent cryptography and privacy review. The future component imports no host capability. No native FFI or server service is allowed in v1; sensitive bytes cross transiently, DOM and IndexedDB handles do not.
+TypeScript owns block graph, UI, IndexedDB, local index, export selection and generation of fresh opaque 128-bit backup/context IDs plus fresh salt/nonce bytes. Any product timestamp belongs inside the encrypted plaintext and never in the clear envelope. Notebook Core v2 is a candidate Rust/WASM boundary for canonical context bytes and Argon2id/AES-256-GCM sealing/opening; this amendment implements no engine. Promotion requires independent cryptography and privacy agent verdicts. The future component imports no host capability. No native FFI or server service is allowed in v1; sensitive bytes cross transiently, DOM and IndexedDB handles do not.
 
 ## Accessibility and degraded mode
 

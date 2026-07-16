@@ -41,5 +41,6 @@ Run affected Bun and Rust checks plus contract and Playwright tests. Uncertain i
 - Read actual state before editing.
 - Use short branches/worktrees and bounded work packages.
 - Do not approve your own output.
-- Human approval is required for contracts, auth, migrations, releases and deployments.
+- Contracts, auth, migrations, releases and deployments require technical review by an independent agent/session; the human owner authorizes merge or execution but is not a substitute technical reviewer.
+- Product-level human decisions explicitly required by a contract remain human.
 - Security > quality > performance > completeness.
