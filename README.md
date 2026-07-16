@@ -19,11 +19,12 @@ Lire dans cet ordre :
 4. [`docs/adr/0001-bun-fullstack-rust-specialized-big-bang.md`](docs/adr/0001-bun-fullstack-rust-specialized-big-bang.md)
 5. [`docs/adr/0002-g1-cross-cutting-product-decisions.md`](docs/adr/0002-g1-cross-cutting-product-decisions.md)
 6. [`docs/specifications/SPECIFICATION-STANDARD.md`](docs/specifications/SPECIFICATION-STANDARD.md)
-7. [`docs/architecture/TARGET.md`](docs/architecture/TARGET.md)
-8. [`docs/transformation/CLEANUP.md`](docs/transformation/CLEANUP.md)
-9. [`docs/transformation/BIG-BANG.md`](docs/transformation/BIG-BANG.md)
-10. [`docs/transformation/WORKSTREAMS.md`](docs/transformation/WORKSTREAMS.md)
-11. [`prompts/`](prompts/) pour l’exécution par phase
+7. [`docs/specifications/DATA-LIFECYCLE.md`](docs/specifications/DATA-LIFECYCLE.md) et [`IDENTITY-AUTHORIZATION.md`](docs/specifications/IDENTITY-AUTHORIZATION.md)
+8. [`docs/architecture/TARGET.md`](docs/architecture/TARGET.md)
+9. [`docs/transformation/CLEANUP.md`](docs/transformation/CLEANUP.md)
+10. [`docs/transformation/BIG-BANG.md`](docs/transformation/BIG-BANG.md)
+11. [`docs/transformation/WORKSTREAMS.md`](docs/transformation/WORKSTREAMS.md)
+12. [`prompts/`](prompts/) pour l’exécution par phase
 
 ## État
 
