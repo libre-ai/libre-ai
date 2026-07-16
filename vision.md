@@ -545,7 +545,6 @@ libre-ai/
 │   ├── agent-orchestrator/
 │   ├── agent-harness/
 │   ├── authz-biscuit/
-│   ├── context/
 │   ├── policy-core/
 │   ├── proof/
 │   ├── artifact/
@@ -789,22 +788,11 @@ Possède :
 Ne possède pas l’exécution agentique, la release, l’inspection indépendante ou
 le rendu web.
 
-### 9.10 `crates/agent-orchestrator`
+### 9.10 Orchestration agentique — différée
 
-Successeur nettoyé de l’actuel Agent Factory engine.
+Aucune `crates/agent-orchestrator` n’est créée par WP-G2-S01. La nécessité à terme pour Missions est reconnue, mais les contrats actuels ne définissent ni plan d’exécution approuvé, ni commandes de contrôle, ni consommation de budgets, ni agent-harness.
 
-Possède :
-
-- planification de missions ;
-- politiques d’exécution ;
-- budgets ;
-- handoffs ;
-- refus ;
-- replay et idempotence ;
-- coordination des adaptateurs ;
-- journal d’audit sans PII.
-
-Il consomme le graphe du Knowledge Engine mais ne le gouverne pas.
+Une future crate exige un Specification Lock et un work package séparés couvrant au minimum : plan exécutable hash-bound, contrôle start/pause/resume/cancel, événements v2 causaux et idempotents, sandbox/harness, autorisation atténuée, absence d’auto-approbation et journal sans PII. Aucun code legacy d’automerge, déploiement ou provider n’est porté implicitement.
 
 ### 9.11 `crates/agent-harness`
 
@@ -835,18 +823,13 @@ Possède :
 
 Le navigateur ne crée jamais de Biscuit.
 
-### 9.13 `crates/context`
+### 9.13 Contexte canonique — sans crate dédiée
 
-Conserve uniquement les capacités Rust justifiées :
-
-- parsing hostile-input-aware ;
-- normalisation déterministe ;
-- provenance ;
-- local-first/WASM ;
-- formats partagés avec clients natifs.
-
-Les fetchers et workflows web ordinaires peuvent appartenir aux applications
-Bun.
+`notebook-core` reste l’unique autorité Rust/WASM de canonicalisation de
+`ContextDocument`. Aucune crate `context` générique, CLI parallèle ou seconde
+WIT n’est créée. L’ingestion hostile et la provenance de l’ancien Context Kit
+restent archivées tant qu’un nouveau package approuvé ne démontre pas un
+invariant distinct, un consommateur et une frontière canonique.
 
 ### 9.14 `crates/policy-core`
 
@@ -1176,15 +1159,7 @@ Le moteur Rust :
 
 ### 14.2 Agent Orchestrator
 
-L’orchestrateur Rust :
-
-- transforme un plan en work packages ;
-- applique politiques, budgets et autorisations ;
-- journalise sans PII ;
-- gère replay et idempotence ;
-- refuse les actions hors périmètre ;
-- délègue au harness ;
-- ne s’auto-approuve pas.
+L’orchestrateur n’est pas une fondation G2 implémentable avec les autorités actuelles. Missions conserve son workflow humain et ses fixtures de protocole, mais aucune simulation Rust ne devient une seconde autorité d’état. Un moteur ultérieur est conditionné par un RFC architecture/sécurité, les contrats d’exécution et de contrôle, puis un package distinct incluant le harness.
 
 ### 14.3 Proof
 
@@ -1486,7 +1461,7 @@ packages ↛ apps
 crates ↛ apps TypeScript
 proof → contrats et artefacts publics uniquement
 ecosystem-engine ↛ logique produit
-agent-orchestrator ↛ UI produit
+agent-orchestrator ↛ UI produit, DB partagée et moteur agentique généraliste
 ```
 
 Ces règles sont testées automatiquement.
@@ -1517,18 +1492,18 @@ Ces règles sont testées automatiquement.
 
 | Repository actuel | Cible | Portage principal | Rust attendu |
 | --- | --- | --- | --- |
-| `agent-factory` | `crates/agent-orchestrator`, `crates/agent-harness`, doctrine écosystème | nettoyage et renommage | oui, cœur stratégique |
+| `agent-factory` | futur package `agent-orchestrator` + `agent-harness` | archive/RFC uniquement en G2 ; aucune reprise S01 | différé jusqu’au lock dédié |
 | `agent-board` | `apps/missions` | Bun/React greenfield | seulement si moteur d’état le justifie |
 | `ai-practices` | `apps/practices` | Bun/React/Bun.sql | corpus/scoring opposable à évaluer |
 | `artifact-supply` | `crates/artifact` | nettoyage et renommage | oui |
 | `benchmarks` | `verification/benchmarks` et `campaigns` | import sélectif des campagnes | tooling selon besoin |
 | `boussole-politique` | `apps/boussole` | Bun/React local-first | scoring déterministe conservé |
 | `client-kit` | `packages/*`, `distribution/templates/bun-app` | reconstruction TS/React | bindings natifs seulement si consommés |
-| `context-kit` | `crates/context` + adaptateurs | extraction des primitives justifiées | oui pour parsing/provenance/WASM |
+| `context-kit` | archive externe uniquement | aucune reprise sans nouveau package approuvé | non dans G2 |
 | `design-system` | `packages/ui` | tokens et composants React | non par défaut |
 | `dioxus-app-template` | archive externe uniquement | remplacé par `bun-app`, aucune projection cible | non |
 | `feed-radar` | `apps/radar` | Bun fullstack | parsing/règles déterministes à conserver |
-| `gear` | archive externe uniquement | aucun code importé | non, remplacé par context/artifact |
+| `gear` | archive externe uniquement | aucun code importé | non, responsabilités redistribuées par contrats |
 | `notebook` | `apps/notebook` | greenfield Bun/React local-first | chiffrement/index/WASM si justifié |
 | `policy` | `apps/model-policy`, `crates/policy-core` | Bun UI/API + cœur WASM | oui pour policy/scoring |
 | `proof-kit` | `crates/proof`, `verification/` | suppression du lab Dioxus | oui |

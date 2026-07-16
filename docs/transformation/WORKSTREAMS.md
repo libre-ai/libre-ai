@@ -18,7 +18,7 @@ These workstreams are organizational groupings, not branch write authority. Exec
 
 **Paths :** `crates/` hors ecosystem engine.
 
-**Résultats :** agent orchestration, Biscuit, context, policy, proof, artifact, WASM/WIT et CLIs.
+**Résultats :** Biscuit, quatre frontières produit Rust/WASM candidates, proof, artifact et CLIs système. Aucun moteur Context, Orchestrator ou Practices scoring n’est créé sans nouveau package approuvé.
 
 ## D — Experiences
 

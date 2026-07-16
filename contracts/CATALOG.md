@@ -4,13 +4,15 @@ Machine authority: [`catalog.v1.json`](catalog.v1.json).
 
 | Family | Count | Authority | Compatibility |
 | --- | ---: | --- | --- |
-| JSON Schema 2020-12 | 30 | `contracts/schemas/` | strict payloads; additive v1 only through coordinated producer/consumer qualification |
+| JSON Schema 2020-12 | 47 | `contracts/schemas/` | strict payloads; breaking changes use a new major |
 | Retention policy | 1 | `contracts/data/` | exact ADR-0002 lifecycle projection |
-| OpenAPI 3.1 | 8 | `contracts/openapi/` | additive routes/operations; existing payloads remain strict |
-| WIT worlds | 5 | `contracts/wit/` | exact major-versioned component boundary |
+| OpenAPI 3.1 | 10 | `contracts/openapi/` | routes and payload majors remain aligned |
+| WIT worlds | 9 | `contracts/wit/` | exact major-versioned component boundary + cataloged profile |
 | Biscuit authority/policies | 3 | `contracts/authz/` | minimal authority plus deny-by-default authorizers |
 
-The catalog records one ID, path, owner set, consumer set, classification, compatibility mode and lock status for every contract. Uncataloged files and missing authorities fail `bun run check:contracts`.
+The catalog records one ID, path, owner set, consumer set, classification, compatibility mode and
+`locked` or pending-independent-review `candidate` status for every contract. Candidate entries are
+not implementation or release approvals. Their dossier names every required human role. Uncataloged files and missing authorities fail `bun run check:contracts`.
 
 ## Shared contracts
 
@@ -27,11 +29,11 @@ The catalog records one ID, path, owner set, consumer set, classification, compa
 
 - Website: public projection and correction record ;
 - Practices: activity definition/outcome and local progress export ;
-- Radar: bounded fetch, deterministic rule set and curation export ;
-- Notebook: context document and encrypted backup envelope ;
+- Radar: v2 source-scoped parsing/rules with exact normalized feed/item and bounded output ;
+- Notebook: candidate context v2 plus authenticated Argon2id/AES-GCM backup envelope ;
 - Sessions: event and audience-safe export ;
-- Model Policy: policy, sourced snapshot and deterministic evaluation ;
-- Boussole: reviewed dataset/method and local comparison ;
+- Model Policy: candidate v2 policy/need/snapshot/evaluation with human approval separation ;
+- Boussole: candidate v2 reviewed dataset/method/local responses/comparison, public scoring disabled ;
 - Specifications: immutable SpecPackage and planning handoff ;
 - Missions: orchestrator event and human-verdict MissionRecord.
 

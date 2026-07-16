@@ -61,7 +61,7 @@ Browser uses opaque session. Biscuit resources are `mission/<id>`, `mission/<id>
 
 ## Runtime boundaries
 
-TypeScript owns mission domain, human workflow, persistence and projection. Rust orchestrator owns process/tool scheduling, sandbox/budget enforcement and emits signed/authorized protocol events. Communication is versioned HTTP/events; no shared DB. Missions can request start/pause/cancel but cannot inspect orchestrator private memory or bypass harness policy.
+TypeScript owns mission domain, human workflow, persistence and projection. WP-G2-S01 does not implement an orchestrator or harness. Any future Rust orchestration owns process/tool scheduling and budget enforcement only behind a separately approved execution-plan/control protocol, attenuated authorization and sandbox; it emits authorized protocol events without shared DB. Until that Specification Lock exists, Missions may use contract fixtures for UI/domain tests but cannot start a real mission or claim orchestrator integration.
 
 ## Accessibility and degraded mode
 

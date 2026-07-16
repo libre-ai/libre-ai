@@ -1,0 +1,40 @@
+# ADR-0003 — Réouverture bornée de WP-G2-S01
+
+- **Statut :** accepted-for-candidate-drafting
+- **Date :** 2026-07-16
+- **Portée :** contrats spécialisés uniquement
+- **Décision humaine :** recommandation v2 et réduction de S01 approuvées ; revues spécialisées encore requises
+
+## Contexte
+
+Les WIT v1 Radar, Notebook, Policy et Boussole étaient syntaxiquement valides mais ne définissaient pas toutes leurs entrées/sorties JSON, formules, bornes, dérivations d’identifiants et préimages de hash. `crates/context` ne portait aucun invariant distinct ; `crates/agent-orchestrator` ne disposait ni d’un protocole de contrôle ni d’un harness contractuel.
+
+## Décisions
+
+1. Les v1 existants restent inchangés et non ciblés par WP-G2-S01 ; aucune réinterprétation cassante n’est admise.
+2. Les quatre moteurs candidats utilisent des WIT v2 et des profils normatifs catalogués.
+3. Radar reçoit une identité de source, une URL de base/finale et un budget de sortie ; ses IDs sont source-scoped.
+4. Notebook v2 rend les métadonnées crypto explicites et authentifiées ; son implémentation attend une revue cryptographique indépendante.
+5. Policy v2 introduit un besoin tenant-bound, des faits typés et la séparation humaine `approverId != proposedBy`.
+6. Boussole v2 fixe une formule candidate reproductible ; le scoring public reste désactivé sans revues méthodologique et vie privée distinctes liées aux hashes.
+7. `crates/context` et `crates/agent-orchestrator` sont retirés de WP-G2-S01. L’orchestrateur nécessite un RFC/Specification Lock séparé avec plan d’exécution, commandes, événements v2, budgets, harness et autorisation.
+8. Practices scoring reste explicitement non implémenté.
+9. Aucun provisioning, secret, fournisseur, réseau ou stockage n’entre dans cet amendement.
+
+## Autorité et approbations
+
+Les contrats v2 sont catalogués comme `candidate`. Un agent ne peut pas les promouvoir. Les approbations humaines nommées requises sont : architecture, sécurité, cryptographie pour Notebook, méthodologie pour Boussole et vie privée France/UE pour Notebook/Policy/Boussole. Les reviewers spécialisés sont distincts des auteurs et futurs implémenteurs.
+
+## Compatibilité
+
+Radar et Notebook changent de signature WIT ; Policy et Boussole changent la signification et la famille de payloads. Tous utilisent donc un major v2. Aucun adaptateur v1→v2 n’est créé : aucun producteur canonique v1 n’a été publié. Les WIT v1 restent des autorités historiques verrouillées mais hors cible d’implémentation.
+
+## Condition de refermeture
+
+Le Specification Lock n’est refermé pour S01 que lorsque :
+
+- chaque candidat est approuvé par ses reviewers requis ;
+- schémas, OpenAPI, WIT, profils et vecteurs passent les gates ;
+- les types générés sont reproductibles ;
+- WP-G2-S01 ne possède que les quatre crates produit ;
+- Practices, Context et Orchestrator ne sont pas implémentés.

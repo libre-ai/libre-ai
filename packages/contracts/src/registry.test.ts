@@ -46,7 +46,7 @@ const fixtureDocument = (await Bun.file("contracts/fixtures/schema-fixtures.v1.j
 
 describe("canonical contract registry", () => {
   test("compiles every canonical JSON Schema without network retrieval", () => {
-    expect(registry.schemaNames()).toHaveLength(30);
+    expect(registry.schemaNames()).toHaveLength(fixtureDocument.cases.length + 1);
     expect(registry.schemaNames()).toContain("common.v1.schema.json");
   });
 

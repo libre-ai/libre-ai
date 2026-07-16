@@ -24,7 +24,7 @@ apps → packages → contracts
 apps → adaptateurs versionnés → crates
 packages ↛ apps
 proof → contrats et artefacts publics
-agent-orchestrator → graphe compilé, jamais UI produit
+futur agent-orchestrator → seulement après lock exécution/contrôle/harness ; jamais UI produit ni DB partagée
 ecosystem-engine ↛ logique métier produit
 ```
 

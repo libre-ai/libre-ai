@@ -2,14 +2,14 @@
 
 | Historique | Cible |
 | --- | --- |
-| agent-factory | crates/agent-orchestrator, crates/agent-harness |
+| agent-factory | archive uniquement en G2 ; futur package orchestrator/harness après Specification Lock dédié |
 | agent-board | apps/missions |
 | ai-practices | apps/practices |
 | artifact-supply | crates/artifact |
 | benchmarks | verification/benchmarks, verification/campaigns |
 | boussole-politique | apps/boussole |
 | client-kit | packages/*, distribution/templates/bun-app |
-| context-kit | crates/context |
+| context-kit | archive uniquement ; aucune crate context sans nouveau package approuvé |
 | design-system | packages/ui |
 | dioxus-app-template | archive uniquement |
 | feed-radar | apps/radar |
