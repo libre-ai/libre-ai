@@ -42,7 +42,7 @@
     "check:objects": "bun tools/quality/validate-knowledge-objects.ts",
     "check:objectives": "bun tools/quality/check-objectives.ts",
     "check:specifications": "bun tools/quality/check-specification-lock.ts",
-    "check:contracts": "bun tools/quality/check-contracts.ts",
+    "check:contracts": "bun tools/quality/check-contracts.ts && bun tools/quality/check-policy-core-vectors.ts",
     "check:notebook-core-v2-candidate": "bun tools/quality/check-notebook-core-v2-candidate.ts",
     "check:generated-contracts": "bun run --cwd packages/contracts generate:check",
     "check:work-packages": "bun tools/quality/check-work-packages.ts",
