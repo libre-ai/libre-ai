@@ -49,6 +49,15 @@ function roundRational6(numerator: number, denominator: number): number {
   const signed = negative ? -rounded : rounded;
   return signed === 0n ? 0 : Number(signed) / 1_000_000;
 }
+function isUtcSeconds(value: unknown): value is string {
+  if (
+    typeof value !== "string" ||
+    !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$/.test(value)
+  )
+    return false;
+  const parsed = new Date(value);
+  return !Number.isNaN(parsed.valueOf()) && parsed.toISOString() === value.replace("Z", ".000Z");
+}
 function numberField(value: RecordValue, key: string, label: string): number {
   const candidate = value[key];
   if (typeof candidate !== "number" || !Number.isSafeInteger(candidate) || candidate < 0) {
@@ -227,12 +236,7 @@ for (const [id, candidate] of successCases) {
     weightedNumerator += answer * difference;
   }
   const computedAt = candidate.computedAt;
-  if (
-    typeof computedAt !== "string" ||
-    !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$/.test(computedAt) ||
-    Number.isNaN(Date.parse(computedAt))
-  )
-    failures.push(`${label}: invalid computedAt`);
+  if (!isUtcSeconds(computedAt)) failures.push(`${label}: invalid computedAt`);
   if (denominator <= 0 || contributions.length === 0) {
     failures.push(`${label}: successful case has zero denominator`);
     continue;
@@ -306,7 +310,7 @@ const expectedErrors = new Map<string, [string | undefined, string | undefined, 
   ],
   [
     "reject-invalid-computed-at",
-    ["excluded-positive", "computedAt = 2026-07-16", "computed-at-invalid"],
+    ["excluded-positive", "computedAt = 2026-02-30T00:00:00Z", "computed-at-invalid"],
   ],
   [
     "reject-duplicate-statement",
@@ -340,10 +344,12 @@ const maxVote = 4_294_967_295;
 const maxStatements = 1_000;
 const maxScale = 5;
 const maxTotalConsidered = 3 * maxVote * maxStatements;
+const maxTotalOmitted = 4 * maxVote * maxStatements;
 const maxWeightedNumerator = maxScale * maxVote * maxStatements;
 const maxScoreDenominator = maxScale * maxTotalConsidered;
 for (const [label, value] of [
   ["total considered", maxTotalConsidered],
+  ["total omitted", maxTotalOmitted],
   ["weighted numerator", maxWeightedNumerator],
   ["score denominator", maxScoreDenominator],
 ] as const) {
