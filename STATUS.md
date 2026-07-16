@@ -24,7 +24,7 @@
 - protected `main`, private vulnerability reporting, secret scanning/push protection and dependency alerts enabled ;
 - nine application specifications expanded to the G1 standard with an executable structure gate ;
 - G1 decisions Q1–Q5 explicitly accepted and recorded in ADR-0002: tenancy, OIDC boundary, retention, Notebook local-only and Boussole release authority ;
-- canonical contract catalog locked: 47 authorities, 30 strict JSON Schemas with 29 fixture pairs, 8 OpenAPI surfaces, 5 parsed WIT worlds and 3 parsed Biscuit authority/policy sources ;
+- canonical contract catalog locked: 48 authorities, 31 strict JSON Schemas with 30 fixture pairs, 8 OpenAPI surfaces, 5 parsed WIT worlds and 3 parsed Biscuit authority/policy sources ;
 - data lifecycle locked through an executable ADR-0002 retention policy, tenant ownership matrix, deletion receipt and restore/rollback rules ;
 - provider-neutral OIDC, opaque browser session, CSRF, Biscuit issuance/attenuation/revocation and Ed25519 rotation protocols locked ;
 - G1 initially closed with 26 machine-validated work packages, acyclic dependencies and explicit human gates.
@@ -33,7 +33,7 @@
 
 - `WP-G2-T01` completed as a human-accepted negative checkpoint: stable `1.3.14` predates the Rust line by 903 commits ;
 - `WP-G2-C01` contract SDK and boundary validators is unlocked ;
-- ADR-0003 opens a strictly bounded contract amendment for WP-G2-S01: 23 v2/new candidate authorities extend the 47 locked baseline authorities ;
+- ADR-0003 opens a strictly bounded contract amendment for WP-G2-S01: 23 v2/new candidate authorities extend the 48 locked baseline authorities ;
 - Radar, Notebook, Policy and Boussole profiles/vectors remain candidate-only pending their named independent agent reviews for architecture, security, cryptography, methodology and privacy ;
 - no product engine, generic Context crate, Agent Orchestrator or Practices scorer is implemented ;
 - real Missions execution, production, another canary and Clever Cloud remain blocked.

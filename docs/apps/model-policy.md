@@ -86,6 +86,8 @@ ADR-0003 implementation candidate v2:
 - `contracts/openapi/model-policy.v2.yaml` ;
 - `contracts/wit/policy-core-v2/world.wit` and `SEMANTICS.md`.
 
+The merged v1 lock is retained and validated as baseline authority; it does not supersede the ADR-0003 v2 implementation target.
+
 ## Evidence
 
 Golden vectors cover every operator, unknown path, source age and origin/jurisdiction distinction in Rust and TypeScript. Property tests prove order independence and deny-by-default. Contract fixtures include restricted payload and cross-tenant negatives. E2E covers author/approve/import/evaluate/export/replay. Supply-chain/licence gate checks every bundled dataset.

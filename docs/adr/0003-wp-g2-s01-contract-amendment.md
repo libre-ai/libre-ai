@@ -11,7 +11,7 @@ Les WIT v1 Radar, Notebook, Policy et Boussole étaient syntaxiquement valides m
 
 ## Décisions
 
-1. Les v1 existants restent inchangés et non ciblés par WP-G2-S01 ; aucune réinterprétation cassante n’est admise.
+1. Les v1 restent hors cible de WP-G2-S01. Radar, Notebook et Boussole v1 demeurent inchangés ; le Policy v1 verrouillé par la PR #16 est conservé comme baseline déjà fusionnée mais ne remplace pas la cible v2 approuvée pour S01. Aucune nouvelle réinterprétation v1 n’est admise.
 2. Les quatre moteurs candidats utilisent des WIT v2 et des profils normatifs catalogués.
 3. Radar reçoit une identité de source, une URL de base/finale et un budget de sortie ; ses IDs sont source-scoped.
 4. Notebook v2 rend les métadonnées crypto explicites et authentifiées ; son implémentation attend une revue cryptographique par un agent indépendant.
@@ -27,7 +27,7 @@ Les contrats v2 sont catalogués comme `candidate`. Les verdicts requis sont pro
 
 ## Compatibilité
 
-Radar et Notebook changent de signature WIT ; Policy et Boussole changent la signification et la famille de payloads. Tous utilisent donc un major v2. Aucun adaptateur v1→v2 n’est créé : aucun producteur canonique v1 n’a été publié. Les WIT v1 restent des autorités historiques verrouillées mais hors cible d’implémentation.
+Radar et Notebook changent de signature WIT ; Policy et Boussole changent la signification et la famille de payloads. Tous utilisent donc un major v2. Aucun adaptateur v1→v2 n’est créé : aucun producteur canonique v1 n’a été publié. Les WIT v1, y compris le Policy v1 désormais verrouillé, restent des autorités de baseline hors cible d’implémentation S01.
 
 ## Condition de refermeture
 
