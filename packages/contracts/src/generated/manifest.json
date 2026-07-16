@@ -123,7 +123,7 @@
     },
     {
       "schema": "model-snapshot.v2.schema.json",
-      "schemaSha256": "45b7f95c4b53416412d546846a3659526d30261c379bcb50dc2a75556dc42236",
+      "schemaSha256": "50082a7125ae583c38d267c4b6115f2b2a7634bcde9392919a38e7c8a29ad993",
       "declaration": "model-snapshot.v2.d.ts"
     },
     {
@@ -153,7 +153,7 @@
     },
     {
       "schema": "policy-definition.v2.schema.json",
-      "schemaSha256": "1ec088c28a7d4736e2be28b36c2584701291f550828b63ba3aafb93944dbbd38",
+      "schemaSha256": "c429db6666bf7ad27c0debd3d7660f50b5d612b27b4f4694d8bf574a049d755c",
       "declaration": "policy-definition.v2.d.ts"
     },
     {
