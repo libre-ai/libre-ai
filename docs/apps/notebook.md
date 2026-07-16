@@ -59,7 +59,7 @@ No server account or session is required in local-only v1. Workspace unlock is l
 
 ## Runtime boundaries
 
-TypeScript owns block graph, UI, IndexedDB, local index and export selection. The audited Rust/WASM core owns canonical context bytes plus Argon2id/AES-256-GCM backup sealing/opening; Web Crypto supplies fresh salt/nonce bytes and the core imports no host capability. No native FFI or server service is allowed in v1. Contract/key bytes cross the boundary transiently; DOM and IndexedDB handles do not.
+TypeScript owns block graph, UI, IndexedDB, local index, export selection and generation of local backup ID/time plus fresh salt/nonce bytes. Notebook Core v2 is a candidate Rust/WASM boundary for canonical context bytes and Argon2id/AES-256-GCM sealing/opening; this amendment implements no engine. Promotion requires independent cryptography and privacy review. The future component imports no host capability. No native FFI or server service is allowed in v1; sensitive bytes cross transiently, DOM and IndexedDB handles do not.
 
 ## Accessibility and degraded mode
 
@@ -67,9 +67,11 @@ All core journeys work offline and keyboard-only. Editor announces formatting/st
 
 ## Contracts
 
-- Notebook Backup v1 — `contracts/schemas/notebook-backup.v1.schema.json` ;
-- Context Document v1 — `contracts/schemas/context-document.v1.schema.json` ;
-- required canonicalization/backup crypto core — `contracts/wit/notebook-core-v1/world.wit`.
+- Notebook Backup v2 — `contracts/schemas/notebook-backup.v2.schema.json` ;
+- Backup Seal Request v2 — `contracts/schemas/notebook-backup-seal-request.v2.schema.json` ;
+- Context Document v2 — `contracts/schemas/context-document.v2.schema.json` ;
+- canonicalization/backup crypto candidate — `contracts/wit/notebook-core-v2/world.wit` and `SEMANTICS.md` ;
+- public test vectors — `contracts/fixtures/notebook-core-v2/golden-vectors.v1.json`.
 
 No OpenAPI contract exists for v1 local data.
 
@@ -85,7 +87,7 @@ Unit tests cover graph closure, exclusions, revisions, canonical hashes and conf
 4. PWA offline/storage/accessibility shell — Web Platform ;
 5. restore/delete/privacy/browser qualification — Infrastructure and Release.
 
-The Rust package is required because the accepted memory-hard Argon2id envelope is not supplied by browser Web Crypto. Golden vectors and zeroized transient key material are release gates.
+The Rust boundary remains justified because memory-hard Argon2id is not supplied by browser Web Crypto, but implementation is NO-GO until an independent cryptographer reproduces the vectors and validates browser budgets, AAD, anti-oracle behavior and zeroization. Golden vectors and zeroized transient key material remain release gates.
 
 ## Release and rollback
 
