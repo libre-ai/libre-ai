@@ -18,6 +18,7 @@ Each reviewer agent/session differs from the authoring agent/session and follows
 - `contracts/wit/policy-core-v2/SEMANTICS.md`
 - `contracts/fixtures/policy-core-v2/operators.json`
 - `contracts/fixtures/policy-core-v2/golden.json`
+- `contracts/fixtures/policy-core-invalid-json/manifest.json` and its byte-exact `.bin` inputs
 
 ## Review claims
 
@@ -45,6 +46,8 @@ Each reviewer agent/session differs from the authoring agent/session and follows
 - decimal JCS thresholds and negative zero are explicit cross-runtime test cases;
 - `serde_json/float_roundtrip` is mandatory in the workspace to prevent binary64 parsing drift;
 - schema-valid duplicate rule IDs have a complete `policy.rule_id_duplicate` vector;
+- nine byte-exact inputs cover BOM, invalid UTF-8, duplicate decoded keys, isolated
+  surrogates and invalid JSON numbers in independent TypeScript and Rust decoders;
 - approval authenticity remains an authorized-caller check, distinct from evaluator separation/binding.
 
 ## Required independent checks
