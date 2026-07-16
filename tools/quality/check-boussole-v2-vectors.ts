@@ -82,6 +82,13 @@ function roundRational(numerator: bigint, denominator: bigint): number {
   return Object.is(result, -0) ? 0 : result;
 }
 
+function isUtcSeconds(value: string): boolean {
+  if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$/.test(value))
+    return false;
+  const parsed = new Date(value);
+  return !Number.isNaN(parsed.valueOf()) && parsed.toISOString() === value.replace("Z", ".000Z");
+}
+
 function approvalIsValid(value: RecordValue, subjectDigest: string): boolean {
   const approvals = value.approvals;
   if (!Array.isArray(approvals) || approvals.length !== 2 || !approvals.every(isRecord))
@@ -158,13 +165,7 @@ function evaluate(
   validators: Record<"dataset" | "method" | "responses" | "output", ValidateFunction>,
 ): Evaluation {
   if (!validateInputSchemas(input, validators)) return { error: "input-invalid" };
-  if (
-    !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$/.test(
-      input.computedAt,
-    )
-  ) {
-    return { error: "computed-at-invalid" };
-  }
+  if (!isUtcSeconds(input.computedAt)) return { error: "computed-at-invalid" };
 
   const scale = validScale(input.method);
   if (!scale) return { error: "method-unsupported" };
@@ -335,18 +336,23 @@ const validators = {
 };
 
 const document: unknown = await Bun.file(vectorPath).json();
-if (!isRecord(document) || document.schemaVersion !== "libre-ai.engine-golden-vectors.v1") {
+if (
+  !isRecord(document) ||
+  document.schemaVersion !== "libre-ai.engine-golden-vectors.v1" ||
+  document.status !== "pending-architecture-security-methodology-and-privacy-review"
+) {
   failures.push("invalid vector envelope");
 }
 const cases =
   isRecord(document) && Array.isArray(document.cases) ? (document.cases as VectorCase[]) : [];
-if (cases.length < 7 || cases.length > 32) failures.push("expected 7..32 bounded Boussole cases");
+if (cases.length < 8 || cases.length > 32) failures.push("expected 8..32 bounded Boussole cases");
 const inputs = new Map<string, ComparisonInput>();
 const ids = new Set<string>();
 const required = new Set([
   "excluded-abstentions-positive-agreement",
   "reject-duplicate-reviewer",
   "reject-zero-denominator",
+  "reject-invalid-computed-at",
   "neutral-scale-five",
   "weighted-with-skipped-and-missing",
   "half-even-boundaries",
@@ -399,6 +405,20 @@ for (const [index, vector] of cases.entries()) {
   }
 }
 for (const id of required) failures.push(`missing required vector ${id}`);
+
+const maxVote = 4_294_967_295n;
+const maxStatements = 1_000n;
+for (const [label, value] of [
+  ["total considered", 3n * maxVote * maxStatements],
+  ["total omitted", 4n * maxVote * maxStatements],
+  ["weighted numerator", 5n * maxVote * maxStatements],
+  ["score denominator", 5n * 3n * maxVote * maxStatements],
+] as const) {
+  if (value > BigInt(Number.MAX_SAFE_INTEGER))
+    failures.push(`${label}: schema maximum exceeds exact JSON integer range`);
+  if (value > 9_223_372_036_854_775_807n)
+    failures.push(`${label}: schema maximum exceeds signed 64-bit range`);
+}
 
 if (failures.length) {
   for (const failure of failures) console.error(failure);
