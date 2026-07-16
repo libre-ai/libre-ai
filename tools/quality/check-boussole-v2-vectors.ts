@@ -1,8 +1,35 @@
-import Ajv2020 from "ajv/dist/2020";
+import Ajv2020, { type ValidateFunction } from "ajv/dist/2020";
 import addFormats from "ajv-formats";
 
 type RecordValue = Record<string, unknown>;
+type ComparisonInput = {
+  dataset: RecordValue;
+  method: RecordValue;
+  responses: RecordValue;
+  computedAt: string;
+};
+type Patch = { op: "replace"; path: string; value: unknown };
+type VectorCase = {
+  id: string;
+  input?: ComparisonInput;
+  baseCase?: string;
+  patches?: Patch[];
+  expected?: RecordValue;
+  expectedError?: string;
+};
+
+type Evaluation = { value?: RecordValue; error?: string };
+type Statement = {
+  id: string;
+  votesFor: number;
+  votesAgainst: number;
+  abstentions: number;
+  absent: number;
+};
+type Response = { statementId: string; kind: "answer" | "skip"; value?: number };
+
 const failures: string[] = [];
+const vectorPath = "contracts/fixtures/boussole-scoring-v2/golden-vectors.v1.json";
 const isRecord = (value: unknown): value is RecordValue =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
@@ -11,15 +38,17 @@ function sorted(value: unknown): unknown {
   if (!isRecord(value)) return value;
   return Object.fromEntries(
     Object.entries(value)
-      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
       .map(([key, nested]) => [key, sorted(nested)]),
   );
 }
+
 function jcs(value: unknown): string {
   const encoded = JSON.stringify(sorted(value));
   if (encoded === undefined) throw new TypeError("not JSON");
   return encoded;
 }
+
 function digest(label: string, value: unknown): string {
   const hasher = new Bun.CryptoHasher("sha256");
   hasher.update(label);
@@ -27,44 +56,262 @@ function digest(label: string, value: unknown): string {
   hasher.update(jcs(value));
   return hasher.digest("hex");
 }
+
 function without(value: RecordValue, ...keys: string[]): RecordValue {
   const result = structuredClone(value);
   for (const key of keys) delete result[key];
   return result;
 }
-function compareUtf8(left: unknown, right: unknown): number {
-  return Buffer.compare(Buffer.from(String(left), "utf8"), Buffer.from(String(right), "utf8"));
+
+function compareUtf8(left: string, right: string): number {
+  return Buffer.compare(Buffer.from(left, "utf8"), Buffer.from(right, "utf8"));
 }
-function roundRational6(numerator: number, denominator: number): number {
-  if (!Number.isSafeInteger(numerator) || !Number.isSafeInteger(denominator) || denominator <= 0)
-    throw new RangeError("rational is outside the exact checked range");
-  const negative = numerator < 0;
-  const scaled = BigInt(Math.abs(numerator)) * 1_000_000n;
-  const divisor = BigInt(denominator);
-  const quotient = scaled / divisor;
-  const remainder = scaled % divisor;
-  const doubled = remainder * 2n;
-  const rounded =
-    doubled > divisor || (doubled === divisor && quotient % 2n === 1n) ? quotient + 1n : quotient;
-  const signed = negative ? -rounded : rounded;
-  return signed === 0n ? 0 : Number(signed) / 1_000_000;
-}
-function isUtcSeconds(value: unknown): value is string {
-  if (
-    typeof value !== "string" ||
-    !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$/.test(value)
-  )
-    return false;
-  const parsed = new Date(value);
-  return !Number.isNaN(parsed.valueOf()) && parsed.toISOString() === value.replace("Z", ".000Z");
-}
-function numberField(value: RecordValue, key: string, label: string): number {
-  const candidate = value[key];
-  if (typeof candidate !== "number" || !Number.isSafeInteger(candidate) || candidate < 0) {
-    failures.push(`${label}.${key}: expected non-negative safe integer`);
-    return 0;
+
+function roundRational(numerator: bigint, denominator: bigint): number {
+  if (denominator <= 0n) throw new RangeError("non-positive denominator");
+  const negative = numerator < 0n;
+  const absolute = negative ? -numerator : numerator;
+  const scaled = absolute * 1_000_000n;
+  let quotient = scaled / denominator;
+  const remainder = scaled % denominator;
+  if (remainder * 2n > denominator || (remainder * 2n === denominator && quotient % 2n === 1n)) {
+    quotient += 1n;
   }
-  return candidate;
+  const signed = negative ? -quotient : quotient;
+  const result = Number(signed) / 1_000_000;
+  return Object.is(result, -0) ? 0 : result;
+}
+
+function approvalIsValid(value: RecordValue, subjectDigest: string): boolean {
+  const approvals = value.approvals;
+  if (!Array.isArray(approvals) || approvals.length !== 2 || !approvals.every(isRecord))
+    return false;
+  const roles = new Set(approvals.map((approval) => approval.role));
+  const reviewers = new Set(approvals.map((approval) => approval.reviewerId));
+  return (
+    roles.size === 2 &&
+    roles.has("methodological-review") &&
+    roles.has("legal-privacy-review") &&
+    reviewers.size === 2 &&
+    approvals.every(
+      (approval) => approval.actorKind === "human" && approval.subjectDigest === subjectDigest,
+    )
+  );
+}
+
+function canonicalMethodDigest(method: RecordValue): string {
+  return digest(
+    "libre-ai.boussole-method.v2",
+    without(method, "approvedAt", "digest", "approvals"),
+  );
+}
+
+function canonicalDatasetDigest(dataset: RecordValue): string {
+  const core = without(dataset, "publishedAt", "digest", "approvals");
+  if (Array.isArray(core.statements)) {
+    core.statements.sort((left, right) =>
+      compareUtf8(String((left as RecordValue).id), String((right as RecordValue).id)),
+    );
+  }
+  return digest("libre-ai.public-vote-dataset.v2", core);
+}
+
+function canonicalResponseDigest(responses: RecordValue): string {
+  const core = structuredClone(responses);
+  if (Array.isArray(core.responses)) {
+    core.responses.sort((left, right) =>
+      compareUtf8(
+        String((left as RecordValue).statementId),
+        String((right as RecordValue).statementId),
+      ),
+    );
+  }
+  return digest("libre-ai.boussole-response-set.v2", core);
+}
+
+function validScale(method: RecordValue): { values: number[]; maximum: bigint } | undefined {
+  if (!Array.isArray(method.responseScale) || method.responseScale.length < 2) return undefined;
+  const values = method.responseScale;
+  if (!values.every((value) => Number.isInteger(value))) return undefined;
+  for (let index = 1; index < values.length; index += 1) {
+    if ((values[index - 1] as number) >= (values[index] as number)) return undefined;
+  }
+  const set = new Set(values);
+  if (!values.every((value) => set.has(-value))) return undefined;
+  const maximum = Math.max(...values.map((value) => Math.abs(value)));
+  return maximum > 0 ? { values, maximum: BigInt(maximum) } : undefined;
+}
+
+function validateInputSchemas(
+  input: ComparisonInput,
+  validators: Record<"dataset" | "method" | "responses" | "output", ValidateFunction>,
+): boolean {
+  return (
+    validators.dataset(input.dataset) &&
+    validators.method(input.method) &&
+    validators.responses(input.responses)
+  );
+}
+
+function evaluate(
+  input: ComparisonInput,
+  validators: Record<"dataset" | "method" | "responses" | "output", ValidateFunction>,
+): Evaluation {
+  if (!validateInputSchemas(input, validators)) return { error: "input-invalid" };
+  if (
+    !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$/.test(
+      input.computedAt,
+    )
+  ) {
+    return { error: "computed-at-invalid" };
+  }
+
+  const scale = validScale(input.method);
+  if (!scale) return { error: "method-unsupported" };
+
+  const methodDigest = canonicalMethodDigest(input.method);
+  const datasetDigest = canonicalDatasetDigest(input.dataset);
+  if (
+    input.method.digest !== methodDigest ||
+    input.dataset.digest !== datasetDigest ||
+    input.dataset.methodId !== input.method.id ||
+    input.dataset.methodDigest !== methodDigest ||
+    input.responses.datasetId !== input.dataset.id ||
+    input.responses.datasetDigest !== datasetDigest ||
+    input.responses.methodId !== input.method.id ||
+    input.responses.methodDigest !== methodDigest
+  ) {
+    return { error: "digest-mismatch" };
+  }
+  if (
+    !approvalIsValid(input.method, methodDigest) ||
+    !approvalIsValid(input.dataset, datasetDigest)
+  ) {
+    return { error: "approval-invalid" };
+  }
+
+  const statements = input.dataset.statements as Statement[];
+  const responses = input.responses.responses as Response[];
+  const statementMap = new Map<string, Statement>();
+  for (const statement of statements) {
+    if (statementMap.has(statement.id)) return { error: "response-invalid" };
+    statementMap.set(statement.id, statement);
+  }
+  const responseMap = new Map<string, Response>();
+  for (const response of responses) {
+    if (
+      responseMap.has(response.statementId) ||
+      !statementMap.has(response.statementId) ||
+      (response.kind === "answer" && !scale.values.includes(response.value as number))
+    ) {
+      return { error: "response-invalid" };
+    }
+    responseMap.set(response.statementId, response);
+  }
+
+  let denominator = 0n;
+  let omitted = 0n;
+  let scoreNumerator = 0n;
+  const contributions: RecordValue[] = [];
+  for (const statement of [...statements].sort((left, right) => compareUtf8(left.id, right.id))) {
+    const response = responseMap.get(statement.id);
+    const votesFor = BigInt(statement.votesFor);
+    const votesAgainst = BigInt(statement.votesAgainst);
+    const abstentions = BigInt(statement.abstentions);
+    const absent = BigInt(statement.absent);
+    const allVotes = votesFor + votesAgainst + abstentions + absent;
+    if (!response || response.kind === "skip") {
+      omitted += allVotes;
+      continue;
+    }
+    const considered =
+      input.method.abstentionTreatment === "neutral"
+        ? votesFor + votesAgainst + abstentions
+        : votesFor + votesAgainst;
+    const votesOmitted =
+      input.method.abstentionTreatment === "neutral" ? absent : abstentions + absent;
+    if (considered === 0n) {
+      omitted += allVotes;
+      continue;
+    }
+    const answer = BigInt(response.value as number);
+    const contributionNumerator = answer * (votesFor - votesAgainst);
+    const contributionDenominator = scale.maximum * considered;
+    contributions.push({
+      statementId: statement.id,
+      contribution: roundRational(contributionNumerator, contributionDenominator),
+      votesConsidered: Number(considered),
+      votesOmitted: Number(votesOmitted),
+    });
+    denominator += considered;
+    omitted += votesOmitted;
+    scoreNumerator += contributionNumerator;
+  }
+  if (denominator === 0n) return { error: "denominator-zero" };
+
+  const output: RecordValue = {
+    schemaVersion: "libre-ai.local-comparison.v2",
+    datasetId: input.dataset.id,
+    datasetDigest,
+    methodId: input.method.id,
+    methodDigest,
+    responseSetDigest: canonicalResponseDigest(input.responses),
+    score: roundRational(scoreNumerator, scale.maximum * denominator),
+    denominator: Number(denominator),
+    omitted: Number(omitted),
+    contributions,
+    computedAt: input.computedAt,
+  };
+  if (!validators.output(output)) return { error: "input-invalid" };
+  return { value: output };
+}
+
+function decodePointer(segment: string): string {
+  return segment.replaceAll("~1", "/").replaceAll("~0", "~");
+}
+
+function applyPatches(input: ComparisonInput, patches: Patch[], label: string): ComparisonInput {
+  if (patches.length > 32) throw new Error(`${label}: too many patches`);
+  const output = structuredClone(input) as unknown;
+  for (const patch of patches) {
+    if (patch.op !== "replace" || !patch.path.startsWith("/")) {
+      throw new Error(`${label}: unsupported patch`);
+    }
+    const segments = patch.path.split("/").slice(1).map(decodePointer);
+    if (
+      segments.length === 0 ||
+      segments.some((segment) => ["__proto__", "constructor", "prototype"].includes(segment))
+    ) {
+      throw new Error(`${label}: unsafe patch path`);
+    }
+    let target = output;
+    for (const segment of segments.slice(0, -1)) {
+      if (Array.isArray(target)) {
+        const index = Number(segment);
+        if (!Number.isInteger(index) || index < 0 || index >= target.length) {
+          throw new Error(`${label}: unknown array patch path`);
+        }
+        target = target[index];
+      } else if (isRecord(target) && Object.hasOwn(target, segment)) {
+        target = target[segment];
+      } else {
+        throw new Error(`${label}: unknown patch path`);
+      }
+    }
+    const last = segments.at(-1) as string;
+    if (Array.isArray(target)) {
+      const index = Number(last);
+      if (!Number.isInteger(index) || index < 0 || index >= target.length) {
+        throw new Error(`${label}: unknown array patch target`);
+      }
+      target[index] = structuredClone(patch.value);
+    } else if (isRecord(target) && Object.hasOwn(target, last)) {
+      target[last] = structuredClone(patch.value);
+    } else {
+      throw new Error(`${label}: unknown patch target`);
+    }
+  }
+  return output as ComparisonInput;
 }
 
 const ajv = new Ajv2020({ allErrors: true, strict: true });
@@ -75,292 +322,88 @@ for await (const name of new Bun.Glob("*.schema.json").scan({
 })) {
   ajv.addSchema(await Bun.file(`contracts/schemas/${name}`).json());
 }
-const validate = (name: string, value: unknown, label: string): void => {
-  const validator = ajv.getSchema(`https://contracts.libre-ai.fr/schemas/${name}`);
-  if (!validator?.(value)) failures.push(`${label}: ${name} rejected vector`);
+function validator(name: string): ValidateFunction {
+  const value = ajv.getSchema(`https://contracts.libre-ai.fr/schemas/${name}`);
+  if (!value) throw new Error(`missing schema ${name}`);
+  return value;
+}
+const validators = {
+  dataset: validator("public-vote-dataset.v2.schema.json"),
+  method: validator("boussole-method.v2.schema.json"),
+  responses: validator("boussole-response-set.v2.schema.json"),
+  output: validator("local-comparison.v2.schema.json"),
 };
 
-const vectorPath = "contracts/fixtures/boussole-scoring-v2/golden-vectors.v1.json";
-const vectors = (await Bun.file(vectorPath).json()) as RecordValue;
-if (vectors.schemaVersion !== "libre-ai.engine-golden-vectors.v1")
-  failures.push("invalid vector version");
-const cases = Array.isArray(vectors.cases) ? vectors.cases : [];
-const successCases = new Map<string, RecordValue>();
-const errorCases = new Map<string, RecordValue>();
-
-for (const [index, rawCase] of cases.entries()) {
-  const label = `${vectorPath}#/cases/${index}`;
-  if (!isRecord(rawCase) || typeof rawCase.id !== "string") {
-    failures.push(`${label}: invalid case`);
-    continue;
-  }
-  if (isRecord(rawCase.expected)) successCases.set(rawCase.id, rawCase);
-  else if (typeof rawCase.expectedError === "string") errorCases.set(rawCase.id, rawCase);
-  else failures.push(`${label}: case has neither expected output nor closed error`);
+const document: unknown = await Bun.file(vectorPath).json();
+if (!isRecord(document) || document.schemaVersion !== "libre-ai.engine-golden-vectors.v1") {
+  failures.push("invalid vector envelope");
 }
-
-for (const [id, candidate] of successCases) {
-  const label = `${vectorPath}#${id}`;
-  const dataset = candidate.dataset;
-  const method = candidate.method;
-  const responses = candidate.responses;
-  const expected = candidate.expected;
-  if (!isRecord(dataset) || !isRecord(method) || !isRecord(responses) || !isRecord(expected)) {
-    failures.push(`${label}: incomplete success case`);
-    continue;
-  }
-  validate("public-vote-dataset.v2.schema.json", dataset, label);
-  validate("boussole-method.v2.schema.json", method, label);
-  validate("boussole-response-set.v2.schema.json", responses, label);
-  validate("local-comparison.v2.schema.json", expected, label);
-  if (Buffer.byteLength(jcs(dataset), "utf8") > 8_388_608)
-    failures.push(`${label}: dataset budget`);
-  if (Buffer.byteLength(jcs(method), "utf8") > 65_536) failures.push(`${label}: method budget`);
-  if (Buffer.byteLength(jcs(responses), "utf8") > 262_144)
-    failures.push(`${label}: response budget`);
-  if (Buffer.byteLength(jcs(expected), "utf8") > 524_288) failures.push(`${label}: output budget`);
-
-  const methodDigest = digest(
-    "libre-ai.boussole-method.v2",
-    without(method, "approvedAt", "digest", "approvals"),
-  );
-  const datasetCore = without(dataset, "publishedAt", "digest", "approvals");
-  const statements = Array.isArray(datasetCore.statements)
-    ? (datasetCore.statements as RecordValue[])
-    : [];
-  statements.sort((a, b) => compareUtf8(a.id, b.id));
-  const datasetDigest = digest("libre-ai.public-vote-dataset.v2", datasetCore);
-  const responseCore = structuredClone(responses);
-  const responseValues = Array.isArray(responseCore.responses)
-    ? (responseCore.responses as RecordValue[])
-    : [];
-  responseValues.sort((a, b) => compareUtf8(a.statementId, b.statementId));
-  const responseDigest = digest("libre-ai.boussole-response-set.v2", responseCore);
-  if (method.digest !== methodDigest || dataset.methodDigest !== methodDigest)
-    failures.push(`${label}: method digest mismatch`);
-  if (dataset.digest !== datasetDigest || responses.datasetDigest !== datasetDigest)
-    failures.push(`${label}: dataset digest mismatch`);
-  if (responses.methodDigest !== methodDigest || expected.responseSetDigest !== responseDigest)
-    failures.push(`${label}: response digest mismatch`);
-
-  for (const [subject, approvals, subjectDigest] of [
-    ["method", method.approvals, methodDigest],
-    ["dataset", dataset.approvals, datasetDigest],
-  ] as const) {
-    if (!Array.isArray(approvals)) {
-      failures.push(`${label}: ${subject} approvals missing`);
-      continue;
-    }
-    const records = approvals.filter(isRecord);
-    const reviewers = records.map((approval) => approval.reviewerId);
-    const roles = records.map((approval) => approval.role).sort();
-    if (
-      records.length !== 2 ||
-      new Set(reviewers).size !== 2 ||
-      JSON.stringify(roles) !== JSON.stringify(["legal-privacy-review", "methodological-review"]) ||
-      records.some(
-        (approval) => approval.actorKind !== "human" || approval.subjectDigest !== subjectDigest,
-      )
-    )
-      failures.push(`${label}: ${subject} approvals are invalid`);
-  }
-
-  const scale = Array.isArray(method.responseScale) ? (method.responseScale as number[]) : [];
-  const maximum = Math.max(...scale.map((value) => Math.abs(value)));
-  if (
-    scale.length < 2 ||
-    maximum <= 0 ||
-    !scale.every(
-      (value, index) =>
-        Number.isInteger(value) &&
-        (index === 0 || value > (scale[index - 1] as number)) &&
-        scale.includes(-value),
-    )
-  )
-    failures.push(`${label}: invalid response scale semantics`);
-
-  const originalStatements = Array.isArray(dataset.statements)
-    ? (dataset.statements as RecordValue[])
-    : [];
-  const originalResponses = Array.isArray(responses.responses)
-    ? (responses.responses as RecordValue[])
-    : [];
-  const statementIds = originalStatements.map((statement) => statement.id);
-  const responseIds = originalResponses.map((response) => response.statementId);
-  if (new Set(statementIds).size !== statementIds.length)
-    failures.push(`${label}: duplicate statement id`);
-  if (new Set(responseIds).size !== responseIds.length)
-    failures.push(`${label}: duplicate response id`);
-  if (responseIds.some((statementId) => !statementIds.includes(statementId)))
-    failures.push(`${label}: unknown response statement`);
-
-  const responseById = new Map(
-    originalResponses.map((response) => [response.statementId, response]),
-  );
-  let denominator = 0;
-  let omitted = 0;
-  let weightedNumerator = 0;
-  const contributions: RecordValue[] = [];
-  for (const statement of [...originalStatements].sort((a, b) => compareUtf8(a.id, b.id))) {
-    const votesFor = numberField(statement, "votesFor", label);
-    const votesAgainst = numberField(statement, "votesAgainst", label);
-    const abstentions = numberField(statement, "abstentions", label);
-    const absent = numberField(statement, "absent", label);
-    const total = votesFor + votesAgainst + abstentions + absent;
-    const response = responseById.get(statement.id);
-    if (!response || response.kind === "skip") {
-      omitted += total;
-      continue;
-    }
-    const answer = response.value;
-    if (typeof answer !== "number" || !scale.includes(answer)) {
-      failures.push(`${label}: answer outside response scale`);
-      continue;
-    }
-    const neutral = method.abstentionTreatment === "neutral";
-    const considered = votesFor + votesAgainst + (neutral ? abstentions : 0);
-    const votesOmitted = absent + (neutral ? 0 : abstentions);
-    if (considered === 0) {
-      omitted += total;
-      continue;
-    }
-    const difference = votesFor - votesAgainst;
-    contributions.push({
-      statementId: statement.id,
-      contribution: roundRational6(answer * difference, maximum * considered),
-      votesConsidered: considered,
-      votesOmitted,
-    });
-    denominator += considered;
-    omitted += votesOmitted;
-    weightedNumerator += answer * difference;
-  }
-  const computedAt = candidate.computedAt;
-  if (!isUtcSeconds(computedAt)) failures.push(`${label}: invalid computedAt`);
-  if (denominator <= 0 || contributions.length === 0) {
-    failures.push(`${label}: successful case has zero denominator`);
-    continue;
-  }
-  const computed = {
-    schemaVersion: "libre-ai.local-comparison.v2",
-    datasetId: dataset.id,
-    datasetDigest,
-    methodId: method.id,
-    methodDigest,
-    responseSetDigest: responseDigest,
-    score: roundRational6(weightedNumerator, maximum * denominator),
-    denominator,
-    omitted,
-    contributions,
-    computedAt,
-  };
-  if (jcs(expected) !== jcs(computed)) failures.push(`${label}: exact result mismatch`);
-  if (jcs(expected).includes("reviewerId")) failures.push(`${label}: reviewer identity in output`);
-}
-
-const requiredSuccesses = [
-  "excluded-positive",
-  "neutral-negative",
-  "skip-missing-zero-denominator",
-  "weighted-multi-statement",
-  "half-even-positive",
-  "half-even-negative",
-  "maximum-counts-neutral",
-];
-for (const id of requiredSuccesses)
-  if (!successCases.has(id)) failures.push(`missing ${id} vector`);
-const positiveTie = successCases.get("half-even-positive")?.expected as RecordValue | undefined;
-const negativeTie = successCases.get("half-even-negative")?.expected as RecordValue | undefined;
-const maximumCase = successCases.get("maximum-counts-neutral")?.expected as RecordValue | undefined;
-if ((positiveTie?.contributions as RecordValue[] | undefined)?.[0]?.contribution !== 0.992188)
-  failures.push("positive half-even tie is not covered");
-if ((negativeTie?.contributions as RecordValue[] | undefined)?.[0]?.contribution !== -0.992188)
-  failures.push("negative half-even tie is not covered");
-if (maximumCase?.score !== 0 || Object.is(maximumCase?.score, -0))
-  failures.push("negative-zero normalization is not covered");
-
-const expectedErrors = new Map<string, [string | undefined, string | undefined, string]>([
-  [
-    "reject-duplicate-reviewer",
-    [
-      "excluded-positive",
-      "method.approvals[1].reviewerId = method.approvals[0].reviewerId",
-      "approval-invalid",
-    ],
-  ],
-  [
-    "reject-zero-denominator",
-    ["excluded-positive", "all responses become skip", "denominator-zero"],
-  ],
-  [
-    "reject-digest-mismatch",
-    ["excluded-positive", "responses.datasetDigest = 64 zeroes", "digest-mismatch"],
-  ],
-  [
-    "reject-unknown-statement",
-    [
-      "excluded-positive",
-      "responses.responses[0].statementId = unknown_statement",
-      "response-invalid",
-    ],
-  ],
-  [
-    "reject-unsupported-method",
-    ["excluded-positive", "method.formula = future-method", "method-unsupported"],
-  ],
-  [
-    "reject-invalid-computed-at",
-    ["excluded-positive", "computedAt = 2026-02-30T00:00:00Z", "computed-at-invalid"],
-  ],
-  [
-    "reject-duplicate-statement",
-    ["excluded-positive", "dataset.statements duplicates statement_1", "input-invalid"],
-  ],
-  ["reject-resource-limit", [undefined, undefined, "resource-limit-exceeded"]],
+const cases =
+  isRecord(document) && Array.isArray(document.cases) ? (document.cases as VectorCase[]) : [];
+if (cases.length < 7 || cases.length > 32) failures.push("expected 7..32 bounded Boussole cases");
+const inputs = new Map<string, ComparisonInput>();
+const ids = new Set<string>();
+const required = new Set([
+  "excluded-abstentions-positive-agreement",
+  "reject-duplicate-reviewer",
+  "reject-zero-denominator",
+  "neutral-scale-five",
+  "weighted-with-skipped-and-missing",
+  "half-even-boundaries",
+  "reject-unknown-statement",
 ]);
-for (const [id, [fromCase, mutation, code]] of expectedErrors) {
-  const errorCase = errorCases.get(id);
-  if (!errorCase || errorCase.expectedError !== code) {
-    failures.push(`missing ${code} vector`);
+for (const [index, vector] of cases.entries()) {
+  const label = `${vectorPath}#/cases/${index}`;
+  if (
+    !isRecord(vector) ||
+    typeof vector.id !== "string" ||
+    !/^[a-z0-9][a-z0-9-]+$/.test(vector.id)
+  ) {
+    failures.push(`${label}: invalid id`);
     continue;
   }
-  if (
-    fromCase !== undefined &&
-    (errorCase.fromCase !== fromCase || errorCase.mutation !== mutation)
-  )
-    failures.push(`${id}: mutation binding mismatch`);
-  if (fromCase !== undefined && !successCases.has(fromCase))
-    failures.push(`${id}: unknown base case`);
+  if (ids.has(vector.id)) failures.push(`${label}: duplicate id`);
+  ids.add(vector.id);
+  required.delete(vector.id);
+  let input: ComparisonInput | undefined;
+  try {
+    if (isRecord(vector.input)) {
+      input = structuredClone(vector.input) as ComparisonInput;
+      if (vector.baseCase !== undefined || vector.patches !== undefined) {
+        throw new Error(`${label}: input cannot be combined with baseCase/patches`);
+      }
+    } else if (typeof vector.baseCase === "string" && Array.isArray(vector.patches)) {
+      const base = inputs.get(vector.baseCase);
+      if (!base) throw new Error(`${label}: base case must precede derived case`);
+      input = applyPatches(base, vector.patches as Patch[], label);
+    } else {
+      throw new Error(`${label}: missing executable input`);
+    }
+  } catch (error) {
+    failures.push(String(error));
+    continue;
+  }
+  inputs.set(vector.id, input);
+  const hasValue = isRecord(vector.expected);
+  const hasError = typeof vector.expectedError === "string";
+  if (hasValue === hasError) {
+    failures.push(`${label}: expected exactly one value or error`);
+    continue;
+  }
+  const actual = evaluate(input, validators);
+  if (hasError && actual.error !== vector.expectedError) {
+    failures.push(`${label}: expected ${vector.expectedError}, got ${actual.error ?? "success"}`);
+  }
+  if (hasValue && (!actual.value || jcs(actual.value) !== jcs(vector.expected))) {
+    failures.push(`${label}: output mismatch`);
+  }
 }
-const resourceLengths = errorCases.get("reject-resource-limit")?.inputByteLengths;
-if (
-  !isRecord(resourceLengths) ||
-  typeof resourceLengths.dataset !== "number" ||
-  resourceLengths.dataset <= 8_388_608
-)
-  failures.push("resource-limit vector does not exceed the dataset byte budget");
-
-const maxVote = 4_294_967_295;
-const maxStatements = 1_000;
-const maxScale = 5;
-const maxTotalConsidered = 3 * maxVote * maxStatements;
-const maxTotalOmitted = 4 * maxVote * maxStatements;
-const maxWeightedNumerator = maxScale * maxVote * maxStatements;
-const maxScoreDenominator = maxScale * maxTotalConsidered;
-for (const [label, value] of [
-  ["total considered", maxTotalConsidered],
-  ["total omitted", maxTotalOmitted],
-  ["weighted numerator", maxWeightedNumerator],
-  ["score denominator", maxScoreDenominator],
-] as const) {
-  if (!Number.isSafeInteger(value))
-    failures.push(`${label}: schema maximum exceeds exact integer range`);
-}
+for (const id of required) failures.push(`missing required vector ${id}`);
 
 if (failures.length) {
   for (const failure of failures) console.error(failure);
   process.exit(1);
 }
 console.log(
-  `Boussole vectors verified: ${successCases.size} success cases, ${errorCases.size} refusal cases, public scoring still candidate-only`,
+  `Boussole vectors verified: ${cases.length} executable cases, public scoring still candidate-only`,
 );

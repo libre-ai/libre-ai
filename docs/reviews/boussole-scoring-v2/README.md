@@ -9,16 +9,15 @@ verrouillage défini dans `docs/reviews/AGENT-REVIEW-PROTOCOL.md` :
 1. architecture — cohérence WIT/JSON Schema et compatibilité ;
 2. sécurité — bornes, refus, arithmétique et imports WASM ;
 3. méthodologie — formule, échelle, abstention, absents, pondération et arrondi ;
-4. vie privée France/UE — zéro transmission, absence d’identifiant de répondant et minimisation des
-   attestations publiques de reviewers.
+4. vie privée France/UE — zéro transmission, absence d’identifiant et publication des attestations.
 
-Chaque verdict suit [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). Les agents doivent
-reproduire `contracts/fixtures/boussole-scoring-v2/golden-vectors.v1.json` avec une seconde
-implémentation, vérifier les digests exacts et confirmer que les deux `reviewerId` méthodologie/vie
-privée sont distincts et liés aux hashes méthode/dataset. Le corpus couvre sept succès (deux
-traitements d’abstention, skip/missing, pondération, arrondis half-even positif/négatif et maxima
-numériques) ainsi que les huit codes de refus, dont reviewer dupliqué, dénominateur nul, digest,
-méthode, date, statement et limite de ressources invalides.
+Les passes doivent reproduire `contracts/fixtures/boussole-scoring-v2/golden-vectors.v1.json` avec
+une seconde implémentation, vérifier les digests exacts et confirmer que les deux `reviewerId`
+méthodologie/vie privée sont distincts et liés aux hashes méthode/dataset. Les sept cas exécutables
+couvrent l’échelle non unitaire, le mode neutre, les réponses sautées ou absentes, l’agrégation
+pondérée, les deux directions d’arrondi half-even, le dénominateur nul, le reviewer dupliqué et une
+référence de proposition inconnue. Les cas dérivés utilisent uniquement des patches `replace` JSON
+Pointer bornés et effectivement appliqués par la gate.
 
 Jusqu’à ces quatre verdicts et leur acceptation humaine, le code, les schémas et les données peuvent
 être testés mais toute fonctionnalité de scoring public reste désactivée à la compilation/release.
