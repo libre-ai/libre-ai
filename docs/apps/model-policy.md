@@ -68,13 +68,23 @@ Policy diff, verdict and rule trace have structured tables/lists and do not rely
 
 ## Contracts
 
-- Policy Definition v2 — `contracts/schemas/policy-definition.v2.schema.json` ;
-- Policy Need v2 — `contracts/schemas/policy-need.v2.schema.json` ;
-- Model Snapshot v2 — `contracts/schemas/model-snapshot.v2.schema.json` ;
-- Policy Evaluation v2 — `contracts/schemas/policy-evaluation.v2.schema.json` ;
-- Model Policy API v2 — `contracts/openapi/model-policy.v2.yaml` ;
-- pure evaluator candidate — `contracts/wit/policy-core-v2/world.wit` ;
-- normative evaluator semantics — `contracts/wit/policy-core-v2/SEMANTICS.md`.
+Locked baseline v1:
+
+- `contracts/schemas/policy-definition.v1.schema.json` ;
+- `contracts/schemas/policy-need.v1.schema.json` ;
+- `contracts/schemas/model-snapshot.v1.schema.json` ;
+- `contracts/schemas/policy-evaluation.v1.schema.json` ;
+- `contracts/openapi/model-policy.v1.yaml` ;
+- `contracts/wit/policy-core-v1/world.wit` and `SEMANTICS.md`.
+
+ADR-0003 implementation candidate v2:
+
+- `contracts/schemas/policy-definition.v2.schema.json` ;
+- `contracts/schemas/policy-need.v2.schema.json` ;
+- `contracts/schemas/model-snapshot.v2.schema.json` ;
+- `contracts/schemas/policy-evaluation.v2.schema.json` ;
+- `contracts/openapi/model-policy.v2.yaml` ;
+- `contracts/wit/policy-core-v2/world.wit` and `SEMANTICS.md`.
 
 ## Evidence
 

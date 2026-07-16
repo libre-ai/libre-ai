@@ -11,11 +11,7 @@
         }
       },
       "invalidMutations": [
-        {
-          "name": "unstable error code",
-          "path": "/error/code",
-          "value": "INVALID"
-        }
+        { "name": "unstable error code", "path": "/error/code", "value": "INVALID" }
       ]
     },
     {
@@ -26,30 +22,13 @@
         "subject": "urn:libre-ai:artifact:subject-1",
         "subjectDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "status": "pass",
-        "checks": [
-          {
-            "id": "check-1",
-            "status": "pass",
-            "ruleVersion": "1.0.0"
-          }
-        ],
+        "checks": [{ "id": "check-1", "status": "pass", "ruleVersion": "1.0.0" }],
         "generatedAt": "2026-07-16T00:00:00Z",
-        "producer": {
-          "name": "contract-test",
-          "version": "1.0.0"
-        }
+        "producer": { "name": "contract-test", "version": "1.0.0" }
       },
       "invalidMutations": [
-        {
-          "name": "unknown check status",
-          "path": "/checks/0/status",
-          "value": "success"
-        },
-        {
-          "name": "passing report with failed check",
-          "path": "/checks/0/status",
-          "value": "fail"
-        }
+        { "name": "unknown check status", "path": "/checks/0/status", "value": "success" },
+        { "name": "passing report with failed check", "path": "/checks/0/status", "value": "fail" }
       ]
     },
     {
@@ -75,11 +54,7 @@
         }
       },
       "invalidMutations": [
-        {
-          "name": "path traversal",
-          "path": "/files/0/path",
-          "value": "../secret"
-        }
+        { "name": "path traversal", "path": "/files/0/path", "value": "../secret" }
       ]
     },
     {
@@ -96,16 +71,8 @@
         "expiresAt": "2026-07-17T00:00:00Z"
       },
       "invalidMutations": [
-        {
-          "name": "execution capability",
-          "path": "/capabilities/0",
-          "value": "execute"
-        },
-        {
-          "name": "public tenant on private handoff",
-          "path": "/tenantId",
-          "value": "public"
-        }
+        { "name": "execution capability", "path": "/capabilities/0", "value": "execute" },
+        { "name": "public tenant on private handoff", "path": "/tenantId", "value": "public" }
       ]
     },
     {
@@ -135,11 +102,7 @@
         ]
       },
       "invalidMutations": [
-        {
-          "name": "remote route",
-          "path": "/route",
-          "value": "https://example.org"
-        }
+        { "name": "remote route", "path": "/route", "value": "https://example.org" }
       ]
     },
     {
@@ -159,13 +122,7 @@
           "subjectDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
         }
       },
-      "invalidMutations": [
-        {
-          "name": "missing reason",
-          "path": "/reason",
-          "value": ""
-        }
-      ]
+      "invalidMutations": [{ "name": "missing reason", "path": "/reason", "value": "" }]
     },
     {
       "schema": "activity-definition.v1.schema.json",
@@ -184,15 +141,9 @@
             "licence": "CC-BY-4.0"
           }
         ],
-        "responseSchema": {
-          "type": "string"
-        },
+        "responseSchema": { "type": "string" },
         "feedbackRules": [
-          {
-            "id": "feedback_1",
-            "explanation": "Vérifier la source",
-            "sourceIndexes": [0]
-          }
+          { "id": "feedback_1", "explanation": "Vérifier la source", "sourceIndexes": [0] }
         ],
         "generatedContent": false,
         "approvals": [
@@ -204,13 +155,7 @@
           }
         ]
       },
-      "invalidMutations": [
-        {
-          "name": "unpublished state",
-          "path": "/status",
-          "value": "unknown"
-        }
-      ]
+      "invalidMutations": [{ "name": "unpublished state", "path": "/status", "value": "unknown" }]
     },
     {
       "schema": "activity-outcome.v1.schema.json",
@@ -225,13 +170,7 @@
         "feedbackRuleIds": ["feedback_1"],
         "recordedAt": "2026-07-16T00:00:00Z"
       },
-      "invalidMutations": [
-        {
-          "name": "universal pass state",
-          "path": "/state",
-          "value": "passed"
-        }
-      ]
+      "invalidMutations": [{ "name": "universal pass state", "path": "/state", "value": "passed" }]
     },
     {
       "schema": "practice-progress-export.v1.schema.json",
@@ -241,11 +180,7 @@
         "outcomes": []
       },
       "invalidMutations": [
-        {
-          "name": "server tenant leakage",
-          "path": "/tenantId",
-          "value": "ten_1234567890abcdef"
-        }
+        { "name": "server tenant leakage", "path": "/tenantId", "value": "ten_1234567890abcdef" }
       ]
     },
     {
@@ -258,18 +193,10 @@
         "fetchId": "fetch_1",
         "scheduledAt": "2026-07-16T00:00:00Z",
         "url": "https://example.org/feed.xml",
-        "limits": {
-          "maxBytes": 1048576,
-          "timeoutMs": 5000,
-          "maxRedirects": 2
-        }
+        "limits": { "maxBytes": 1048576, "timeoutMs": 5000, "maxRedirects": 2 }
       },
       "invalidMutations": [
-        {
-          "name": "forbidden scheme",
-          "path": "/url",
-          "value": "file:///etc/passwd"
-        }
+        { "name": "forbidden scheme", "path": "/url", "value": "file:///etc/passwd" }
       ]
     },
     {
@@ -293,11 +220,7 @@
         "createdAt": "2026-07-16T00:00:00Z"
       },
       "invalidMutations": [
-        {
-          "name": "unbounded operator",
-          "path": "/rules/0/operator",
-          "value": "regex"
-        }
+        { "name": "unbounded operator", "path": "/rules/0/operator", "value": "regex" }
       ]
     },
     {
@@ -308,13 +231,7 @@
         "exportedAt": "2026-07-16T00:00:00Z",
         "items": []
       },
-      "invalidMutations": [
-        {
-          "name": "missing tenant",
-          "path": "/tenantId",
-          "remove": true
-        }
-      ]
+      "invalidMutations": [{ "name": "missing tenant", "path": "/tenantId", "remove": true }]
     },
     {
       "schema": "context-document.v1.schema.json",
@@ -336,11 +253,7 @@
         "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "invalidMutations": [
-        {
-          "name": "network location",
-          "path": "/remoteUrl",
-          "value": "https://example.org/note"
-        }
+        { "name": "network location", "path": "/remoteUrl", "value": "https://example.org/note" }
       ]
     },
     {
@@ -361,13 +274,7 @@
         "ciphertext": "AAAAAAAAAAAAAAAAAAAAAAAA",
         "ciphertextDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
-      "invalidMutations": [
-        {
-          "name": "weak KDF",
-          "path": "/kdf/memoryKiB",
-          "value": 1024
-        }
-      ]
+      "invalidMutations": [{ "name": "weak KDF", "path": "/kdf/memoryKiB", "value": 1024 }]
     },
     {
       "schema": "public-vote-dataset.v1.schema.json",
@@ -447,11 +354,7 @@
         ]
       },
       "invalidMutations": [
-        {
-          "name": "hidden missing treatment",
-          "path": "/missingTreatment",
-          "value": "neutral"
-        }
+        { "name": "hidden missing treatment", "path": "/missingTreatment", "value": "neutral" }
       ]
     },
     {
@@ -476,13 +379,7 @@
         ],
         "computedAt": "2026-07-16T00:00:00Z"
       },
-      "invalidMutations": [
-        {
-          "name": "score out of range",
-          "path": "/score",
-          "value": 2
-        }
-      ]
+      "invalidMutations": [{ "name": "score out of range", "path": "/score", "value": 2 }]
     },
     {
       "schema": "policy-definition.v1.schema.json",
@@ -495,7 +392,7 @@
         "rules": [
           {
             "id": "licence_1",
-            "fact": "licence",
+            "fact": "model.licence",
             "operator": "in",
             "value": ["MIT", "Apache-2.0"],
             "unknown": "ineligible",
@@ -517,10 +414,38 @@
         }
       },
       "invalidMutations": [
+        { "name": "unknown treated as eligible", "path": "/rules/0/unknown", "value": "eligible" },
         {
-          "name": "unknown treated as eligible",
-          "path": "/rules/0/unknown",
-          "value": "eligible"
+          "name": "numeric operator with set value",
+          "path": "/rules/0/operator",
+          "value": "at-least"
+        }
+      ]
+    },
+    {
+      "schema": "policy-need.v1.schema.json",
+      "valid": {
+        "schemaVersion": "libre-ai.policy-need.v1",
+        "id": "urn:libre-ai:need:need-1",
+        "tenantId": "ten_1234567890abcdef",
+        "facts": [
+          { "name": "need.task", "value": "summary" },
+          { "name": "need.max_context_tokens", "value": 8192 },
+          { "name": "need.personal_data", "value": true }
+        ],
+        "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "invalidMutations": [
+        { "name": "tenant missing", "path": "/tenantId", "remove": true },
+        { "name": "model fact in need", "path": "/facts/0/name", "value": "model.task" },
+        { "name": "fact value is not scalar", "path": "/facts/0/value", "value": ["summary"] },
+        {
+          "name": "exact duplicate need fact",
+          "path": "/facts",
+          "value": [
+            { "name": "need.task", "value": "summary" },
+            { "name": "need.task", "value": "summary" }
+          ]
         }
       ]
     },
@@ -534,7 +459,7 @@
         "capturedAt": "2026-07-16T00:00:00Z",
         "facts": [
           {
-            "name": "licence",
+            "name": "model.licence",
             "value": "MIT",
             "source": {
               "uri": "https://example.org/model",
@@ -547,10 +472,34 @@
         "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "invalidMutations": [
+        { "name": "personal tenant missing", "path": "/tenantId", "remove": true },
+        { "name": "need fact in snapshot", "path": "/facts/0/name", "value": "need.licence" },
+        { "name": "fact value is not scalar", "path": "/facts/0/value", "value": ["MIT"] },
         {
-          "name": "personal tenant missing",
-          "path": "/tenantId",
-          "remove": true
+          "name": "exact duplicate snapshot fact",
+          "path": "/facts",
+          "value": [
+            {
+              "name": "model.licence",
+              "value": "MIT",
+              "source": {
+                "uri": "https://example.org/model",
+                "retrievedAt": "2026-07-16T00:00:00Z",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "licence": "CC-BY-4.0"
+              }
+            },
+            {
+              "name": "model.licence",
+              "value": "MIT",
+              "source": {
+                "uri": "https://example.org/model",
+                "retrievedAt": "2026-07-16T00:00:00Z",
+                "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "licence": "CC-BY-4.0"
+              }
+            }
+          ]
         }
       ]
     },
@@ -558,7 +507,7 @@
       "schema": "policy-evaluation.v1.schema.json",
       "valid": {
         "schemaVersion": "libre-ai.policy-evaluation.v1",
-        "id": "urn:libre-ai:evaluation:evaluation-1",
+        "id": "urn:libre-ai:evaluation:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
         "tenantId": "ten_1234567890abcdef",
         "policyId": "urn:libre-ai:policy:policy-1",
         "policyDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -568,26 +517,14 @@
         "engineVersion": "1.0.0",
         "verdict": "indeterminate",
         "ruleResults": [
-          {
-            "ruleId": "licence_1",
-            "status": "unknown",
-            "reasonCode": "policy.fact_unknown"
-          }
+          { "ruleId": "licence_1", "status": "unknown", "reasonCode": "policy.fact_absent" }
         ],
         "evaluatedAt": "2026-07-16T00:00:00Z",
         "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
       },
       "invalidMutations": [
-        {
-          "name": "success verdict alias",
-          "path": "/verdict",
-          "value": "compliant"
-        },
-        {
-          "name": "eligible verdict with unknown rule",
-          "path": "/verdict",
-          "value": "eligible"
-        }
+        { "name": "success verdict alias", "path": "/verdict", "value": "compliant" },
+        { "name": "eligible verdict with unknown rule", "path": "/verdict", "value": "eligible" }
       ]
     },
     {
@@ -600,19 +537,12 @@
         "sequence": 1,
         "revision": 0,
         "type": "session-created",
-        "actor": {
-          "kind": "human",
-          "id": "user_1"
-        },
+        "actor": { "kind": "human", "id": "user_1" },
         "occurredAt": "2026-07-16T00:00:00Z",
         "data": {}
       },
       "invalidMutations": [
-        {
-          "name": "event without tenant",
-          "path": "/tenantId",
-          "remove": true
-        },
+        { "name": "event without tenant", "path": "/tenantId", "remove": true },
         {
           "name": "contribution without bounded data",
           "path": "/type",
@@ -636,11 +566,7 @@
         "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "invalidMutations": [
-        {
-          "name": "private audience export",
-          "path": "/audience",
-          "value": "private"
-        }
+        { "name": "private audience export", "path": "/audience", "value": "private" }
       ]
     },
     {
@@ -654,33 +580,13 @@
         "problem": "Problème explicite",
         "actors": ["actor_1"],
         "requirements": [
-          {
-            "id": "requirement_1",
-            "text": "Refuser sans preuve",
-            "priority": "must"
-          }
+          { "id": "requirement_1", "text": "Refuser sans preuve", "priority": "must" }
         ],
-        "decisions": [
-          {
-            "id": "decision_1",
-            "status": "accepted",
-            "decision": "Fail closed"
-          }
-        ],
+        "decisions": [{ "id": "decision_1", "status": "accepted", "decision": "Fail closed" }],
         "contracts": ["urn:libre-ai:contract:contract-1"],
-        "risks": [
-          {
-            "id": "risk_1",
-            "severity": "high",
-            "control": "Gate automatisée"
-          }
-        ],
+        "risks": [{ "id": "risk_1", "severity": "high", "control": "Gate automatisée" }],
         "acceptanceCriteria": [
-          {
-            "id": "criterion_1",
-            "observable": "Le refus est stable",
-            "evidenceRule": "evidence_1"
-          }
+          { "id": "criterion_1", "observable": "Le refus est stable", "evidenceRule": "evidence_1" }
         ],
         "approvals": [
           {
@@ -694,11 +600,7 @@
         "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "invalidMutations": [
-        {
-          "name": "open decision",
-          "path": "/decisions/0/status",
-          "value": "open"
-        }
+        { "name": "open decision", "path": "/decisions/0/status", "value": "open" }
       ]
     },
     {
@@ -712,21 +614,11 @@
         "sequence": 1,
         "type": "started",
         "occurredAt": "2026-07-16T00:00:00Z",
-        "data": {
-          "progressPermille": 0
-        }
+        "data": { "progressPermille": 0 }
       },
       "invalidMutations": [
-        {
-          "name": "claims accepted result",
-          "path": "/type",
-          "value": "accepted"
-        },
-        {
-          "name": "result without artifact evidence",
-          "path": "/type",
-          "value": "result-submitted"
-        }
+        { "name": "claims accepted result", "path": "/type", "value": "accepted" },
+        { "name": "result without artifact evidence", "path": "/type", "value": "result-submitted" }
       ]
     },
     {
@@ -739,15 +631,8 @@
         "state": "approved",
         "handoffId": "urn:libre-ai:handoff:handoff-1",
         "handoffDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "risk": {
-          "level": "medium",
-          "policyVersion": "1.0.0"
-        },
-        "budgets": {
-          "maxDurationSeconds": 3600,
-          "maxToolCalls": 100,
-          "network": "allowlisted"
-        },
+        "risk": { "level": "medium", "policyVersion": "1.0.0" },
+        "budgets": { "maxDurationSeconds": 3600, "maxToolCalls": 100, "network": "allowlisted" },
         "acceptanceCriteria": ["criterion_1"],
         "approvals": [
           {
@@ -761,11 +646,7 @@
         "createdAt": "2026-07-16T00:00:00Z"
       },
       "invalidMutations": [
-        {
-          "name": "agent claims success",
-          "path": "/state",
-          "value": "success"
-        },
+        { "name": "agent claims success", "path": "/state", "value": "success" },
         {
           "name": "accepted state without result and verdict",
           "path": "/state",
@@ -797,16 +678,8 @@
         "revision": 1
       },
       "invalidMutations": [
-        {
-          "name": "public tenant on private session",
-          "path": "/tenantId",
-          "value": "public"
-        },
-        {
-          "name": "raw cookie persisted",
-          "path": "/cookie",
-          "value": "forbidden"
-        },
+        { "name": "public tenant on private session", "path": "/tenantId", "value": "public" },
+        { "name": "raw cookie persisted", "path": "/cookie", "value": "forbidden" },
         {
           "name": "active session carrying revocation time",
           "path": "/revokedAt",
@@ -831,12 +704,7 @@
         "requestedAt": "2026-07-16T00:00:00Z",
         "completedAt": "2026-07-16T00:00:01Z",
         "status": "complete",
-        "stores": [
-          {
-            "store": "postgresql",
-            "outcome": "deleted"
-          }
-        ],
+        "stores": [{ "store": "postgresql", "outcome": "deleted" }],
         "backupExpiresAt": "2026-08-20T00:00:00Z"
       },
       "invalidMutations": [
@@ -917,16 +785,8 @@
         ]
       },
       "invalidMutations": [
-        {
-          "name": "unlocked package",
-          "path": "/packages/0/definitionStatus",
-          "value": "draft"
-        },
-        {
-          "name": "unsafe write path",
-          "path": "/packages/0/writePaths/0",
-          "value": "../outside"
-        }
+        { "name": "unlocked package", "path": "/packages/0/definitionStatus", "value": "draft" },
+        { "name": "unsafe write path", "path": "/packages/0/writePaths/0", "value": "../outside" }
       ]
     },
     {
@@ -960,7 +820,9 @@
     {
       "schema": "radar-normalized-item.v1.schema.json",
       "valid": {
-        "authors": ["Alice"],
+        "authors": [
+          "Alice"
+        ],
         "deduplicationKey": "3b9f05afc2635216cb25f674ff9d0058d1425751a8dba2ec0d67fc7ec6618c92",
         "externalId": "item-001",
         "id": "urn:libre-ai:radar-item:3b9f05afc2635216cb25f674ff9d0058d1425751a8dba2ec0d67fc7ec6618c92",
@@ -969,7 +831,10 @@
         "sourceHost": "example.org",
         "sourceId": "urn:libre-ai:source:feed-1",
         "summary": "Résumé sûr.",
-        "tags": ["rust", "sécurité"],
+        "tags": [
+          "rust",
+          "sécurité"
+        ],
         "title": "Sécurité du parsing",
         "updatedAt": null,
         "url": "https://example.org/articles/1"
@@ -990,7 +855,9 @@
         "homeUrl": "https://example.org/news",
         "items": [
           {
-            "authors": ["Alice"],
+            "authors": [
+              "Alice"
+            ],
             "deduplicationKey": "3b9f05afc2635216cb25f674ff9d0058d1425751a8dba2ec0d67fc7ec6618c92",
             "externalId": "item-001",
             "id": "urn:libre-ai:radar-item:3b9f05afc2635216cb25f674ff9d0058d1425751a8dba2ec0d67fc7ec6618c92",
@@ -999,7 +866,10 @@
             "sourceHost": "example.org",
             "sourceId": "urn:libre-ai:source:feed-1",
             "summary": "Résumé sûr.",
-            "tags": ["rust", "sécurité"],
+            "tags": [
+              "rust",
+              "sécurité"
+            ],
             "title": "Sécurité du parsing",
             "updatedAt": null,
             "url": "https://example.org/articles/1"
@@ -1070,7 +940,9 @@
         "schemaVersion": "libre-ai.context-document.v2",
         "id": "urn:libre-ai:context:context-1",
         "createdAt": "2026-07-16T00:00:00Z",
-        "rootBlockIds": ["block_1"],
+        "rootBlockIds": [
+          "block_1"
+        ],
         "blocks": [
           {
             "id": "block_1",
@@ -1186,7 +1058,9 @@
             "id": "not_in_boolean",
             "fact": "model.open",
             "operator": "not-in",
-            "value": [false],
+            "value": [
+              false
+            ],
             "unknown": "indeterminate",
             "source": {
               "uri": "https://example.org/policy/method",
@@ -1199,7 +1073,10 @@
             "id": "not_in_number",
             "fact": "model.score",
             "operator": "not-in",
-            "value": [1, 0],
+            "value": [
+              1,
+              0
+            ],
             "unknown": "indeterminate",
             "source": {
               "uri": "https://example.org/policy/method",
@@ -1212,7 +1089,10 @@
             "id": "not_in_string",
             "fact": "model.licence",
             "operator": "not-in",
-            "value": ["SSPL-1.0", "AGPL-3.0"],
+            "value": [
+              "SSPL-1.0",
+              "AGPL-3.0"
+            ],
             "unknown": "indeterminate",
             "source": {
               "uri": "https://example.org/policy/method",
@@ -1225,7 +1105,9 @@
             "id": "in_boolean",
             "fact": "model.open",
             "operator": "in",
-            "value": [true],
+            "value": [
+              true
+            ],
             "unknown": "indeterminate",
             "source": {
               "uri": "https://example.org/policy/method",
@@ -1238,7 +1120,10 @@
             "id": "in_number",
             "fact": "model.score",
             "operator": "in",
-            "value": [8, 7],
+            "value": [
+              8,
+              7
+            ],
             "unknown": "indeterminate",
             "source": {
               "uri": "https://example.org/policy/method",
@@ -1251,7 +1136,10 @@
             "id": "in_string",
             "fact": "model.licence",
             "operator": "in",
-            "value": ["MIT", "Apache-2.0"],
+            "value": [
+              "MIT",
+              "Apache-2.0"
+            ],
             "unknown": "indeterminate",
             "source": {
               "uri": "https://example.org/policy/method",
@@ -1587,7 +1475,11 @@
         "schemaVersion": "libre-ai.boussole-method.v2",
         "id": "urn:libre-ai:method:method-2",
         "version": "2.0.0",
-        "responseScale": [-1, 0, 1],
+        "responseScale": [
+          -1,
+          0,
+          1
+        ],
         "abstentionTreatment": "excluded-from-denominator",
         "missingTreatment": "excluded-and-reported",
         "formula": "normalized-agreement-v2",

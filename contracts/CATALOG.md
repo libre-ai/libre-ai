@@ -4,7 +4,7 @@ Machine authority: [`catalog.v1.json`](catalog.v1.json).
 
 | Family | Count | Authority | Compatibility |
 | --- | ---: | --- | --- |
-| JSON Schema 2020-12 | 47 | `contracts/schemas/` | strict payloads; breaking changes use a new major |
+| JSON Schema 2020-12 | 48 | `contracts/schemas/` | strict payloads; breaking changes use a new major |
 | Retention policy | 1 | `contracts/data/` | exact ADR-0002 lifecycle projection |
 | OpenAPI 3.1 | 10 | `contracts/openapi/` | routes and payload majors remain aligned |
 | WIT worlds | 9 | `contracts/wit/` | exact major-versioned component boundary + cataloged profile |
@@ -33,7 +33,7 @@ the reviewer to a distinct agent/session under [`AGENT-REVIEW-PROTOCOL.md`](../d
 - Radar: v2 source-scoped parsing/rules with exact normalized feed/item and bounded output ;
 - Notebook: candidate context v2 plus authenticated Argon2id/AES-GCM backup envelope ;
 - Sessions: event and audience-safe export ;
-- Model Policy: candidate v2 policy/need/snapshot/evaluation with human approval separation ;
+- Model Policy: locked v1 baseline plus candidate v2 policy/need/snapshot/evaluation with human approval separation ;
 - Boussole: candidate v2 reviewed dataset/method/local responses/comparison, public scoring disabled ;
 - Specifications: immutable SpecPackage and planning handoff ;
 - Missions: orchestrator event and human-verdict MissionRecord.
