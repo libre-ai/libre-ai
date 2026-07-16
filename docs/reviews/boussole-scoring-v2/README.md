@@ -7,8 +7,8 @@ La promotion du contrat exige quatre verdicts agentiques, avec des identités/se
 1. architecture — cohérence WIT/JSON Schema et compatibilité ;
 2. sécurité — bornes, refus, arithmétique et imports WASM ;
 3. méthodologie — formule, échelle, abstention, absents, pondération et arrondi ;
-4. vie privée France/UE — zéro transmission, absence d’identifiant et minimisation des attestations.
+4. vie privée France/UE — zéro transmission, absence d’identifiant de répondant et minimisation des attestations publiques de reviewers.
 
-Chaque record suit [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). Les agents doivent reproduire `contracts/fixtures/boussole-scoring-v2/golden-vectors.v1.json` avec une implémentation indépendante et vérifier les digests exacts.
+Chaque record suit [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). Les agents doivent reproduire `contracts/fixtures/boussole-scoring-v2/golden-vectors.v1.json` avec une implémentation indépendante et vérifier les digests exacts. Le corpus couvre sept succès (deux traitements d’abstention, skip/missing, pondération, arrondis half-even positif/négatif et maxima numériques) ainsi que les huit codes de refus.
 
 Ces revues d’ingénierie ne remplacent pas les approbations produit humaines `actorKind = human` liées aux hashes méthode/dataset par les contrats Boussole. Jusqu’aux verdicts agentiques et aux deux approbations produit, toute fonctionnalité de scoring public reste désactivée à la compilation/release.

@@ -408,6 +408,7 @@ const expectedMutationNames = [
   "ciphertext-modified",
   "aad-modified",
   "weak-kdf-parameters",
+  "unsupported-version",
 ];
 expectEqual(
   JSON.stringify(vectors.mutations.map((mutation) => mutation.name)),
@@ -434,6 +435,12 @@ for (const mutation of vectors.mutations) {
     expect(!schemaValid, `${mutation.name}: weak parameters accepted by schema`);
     expect(mutation.expected.argon2idAttempted === false, `${mutation.name}: Argon2id attempted`);
     expectEqual(mutation.expected.code, "invalid-envelope", `${mutation.name} code`);
+    continue;
+  }
+  if (mutation.name === "unsupported-version") {
+    expect(!schemaValid, `${mutation.name}: unsupported version accepted by schema`);
+    expect(mutation.expected.argon2idAttempted === false, `${mutation.name}: Argon2id attempted`);
+    expectEqual(mutation.expected.code, "unsupported-version", `${mutation.name} code`);
     continue;
   }
 
