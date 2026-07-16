@@ -128,7 +128,7 @@
     },
     {
       "schema": "notebook-backup-seal-request.v2.schema.json",
-      "schemaSha256": "f2375d8d17c4ccfbacfd5a755f02e9139388edb96a9e945f7d7947c386b12eae",
+      "schemaSha256": "d6b38a443249f7029dcd47eddd32a44d1b82025782a7df5e9bebeedfa79c8f96",
       "declaration": "notebook-backup-seal-request.v2.d.ts"
     },
     {
@@ -138,7 +138,7 @@
     },
     {
       "schema": "notebook-backup.v2.schema.json",
-      "schemaSha256": "0eb47c5453f08ddcbb15986f8fd4d12f1bc7de2d051634f1f606519fb060dc61",
+      "schemaSha256": "d194c15523a51ee64a11fc09f07dfbd15e6e64d907e000b928d7b8e4d64a23d8",
       "declaration": "notebook-backup.v2.d.ts"
     },
     {
