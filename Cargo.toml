@@ -2,6 +2,10 @@
 resolver = "3"
 members = ["crates/*"]
 
+[workspace.dependencies]
+biscuit-parser = "=0.2.0"
+wit-parser = { version = "=0.253.0", default-features = false, features = ["std"] }
+
 [workspace.package]
 edition = "2024"
 rust-version = "1.97"
