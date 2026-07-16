@@ -2,7 +2,7 @@
 
 - **Checkpoint:** 2026-07-16
 - **Scope:** design primitives and canonical Bun application template
-- **Status:** automated evidence complete; `accessibility-foundation-review` remains human and open
+- **Status:** `accessibility-foundation-review` accepted by human disposition on 2026-07-16
 
 ## Foundation delivered
 
@@ -43,9 +43,10 @@ Calculated WCAG relative-contrast ratios for canonical pairs:
 | button text / accent | 7.67:1 | 8.55:1 |
 | focus / canvas | 4.78:1 | 10.33:1 |
 
-## Human review checklist
+## Retained manual follow-up checklist
 
-A reviewer independent from implementation must still verify:
+The human disposition accepted this bounded foundation for integration while retaining these checks
+for product-level accessibility qualification:
 
 - [ ] navigation order and visible focus in a real desktop browser;
 - [ ] 200% zoom and narrow viewport reflow without loss of content;
@@ -55,4 +56,6 @@ A reviewer independent from implementation must still verify:
 - [ ] no-JavaScript usefulness and wording quality;
 - [ ] the foundation is sufficient but not falsely presented as complete WCAG conformance.
 
-This evidence does not claim WCAG certification and does not approve its own gate.
+The repository owner accepted `accessibility-foundation-review` by explicit human disposition on
+2026-07-16. This evidence still does not claim WCAG certification or completion of product-level
+manual accessibility qualification.
