@@ -51,7 +51,7 @@ Failure never uploads data or drops the previous valid local revision.
 
 ## Data
 
-IndexedDB owns encrypted block revisions, links, local index, export metadata and settings. Workspace content encryption uses a non-exportable device key where available; portable backup uses user-provided recovery secret with memory-hard KDF parameters encoded in the envelope. Retention is until explicit local deletion. Delete removes records and keys; browser/storage limitations are disclosed. No historical notebook database is migrated automatically; v1 migration input is only validated portable export/backup.
+IndexedDB owns encrypted block revisions, links, local index, export metadata and settings. L'inventaire local distingue contenu chiffré, clés, index et métadonnées d'exports ; chacun est supprimé lors de `DeleteWorkspace`, tandis qu'une copie exportée hors de l'application reste sous le contrôle explicite de l'utilisateur et ne peut pas être révoquée à distance. Workspace content encryption uses a non-exportable device key where available; portable backup uses `libre-ai.recovery-secret-code.v1` (16 local CSPRNG bytes displayed as 32 lowercase hex characters) by default, with memory-hard KDF parameters encoded in the envelope; any separately approved text-secret mode applies `libre-ai.recovery-secret-text.v1` exactly. Retention is until explicit local deletion. Delete removes records and keys; browser/storage limitations are disclosed. No historical notebook database is migrated automatically; v1 migration input is only validated portable export/backup.
 
 ## Authentication and authorization
 
@@ -59,7 +59,7 @@ No server account or session is required in local-only v1. Workspace unlock is l
 
 ## Runtime boundaries
 
-TypeScript owns block graph, UI, IndexedDB, local index, export selection and generation of local backup ID/time plus fresh salt/nonce bytes. Notebook Core v2 is a candidate Rust/WASM boundary for canonical context bytes and Argon2id/AES-256-GCM sealing/opening; this amendment implements no engine. Promotion requires independent cryptography and privacy review. The future component imports no host capability. No native FFI or server service is allowed in v1; sensitive bytes cross transiently, DOM and IndexedDB handles do not.
+TypeScript owns block graph, UI, IndexedDB, local index, export selection and generation of fresh opaque 128-bit backup/context IDs plus fresh salt/nonce bytes. Any product timestamp belongs inside the encrypted plaintext and never in the clear envelope. Notebook Core v2 is a candidate Rust/WASM boundary for canonical context bytes and Argon2id/AES-256-GCM sealing/opening; this amendment implements no engine. Promotion requires independent cryptography and privacy review. The future component imports no host capability. No native FFI or server service is allowed in v1; sensitive bytes cross transiently, DOM and IndexedDB handles do not.
 
 ## Accessibility and degraded mode
 

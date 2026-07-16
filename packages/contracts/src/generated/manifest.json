@@ -53,7 +53,7 @@
     },
     {
       "schema": "context-document.v2.schema.json",
-      "schemaSha256": "f14de256079228b075d38977321c0fb29b97bf872de78b2d03d7de00ea2e9dc9",
+      "schemaSha256": "fe030c2642076588289f5da7814cb44bbff75e7684f487c0c7e4c230e25be455",
       "declaration": "context-document.v2.d.ts"
     },
     {
@@ -128,7 +128,7 @@
     },
     {
       "schema": "notebook-backup-seal-request.v2.schema.json",
-      "schemaSha256": "d6b38a443249f7029dcd47eddd32a44d1b82025782a7df5e9bebeedfa79c8f96",
+      "schemaSha256": "4beb3e8818f2036f38c44469432d31222191523d621779c8c5b28ab5be760e5a",
       "declaration": "notebook-backup-seal-request.v2.d.ts"
     },
     {
@@ -138,7 +138,7 @@
     },
     {
       "schema": "notebook-backup.v2.schema.json",
-      "schemaSha256": "d194c15523a51ee64a11fc09f07dfbd15e6e64d907e000b928d7b8e4d64a23d8",
+      "schemaSha256": "e2932bbb2cd2b7062be703aad327ad84e51badf0d4fa9b8ad59b00191e686ad0",
       "declaration": "notebook-backup.v2.d.ts"
     },
     {
