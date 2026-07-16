@@ -68,7 +68,7 @@
     },
     {
       "schema": "curated-item-export.v2.schema.json",
-      "schemaSha256": "336076fa44343db64ecc84592edad0a82c28a6eccc615861dec181f7daef31bb",
+      "schemaSha256": "f55f65c8d121dfbef781bce0732d76020725f392825fc68ba3421625a88aa422",
       "declaration": "curated-item-export.v2.d.ts"
     },
     {
