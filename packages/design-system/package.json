@@ -1,0 +1,22 @@
+{
+  "name": "@libre-ai/design-system",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles.css",
+    "./tailwind": "./src/tailwind.ts"
+  },
+  "scripts": {
+    "test": "bun test"
+  },
+  "dependencies": {
+    "react": "catalog:",
+    "react-aria-components": "catalog:",
+    "tailwindcss": "catalog:"
+  },
+  "devDependencies": {
+    "react-dom": "catalog:"
+  }
+}
