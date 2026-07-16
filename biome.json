@@ -6,7 +6,11 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!ecosystem/projections/public.v1.json"]
+    "includes": [
+      "**",
+      "!ecosystem/projections/public.v1.json",
+      "!contracts/fixtures/radar-engine-v2"
+    ]
   },
   "formatter": {
     "enabled": true,
