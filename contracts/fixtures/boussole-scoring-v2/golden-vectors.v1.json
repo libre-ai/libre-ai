@@ -909,7 +909,7 @@
       "id": "reject-invalid-computed-at",
       "operation": "compare",
       "fromCase": "excluded-positive",
-      "mutation": "computedAt = 2026-07-16",
+      "mutation": "computedAt = 2026-02-30T00:00:00Z",
       "expectedError": "computed-at-invalid"
     },
     {
