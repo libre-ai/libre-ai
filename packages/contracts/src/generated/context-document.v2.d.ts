@@ -7,7 +7,6 @@
 export type LibreAiContextDocumentV2 = {
   schemaVersion: "libre-ai.context-document.v2";
   id: string;
-  createdAt: string;
   rootBlockIds: Array<string>;
   blocks: Array<{
     id: string;

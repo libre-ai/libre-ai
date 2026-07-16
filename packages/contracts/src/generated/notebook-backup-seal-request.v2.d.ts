@@ -7,7 +7,6 @@
 export type LibreAiNotebookBackupSealRequestV2 = {
   schemaVersion: "libre-ai.notebook-backup-seal-request.v2";
   id: string;
-  createdAt: string;
   cipher: "aes-256-gcm";
   kdf: {
     algorithm: "argon2id";
