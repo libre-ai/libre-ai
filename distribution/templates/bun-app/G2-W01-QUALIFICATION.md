@@ -1,7 +1,7 @@
 # WP-G2-W01 — Bun React web foundation qualification
 
 - **Checkpoint:** 2026-07-16
-- **Status:** implementation complete; human accessibility review open
+- **Status:** completed; human accessibility review accepted on 2026-07-16
 - **Runtime:** exact bootstrap Bun `1.4.0-canary.1+57f349f63`
 - **Production status:** blocked
 
@@ -54,9 +54,11 @@ Two consecutive builds produced byte-identical output with aggregate SHA-256
 client is minified with `NODE_ENV=production`; its size is 421,448 bytes (129,628 bytes through the
 local gzip check). The complete root Bun and Rust gates passed immediately before this record.
 
-## Open human gate
+## Human gate outcome
 
-`accessibility-foundation-review` is not approved here. The independent review worksheet is
-`packages/design-system/evidence/ACCESSIBILITY-FOUNDATION-REVIEW.md`.
+The repository owner accepted `accessibility-foundation-review` by explicit human disposition on
+2026-07-16. The retained product-level manual checks remain documented in
+`packages/design-system/evidence/ACCESSIBILITY-FOUNDATION-REVIEW.md`; this acceptance is not a WCAG
+certification.
 
 The Bun production gate, G2 foundation acceptance and all Clever Cloud actions remain blocked.
