@@ -472,6 +472,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66"
 
 [[package]]
+name = "libre-ai-artifact"
+version = "0.1.0"
+dependencies = [
+ "libre-ai-contract-types",
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "libre-ai-contract-types"
 version = "0.1.0"
 dependencies = [
@@ -494,6 +504,16 @@ dependencies = [
  "serde_json",
  "sha2",
  "wit-parser",
+]
+
+[[package]]
+name = "libre-ai-proof"
+version = "0.1.0"
+dependencies = [
+ "libre-ai-artifact",
+ "libre-ai-contract-types",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
