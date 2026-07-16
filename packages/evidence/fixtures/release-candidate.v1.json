@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "libre-ai.release-candidate-fixture.v1",
+  "files": [
+    {
+      "path": "dist/app.js",
+      "mediaType": "text/javascript",
+      "contentUtf8": "console.log('libre-ai');\n"
+    }
+  ],
+  "manifest": {
+    "schemaVersion": "libre-ai.artifact-manifest.v1",
+    "id": "urn:libre-ai:artifact:release-golden",
+    "artifactType": "release",
+    "createdAt": "2026-07-16T00:00:00Z",
+    "digest": "aa2bff8a1e3226873b2495393c27de44ada131091aded2b01692a66f0f19c5af",
+    "files": [
+      {
+        "path": "dist/app.js",
+        "size": 25,
+        "digest": "f2bde63a0eecd1e1c98d4d78ead411a8d0bf8ad3b65ff991394c56f353b7c054",
+        "mediaType": "text/javascript"
+      }
+    ],
+    "evidenceReport": {
+      "id": "urn:libre-ai:evidence:release-golden",
+      "digest": "f7aca507c950554b2b71d1090275b24004de3eaaa8fa5086717bfde94dcc5a60",
+      "mediaType": "application/json"
+    }
+  },
+  "evidence": {
+    "schemaVersion": "libre-ai.evidence-report.v1",
+    "id": "urn:libre-ai:evidence:release-golden",
+    "subject": "urn:libre-ai:artifact:release-golden",
+    "subjectDigest": "aa2bff8a1e3226873b2495393c27de44ada131091aded2b01692a66f0f19c5af",
+    "status": "pass",
+    "checks": [
+      {
+        "id": "contracts",
+        "status": "pass",
+        "ruleVersion": "1.0.0"
+      },
+      {
+        "id": "supply-chain",
+        "status": "pass",
+        "ruleVersion": "1.0.0"
+      }
+    ],
+    "generatedAt": "2026-07-16T00:00:00Z",
+    "producer": {
+      "name": "libre-ai-proof",
+      "version": "0.1.0"
+    }
+  }
+}

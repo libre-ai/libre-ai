@@ -23,6 +23,13 @@
         "ajv-formats": "catalog:",
       },
     },
+    "packages/evidence": {
+      "name": "@libre-ai/evidence",
+      "version": "0.1.0",
+      "dependencies": {
+        "@libre-ai/contracts": "workspace:*",
+      },
+    },
     "packages/knowledge": {
       "name": "@libre-ai/knowledge",
       "version": "0.1.0",
@@ -74,6 +81,8 @@
     "@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@2.5.3", "", { "os": "win32", "cpu": "x64" }, "sha512-ExSaJWi4/u6+GXCszlSKpWSjKNbDseAYqqkCznsCsZ/4uidZ/BEqsCc5/3ctlq6dfIubdIIRSVLC/PG9xPl70Q=="],
 
     "@libre-ai/contracts": ["@libre-ai/contracts@workspace:packages/contracts"],
+
+    "@libre-ai/evidence": ["@libre-ai/evidence@workspace:packages/evidence"],
 
     "@libre-ai/knowledge": ["@libre-ai/knowledge@workspace:packages/knowledge"],
 
