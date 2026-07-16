@@ -61,7 +61,7 @@ Browser uses opaque session. Biscuit resources are `mission/<id>`, `mission/<id>
 
 ## Runtime boundaries
 
-TypeScript owns mission domain, human workflow, persistence and projection. WP-G2-S01 provides only a deterministic Rust simulator and semantic `OrchestratorEvent` validator: no process/tool execution, harness, network, secret, approval or durable state. The Missions adapter remains responsible for authorization, idempotency persistence and event ingestion without shared DB. Missions may use the simulator for contract integration but cannot start a real mission; scheduling, pause/resume/cancel or harness execution requires a separately approved execution-plan/control protocol and package.
+TypeScript owns mission domain, human workflow, persistence and projection. WP-G2-S01 does not implement an orchestrator or harness. Any future Rust orchestration owns process/tool scheduling and budget enforcement only behind a separately approved execution-plan/control protocol, attenuated authorization and sandbox; it emits authorized protocol events without shared DB. Until that Specification Lock exists, Missions may use contract fixtures for UI/domain tests but cannot start a real mission or claim orchestrator integration.
 
 ## Accessibility and degraded mode
 
