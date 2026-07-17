@@ -2,7 +2,7 @@
 
 - **Checkpoint:** 2026-07-16
 - **Status:** completed; human accessibility review accepted on 2026-07-16
-- **Runtime:** exact bootstrap Bun `1.4.0-canary.1+57f349f63`
+- **Runtime:** Bun `>=1.4.0`; qualification evidence uses exact bootstrap Bun `1.4.0-canary.1+57f349f63`
 - **Production status:** blocked
 
 ## Acceptance map
