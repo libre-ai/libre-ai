@@ -55,9 +55,23 @@ conservé dans
 [`CANDIDATE-INTEGRATION-REJECT-E6DF443.md`](CANDIDATE-INTEGRATION-REJECT-E6DF443.md), SHA-256
 `59607db595d156db37723e1bbe47130db2b9c0a9263055a958a4925b4f487967`.
 
-La remédiation courante couvre exactement les aliases HTML5 dont le scalaire est un caractère ASCII
-RFC atext, `@` ou `period`, laisse `&at;` inconnu et remplace la regex rétroactive par un scan linéaire
-du domaine puis du local-part. Aucune autorité normative moteur n'est modifiée.
+La remédiation linéaire sur `9e74bab` a fermé ces deux points, mais sa passe d'intégration a trouvé
+les préfixes legacy `&amp` sans point-virgule devant un alias nommé. Ce cinquième rejet est conservé
+dans [`CANDIDATE-INTEGRATION-REJECT-9E74BAB.md`](CANDIDATE-INTEGRATION-REJECT-9E74BAB.md), SHA-256
+`e27011a3f008bac8518e7cce83641530a05cb346cd6df3e1081e8aa8383b8432`.
+
+Des passes parallèles sur le merge `79d02b6` sont également conservées : candidate-integration
+`approve` ([`CANDIDATE-INTEGRATION-79D02.md`](CANDIDATE-INTEGRATION-79D02.md),
+`bd2b9af3136ba6b124e9dfbeeddee67af75c3735529730008f5116bdda2b253a`), Architecture `approve`
+([`ARCHITECTURE-VERDICT-79D02.md`](ARCHITECTURE-VERDICT-79D02.md),
+`74725a31d7a3323d32f3b17a5e84a90fd5497fd352edc493b981f1e551ec6a42`) et Security `reject` pour
+les local-parts RFC entre guillemets ([`SECURITY-VERDICT-79D02.md`](SECURITY-VERDICT-79D02.md),
+`442fc6009a56c930143e2704fdddf2a4a37f0f1e24bb5ee95d08708bdcd6bc13`). Le rejet Security gouverne ;
+les deux approbations ne sont pas citables pour promotion.
+
+La remédiation courante couvre les aliases HTML5 de la syntaxe e-mail supportée, les chaînes `&amp`
+legacy, les local-parts dot-atom ou quoted et les domaines DNS/punycode ou literals. `&at;` reste
+inconnu et les scans restent bornés. Aucune autorité normative moteur n'est modifiée.
 
 ## Gates restants
 

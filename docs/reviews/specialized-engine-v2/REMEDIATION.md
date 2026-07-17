@@ -37,18 +37,18 @@ expected outputs.
   and reject credential-shaped names.
 - Engine payload strings retain their semantics. Before AJV, a separate public-source scanner applies
   NFKC normalization, removes default-ignorable code points, linearly collapses nested percent/HTML
-  marker chains and performs four bounded decoding rounds over percent octets, `%u` escapes and
-  numeric HTML markers and the complete lowercased HTML5 alias set whose exact scalar is ASCII RFC
-  atext, `@` or `period`; unknown named entities, including non-HTML5 `at`, remain unchanged. The
-  detector finds a domain suffix from `@` then scans the local-part backwards by code point, keeping
-  work linear in input length. Only decoded email identifiers or high-confidence credentials are
-  rejected, without echoing content; unrelated `@`, `&#` or `%` text is not reinterpreted.
+  marker chains, including legacy semicolonless `amp`, and performs four bounded decoding rounds over
+  percent octets, `%u`, numeric HTML and the complete lowercased HTML5 alias set whose exact scalar
+  participates in the supported RFC email syntax. Unknown entities, including non-HTML5 `at`, remain
+  unchanged. The detector finds bounded DNS/punycode/domain-literal suffixes from `@`, then validates
+  a dot-atom or quoted local-part by code point. Only decoded email identifiers or high-confidence
+  credentials are rejected, without echoing content; unrelated `@`, `&#` or `%` is not reinterpreted.
 - The only sensitive-looking allowlist entry is Radar's locked synthetic userinfo refusal canary,
   byte-exact and file-bound `https://user:secret@example.org/feed.xml`. `file:///etc/passwd` is
   ordinary inert payload data and receives no resolver capability or lexical exception.
-- Scanner self-tests reject direct, RFC local-parts containing `&`, Unicode-domain,
-  default-ignorable, percent, over-nested percent, `%u`, numeric/named/mixed HTML and Unicode
-  identifiers plus credential markers. They preserve a maximum-length no-`@` string, `R&D`,
+- Scanner self-tests reject direct, dot-atom/quoted local-parts, DNS/punycode/domain literals,
+  Unicode-domain, default-ignorable, percent, `%u`, numeric/named/mixed/semicolonless HTML and
+  credential markers. They preserve maximum-length non-identifiers, `R&D`,
   `R&amplitude`, literal unresolved markers, `50%`, `release@2`, `https://example.org/a%2Fb`,
   `Café démonstration` and inert path payloads.
 - Radar, Notebook, Policy v1/v2 and Boussole golden corpora all pass the shared structural/content
