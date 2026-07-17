@@ -24,6 +24,11 @@ vaut pas pour ces hashes.
 | Méthodologie | [`METHODOLOGY-VERDICT-3.md`](METHODOLOGY-VERDICT-3.md) | `APPROVE` | `564a9d8afaca637ebbd9415d30bc1cb587a57eb347baba73986b87f6c5760610` |
 | Vie privée France/UE | [`PRIVACY-VERDICT.md`](PRIVACY-VERDICT.md) | `APPROVE` | `181df0904924cf66483bab3c3fb556329c873e220790e44218101acf795b0cfb` |
 
+Les tables de hashes internes aux rapports décrivent exactement l’arbre revu `7ad0695`. Les entrées
+qui y mentionnent ce README sont donc des snapshots historiques attendus, pas une assertion
+d’identité avec le présent index enrichi. Ce README n’est pas une autorité normative cataloguée ; le
+delta d’enregistrement ne modifie aucun WIT, schéma, corpus ou hash d’autorité Boussole.
+
 La promotion reste une passe séparée sous
 [`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). Les quatre rôles vérifiés sont :
 
