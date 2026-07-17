@@ -30,7 +30,7 @@ Missions lets requesters propose, risk-assess, review, observe and validate boun
 
 **Queries v1:** `GetMission`, `ListMissions`, `GetMissionEvents`, `GetOpenDecisionRequests`, `GetResultEvidence`, `GetApprovalHistory`, `GetMissionExport`.
 
-**Commands v2 candidate:** `ProposeMission`, `AssessMissionRisk`, `SubmitExecutionPlan`, `SubmitAgentReview`, `AuthorizeExecution`, `StartMission`, `PauseMission`, `ResumeMission`, `CancelMission`, `RecordOrchestratorEvent`, `AnswerDecisionRequest`, `SubmitMissionResult`, `AbandonMission`, `ExportMissionRecord`.
+**Commands v2 candidate:** `ProposeMission`, `AssessMissionRisk`, `SubmitExecutionPlan`, `SubmitAgentReview`, `StartMission`, `PauseMission`, `ResumeMission`, `CancelMission`, `RecordOrchestratorEvent`, `AnswerDecisionRequest`, `SubmitMissionResult`, `AbandonMission`, `ExportMissionRecord`.
 
 **Queries v2 candidate:** `GetMission`, `ListMissions`, `GetMissionEvents`, `GetOpenDecisionRequests`, `GetResultEvidence`, `GetReviewQuorum`, `GetMissionExport`.
 

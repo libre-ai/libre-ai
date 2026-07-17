@@ -163,7 +163,7 @@
     },
     {
       "schema": "mission-record.v2.schema.json",
-      "schemaSha256": "303a4a46282d5980ed198eadabe8e9d5f1a78827bcf2f9cc54bf256ec4c78f55",
+      "schemaSha256": "85322af7a76ca9ca4878371284d17f4ea724e8f8ad9b726bef2df408ed832b2b",
       "declaration": "mission-record.v2.d.ts"
     },
     {
