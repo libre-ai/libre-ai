@@ -17,6 +17,19 @@
         "typescript": "7.0.2",
       },
     },
+    "apps/notebook": {
+      "name": "@libre-ai/notebook",
+      "version": "0.1.0",
+      "dependencies": {
+        "@libre-ai/design-system": "workspace:*",
+        "@libre-ai/web-platform": "workspace:*",
+        "react": "catalog:",
+        "react-dom": "catalog:",
+      },
+      "devDependencies": {
+        "@playwright/test": "catalog:testing",
+      },
+    },
     "distribution/templates/bun-app": {
       "name": "@libre-ai/bun-app-template",
       "version": "0.1.0",
@@ -134,6 +147,8 @@
     "@libre-ai/design-system": ["@libre-ai/design-system@workspace:packages/design-system"],
 
     "@libre-ai/knowledge": ["@libre-ai/knowledge@workspace:packages/knowledge"],
+
+    "@libre-ai/notebook": ["@libre-ai/notebook@workspace:apps/notebook"],
 
     "@libre-ai/web-platform": ["@libre-ai/web-platform@workspace:packages/web-platform"],
 
