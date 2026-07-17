@@ -67,7 +67,7 @@ All core journeys work offline and keyboard-only. Editor announces formatting/st
 
 ## Resource floor
 
-Le minimum produit candidat est une machine macOS arm64 avec 8 Gio de mémoire physique, 8 CPU logiques, les capacités navigateur WASM SIMD128/Worker/Web Crypto/IndexedDB et un quota local candidat de 512 Mio. Ce n'est pas encore une promesse de support : les classes physiques 8 Gio et 16–24 Gio restent à qualifier avec les budgets verrouillés. Les bornes, statuts et commandes sont définis dans [`notebook-resource-floor.md`](notebook-resource-floor.md) et `toolchains/notebook-resource-classes.json`.
+Le minimum produit candidat est une machine macOS arm64 avec 8 Gio de mémoire physique, 8 CPU logiques, les capacités navigateur WASM SIMD128/Worker/Web Crypto/IndexedDB et un quota local candidat de 512 Mio. Ce n'est pas encore une promesse de support : les classes physiques 8 Gio et 16–24 Gio restent à qualifier avec les budgets verrouillés. Les bornes, statuts et commandes sont définis dans [`notebook-resource-floor.md`](notebook-resource-floor.md) et `toolchains/notebook-resource-classes.json`. Les propriétaires de machines correspondantes peuvent suivre l'[appel à contribution](../../tools/qualification/notebook-core-v2/CONTRIBUTING-DEVICE-QUALIFICATION.md) ; les VM 8/16 Gio y sont admises uniquement comme diagnostics non promouvables.
 
 ## Contracts
 

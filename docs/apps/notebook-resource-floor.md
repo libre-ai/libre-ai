@@ -39,6 +39,7 @@ Sur une machine physique appartenant réellement à la classe :
 export NOTEBOOK_QUALIFICATION_DEVICE_CLASS=desktop-arm64-constrained-8gib
 export NOTEBOOK_QUALIFICATION_NODE=/path/to/node-26.5.0/bin/node
 export NOTEBOOK_QUALIFICATION_ARCHIVE_DIR=/path/to/verified-archives
+export NOTEBOOK_QUALIFICATION_EVIDENCE_MODE=physical-evidence
 bun run qualify:notebook-core-v2:performance
 ```
 
@@ -54,6 +55,21 @@ Le harness :
 6. refuse le résumé si les rapports ne désignent pas la même classe ou le même manifeste.
 
 Une classe ne devient supportée qu'après archivage des rapports bruts sur commit immuable, passe `review-only`, host produit exact et décision Gate B. Les essais utilisent uniquement les fixtures publiques ; aucun service externe ni donnée personnelle n'est nécessaire.
+
+## Diagnostic en machine virtuelle
+
+Une VM macOS arm64 avec 8 ou 16 Gio assignés permet de détecter tôt un dépassement de budget, une panne mémoire ou un problème navigateur. Elle ne reproduit ni la pression mémoire physique, ni le partage de mémoire unifiée, ni les caractéristiques thermiques d'un appareil modeste. Elle ne peut donc pas promouvoir une classe.
+
+Le mode VM est volontairement distinct :
+
+```sh
+export NOTEBOOK_QUALIFICATION_DEVICE_CLASS=desktop-arm64-constrained-8gib
+export NOTEBOOK_QUALIFICATION_NODE=/path/to/node-26.5.0/bin/node
+export NOTEBOOK_QUALIFICATION_ARCHIVE_DIR=/path/to/verified-archives
+bun run diagnose:notebook-core-v2:performance:vm
+```
+
+Le résumé obtenu porte `evidenceMode: "vm-diagnostic"`, `promotableEvidence: false` et, si les budgets passent, `diagnostic-budgets-pass`. Le validateur refuse les signaux de virtualisation connus en mode `physical-evidence`. L'appel public, les prérequis et le contenu attendu d'une contribution sont détaillés dans [`../../tools/qualification/notebook-core-v2/CONTRIBUTING-DEVICE-QUALIFICATION.md`](../../tools/qualification/notebook-core-v2/CONTRIBUTING-DEVICE-QUALIFICATION.md).
 
 ## Matériel encore requis
 
