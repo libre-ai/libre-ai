@@ -1,6 +1,7 @@
+use crate::digest::{ContentDescriptor, content_descriptors, descriptor_set_digest};
 use crate::{
     ArtifactKind, ArtifactRefusal, CandidateFile, VerifiedArtifact, VerifiedEvidence,
-    artifact_content_digest, canonical_document_digest, sha256_hex,
+    canonical_document_digest,
 };
 use libre_ai_contract_types::ContractRegistry;
 use libre_ai_contract_types::generated::artifact_manifest_v1::{
@@ -41,8 +42,9 @@ impl ArtifactVerifier {
         let manifest: LibreAiArtifactManifestV1 = serde_json::from_value(manifest_document.clone())
             .map_err(|_| ArtifactRefusal::ManifestSchemaInvalid)?;
 
-        let content_digest = artifact_content_digest(files)?;
-        verify_file_set(&manifest, files)?;
+        let descriptors = content_descriptors(files)?;
+        verify_file_set(&manifest, &descriptors)?;
+        let content_digest = descriptor_set_digest(&descriptors)?;
         if manifest.digest.as_str() != content_digest {
             return Err(ArtifactRefusal::ManifestDigestMismatch);
         }
@@ -138,13 +140,13 @@ fn artifact_kind(kind: LibreAiArtifactManifestV1ArtifactType) -> ArtifactKind {
 
 fn verify_file_set(
     manifest: &LibreAiArtifactManifestV1,
-    files: &[CandidateFile<'_>],
+    descriptors: &[ContentDescriptor<'_>],
 ) -> Result<(), ArtifactRefusal> {
-    let candidates = files
+    let candidates = descriptors
         .iter()
-        .map(|file| (file.path, file))
+        .map(|descriptor| (descriptor.path, descriptor))
         .collect::<BTreeMap<_, _>>();
-    if candidates.len() != files.len() || manifest.files.len() != files.len() {
+    if candidates.len() != descriptors.len() || manifest.files.len() != descriptors.len() {
         return Err(ArtifactRefusal::FileSetMismatch);
     }
 
@@ -157,12 +159,11 @@ fn verify_file_set(
         let Some(candidate) = candidates.get(path) else {
             return Err(ArtifactRefusal::FileSetMismatch);
         };
-        let size =
-            i64::try_from(candidate.bytes.len()).map_err(|_| ArtifactRefusal::CandidateTooLarge)?;
+        let size = i64::try_from(candidate.size).map_err(|_| ArtifactRefusal::CandidateTooLarge)?;
         if entry.size != size {
             return Err(ArtifactRefusal::FileSizeMismatch);
         }
-        if entry.digest.as_str() != sha256_hex(candidate.bytes) {
+        if entry.digest.as_str() != candidate.digest {
             return Err(ArtifactRefusal::FileDigestMismatch);
         }
         if entry.media_type.as_str() != candidate.media_type {

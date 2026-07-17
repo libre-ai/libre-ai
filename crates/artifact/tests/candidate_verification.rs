@@ -153,17 +153,34 @@ fn manifest_path_traversal_fails_at_the_contract_boundary() {
 }
 
 #[test]
-fn candidate_path_traversal_is_refused_before_digesting() {
-    let files = [CandidateFile {
-        path: "dist/../secret",
-        media_type: "text/plain",
-        bytes: b"secret",
-    }];
+fn hostile_and_non_portable_candidate_paths_are_refused_before_digesting() {
+    for path in [
+        "../secret",
+        "dist/../secret",
+        "/absolute",
+        "C:/absolute",
+        "C:drive-relative",
+        "dist\\file",
+        "dist//file",
+        "./file",
+        "dist/./file",
+        "dist/trailing/",
+        "dist/control\nname",
+        "dist/résultat.json",
+    ] {
+        let files = [CandidateFile {
+            path,
+            media_type: "text/plain",
+            bytes: b"secret",
+        }];
 
-    assert_eq!(
-        artifact_content_digest(&files),
-        Err(ArtifactRefusal::CandidatePathInvalid)
-    );
+        assert_eq!(
+            artifact_content_digest(&files),
+            Err(ArtifactRefusal::CandidatePathInvalid),
+            "{}",
+            path.escape_default()
+        );
+    }
 }
 
 #[test]
