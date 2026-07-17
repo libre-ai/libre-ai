@@ -54,9 +54,10 @@
     "format": "biome check --write .",
     "test": "bun test",
     "qualify:notebook-core-v2:toolchain": "bun tools/qualification/notebook-core-v2/check-toolchain.ts",
+    "qualify:notebook-core-v2:resource-class": "bun tools/qualification/notebook-core-v2/check-resource-class.ts",
     "qualify:notebook-core-v2:build": "node --no-warnings=MODULE_TYPELESS_PACKAGE_JSON tools/qualification/notebook-core-v2/build.ts",
     "qualify:notebook-core-v2:host": "bun run qualify:notebook-core-v2:toolchain && bun run qualify:notebook-core-v2:build && playwright test --config tools/qualification/notebook-core-v2/playwright.config.ts",
-    "qualify:notebook-core-v2:performance": "NOTEBOOK_QUALIFICATION_REQUIRE_ARCHIVES=1 bun run qualify:notebook-core-v2:toolchain && bun run qualify:notebook-core-v2:build && playwright test --config tools/qualification/notebook-core-v2/performance.config.ts && bun tools/qualification/notebook-core-v2/summarize-performance.ts",
+    "qualify:notebook-core-v2:performance": "NOTEBOOK_QUALIFICATION_REQUIRE_ARCHIVES=1 bun run qualify:notebook-core-v2:toolchain && bun run qualify:notebook-core-v2:resource-class && bun run qualify:notebook-core-v2:build && playwright test --config tools/qualification/notebook-core-v2/performance.config.ts && bun tools/qualification/notebook-core-v2/summarize-performance.ts",
     "build": "bun run check:toolchain && bun run typecheck",
     "check": "bun run check:toolchain && bun run check:source && bun run check:objects && bun run check:objectives && bun run check:specifications && bun run check:contracts && bun run check:notebook-core-v2 && bun run check:generated-contracts && bun run check:work-packages && bun run check:licenses && bun run lint && bun run typecheck && bun test"
   },
