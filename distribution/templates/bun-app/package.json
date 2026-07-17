@@ -2,6 +2,7 @@
   "name": "@libre-ai/bun-app-template",
   "version": "0.1.0",
   "private": true,
+  "license": "Apache-2.0",
   "type": "module",
   "packageManager": "bun@1.4.0-canary.1",
   "engines": {
