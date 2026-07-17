@@ -3,12 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "bun": ">=1.4.0"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./styles.css": "./src/styles.css",
     "./tailwind": "./src/tailwind.ts"
   },
   "scripts": {
+    "check:bun": "bun ../../tools/quality/check-bun-minimum.ts",
+    "pretest": "bun run check:bun",
     "test": "bun test"
   },
   "dependencies": {

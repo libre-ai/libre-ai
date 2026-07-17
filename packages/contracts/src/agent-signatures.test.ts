@@ -74,10 +74,11 @@ describe("agent attestation signature vectors", () => {
       expect(verify(null, message, publicKey(rawPublicKey), signature)).toBeTrue();
 
       const altered = Buffer.from(signature);
-      altered[0] ^= 1;
+      altered[0] = (altered[0] ?? 0) ^ 1;
       expect(verify(null, message, publicKey(rawPublicKey), altered)).toBeFalse();
       const staleMessage = Buffer.from(message);
-      staleMessage[staleMessage.length - 1] ^= 1;
+      const lastIndex = staleMessage.length - 1;
+      staleMessage[lastIndex] = (staleMessage[lastIndex] ?? 0) ^ 1;
       expect(verify(null, staleMessage, publicKey(rawPublicKey), signature)).toBeFalse();
     });
   }
