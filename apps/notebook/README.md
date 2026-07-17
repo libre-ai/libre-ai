@@ -59,10 +59,11 @@ bun run typecheck
 
 export NOTEBOOK_QUALIFICATION_NODE=/path/to/node-v26.5.0/bin/node
 bun run --cwd apps/notebook test:e2e
+bun run qualify:notebook-product-host:faults
 ```
 
-Le parcours Playwright exécute Chromium, Firefox et WebKit : chiffrement réel, nom de téléchargement, absence du recovery dans l'enveloppe et IndexedDB, restauration, mauvais recovery, staging interrompu et reprise sur une nouvelle page.
+Le parcours Playwright exécute Chromium, Firefox et WebKit : chiffrement réel, nom de téléchargement, absence du recovery dans l'enveloppe et IndexedDB, restauration, mauvais recovery, staging interrompu et reprise sur une nouvelle page. La campagne de fautes produit force ensuite un `SIGKILL` pendant le seal et un crash `SIGABRT` pendant la restauration sur le groupe de processus de chaque moteur, relance le même profil persistant et vérifie l'absence de téléchargement/reçu partiel, le nettoyage du staging et la création de nouveaux workers. Elle teste aussi le refus préflight d'un quota sous le plancher et un abort transactionnel IndexedDB injecté ; ce dernier n'est pas une preuve d'épuisement physique du disque.
 
 ## Limites ouvertes
 
-Ce host qualifie la mécanique sauvegarde/restauration sur fixture publique ; il n'implémente pas encore le modèle complet blocs/révisions ni son import atomique chiffré. Restent également hors preuve : OOM/crash du processus navigateur, matériel physique 8/16 Gio, effacement physique et passes indépendantes sécurité/cryptographie/vie privée. Gate B et la release demeurent **REJECT**.
+Ce host qualifie la mécanique sauvegarde/restauration sur fixture publique ; il n'implémente pas encore le modèle complet blocs/révisions ni son import atomique chiffré. Restent également hors preuve : OOM réel du processus navigateur, épuisement physique du quota, matériel physique 8/16 Gio, effacement physique et passes indépendantes sécurité/cryptographie/vie privée. Gate B et la release demeurent **REJECT**.
