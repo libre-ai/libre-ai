@@ -90,6 +90,12 @@
               "pattern": "^https://user:secret@example\\.org(?:[/?#]|$)"
             }
           ]
+        },
+        {
+          "anyOf": [
+            { "not": { "pattern": "(?:file:|\\.\\.[/\\\\])" } },
+            { "const": "file:///etc/passwd" }
+          ]
         }
       ]
     },

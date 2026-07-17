@@ -7,18 +7,30 @@
 export type LibreAiSpecializedEngineGoldenVectorIndexV1 = {
   schemaVersion: string;
   world?: string;
-  status?: string & unknown & (unknown | unknown) & string;
+  status?: string & unknown & (unknown | unknown) & (unknown | "file:///etc/passwd") & string;
   semantics?: string;
   engineVersion?: string;
-  digestAlgorithm?: string & unknown & (unknown | unknown) & string;
-  canonicalization?: string & unknown & (unknown | unknown) & string;
-  testMaterialWarning?: string & unknown & (unknown | unknown) & string;
+  digestAlgorithm?: string &
+    unknown &
+    (unknown | unknown) &
+    (unknown | "file:///etc/passwd") &
+    string;
+  canonicalization?: string &
+    unknown &
+    (unknown | unknown) &
+    (unknown | "file:///etc/passwd") &
+    string;
+  testMaterialWarning?: string &
+    unknown &
+    (unknown | unknown) &
+    (unknown | "file:///etc/passwd") &
+    string;
   contractFiles?: Array<{ path: string; sha256: string }>;
   parseCases?: Array<
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | unknown))
+    | (string & unknown & (unknown | unknown) & (unknown | "file:///etc/passwd"))
     | Array<unknown>
     | { [key: string]: unknown }
   >;
@@ -26,7 +38,7 @@ export type LibreAiSpecializedEngineGoldenVectorIndexV1 = {
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | unknown))
+    | (string & unknown & (unknown | unknown) & (unknown | "file:///etc/passwd"))
     | Array<unknown>
     | { [key: string]: unknown }
   >;
@@ -34,7 +46,7 @@ export type LibreAiSpecializedEngineGoldenVectorIndexV1 = {
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | unknown))
+    | (string & unknown & (unknown | unknown) & (unknown | "file:///etc/passwd"))
     | Array<unknown>
     | { [key: string]: unknown }
   >;
@@ -42,7 +54,7 @@ export type LibreAiSpecializedEngineGoldenVectorIndexV1 = {
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | unknown))
+    | (string & unknown & (unknown | unknown) & (unknown | "file:///etc/passwd"))
     | Array<unknown>
     | { [key: string]: unknown }
   >;
@@ -50,7 +62,7 @@ export type LibreAiSpecializedEngineGoldenVectorIndexV1 = {
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | unknown))
+    | (string & unknown & (unknown | unknown) & (unknown | "file:///etc/passwd"))
     | Array<unknown>
     | { [key: string]: unknown }
   >;
@@ -58,7 +70,7 @@ export type LibreAiSpecializedEngineGoldenVectorIndexV1 = {
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | unknown))
+    | (string & unknown & (unknown | unknown) & (unknown | "file:///etc/passwd"))
     | Array<unknown>
     | { [key: string]: unknown }
   >;
@@ -66,44 +78,51 @@ export type LibreAiSpecializedEngineGoldenVectorIndexV1 = {
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | unknown))
+    | (string & unknown & (unknown | unknown) & (unknown | "file:///etc/passwd"))
     | Array<unknown>
     | { [key: string]: unknown };
   mutations?: Array<
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | unknown))
+    | (string & unknown & (unknown | unknown) & (unknown | "file:///etc/passwd"))
     | Array<unknown>
     | { [key: string]: unknown }
   >;
-  standards?: Array<string & unknown & (unknown | unknown)>;
+  standards?: Array<string & unknown & (unknown | unknown) & (unknown | "file:///etc/passwd")>;
   reproductionEvidence?:
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | unknown))
+    | (string & unknown & (unknown | unknown) & (unknown | "file:///etc/passwd"))
     | Array<unknown>
     | { [key: string]: unknown };
   contextCanonicalization?:
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | unknown))
+    | (string & unknown & (unknown | unknown) & (unknown | "file:///etc/passwd"))
     | Array<unknown>
     | { [key: string]: unknown };
   recoverySecretCodeProfile?:
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | unknown))
+    | (string & unknown & (unknown | unknown) & (unknown | "file:///etc/passwd"))
     | Array<unknown>
     | { [key: string]: unknown };
 };
 
-export type Shortpublicstring = string & unknown & (unknown | unknown) & string;
+export type Shortpublicstring = string &
+  unknown &
+  (unknown | unknown) &
+  (unknown | "file:///etc/passwd") &
+  string;
 
-export type Publicstring = string & unknown & (unknown | unknown);
+export type Publicstring = string &
+  unknown &
+  (unknown | unknown) &
+  (unknown | "file:///etc/passwd");
 
 export type Contractpath = string;
 
@@ -113,7 +132,7 @@ export type Vectorlist = Array<
   | null
   | boolean
   | number
-  | (string & unknown & (unknown | unknown))
+  | (string & unknown & (unknown | unknown) & (unknown | "file:///etc/passwd"))
   | Array<unknown>
   | { [key: string]: unknown }
 >;
@@ -122,12 +141,12 @@ export type Publicvalue =
   | null
   | boolean
   | number
-  | (string & unknown & (unknown | unknown))
+  | (string & unknown & (unknown | unknown) & (unknown | "file:///etc/passwd"))
   | Array<
       | null
       | boolean
       | number
-      | (string & unknown & (unknown | unknown))
+      | (string & unknown & (unknown | unknown) & (unknown | "file:///etc/passwd"))
       | Array<unknown>
       | { [key: string]: unknown }
     >
@@ -136,7 +155,7 @@ export type Publicvalue =
         | null
         | boolean
         | number
-        | (string & unknown & (unknown | unknown))
+        | (string & unknown & (unknown | unknown) & (unknown | "file:///etc/passwd"))
         | Array<unknown>
         | { [key: string]: unknown };
     };

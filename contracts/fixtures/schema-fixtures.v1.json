@@ -2032,6 +2032,20 @@
           }
         },
         {
+          "name": "recursive path traversal payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "note": "read ../../secrets.txt"
+          }
+        },
+        {
+          "name": "unapproved local file URI payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "url": "file:///var/private/data"
+          }
+        },
+        {
           "name": "unbounded public string",
           "path": "/status",
           "value": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
