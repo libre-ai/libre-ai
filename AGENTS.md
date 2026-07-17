@@ -40,7 +40,7 @@ Run affected Bun and Rust checks plus contract and Playwright tests. Uncertain i
 
 - Read actual state before editing.
 - Use short branches/worktrees and bounded work packages.
-- Do not approve your own output.
-- Contracts, auth, migrations, releases and deployments require technical review by an independent agent/session; the human owner authorizes merge or execution but is not a substitute technical reviewer.
+- Never review mutable or uncommitted output in the authoring pass. In solo work, the same agent/session may later perform a dedicated review-only pass on an immutable commit.
+- Contracts, auth, migrations, releases and deployments require role-separated technical review under `docs/reviews/AGENT-REVIEW-PROTOCOL.md`; the human owner retains the explicit control milestone.
 - Product-level human decisions explicitly required by a contract remain human.
 - Security > quality > performance > completeness.
