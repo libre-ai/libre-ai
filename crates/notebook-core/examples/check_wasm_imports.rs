@@ -3,7 +3,7 @@ use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
 
-use wasmparser::{ComponentExternalKind, Encoding, Parser, Payload};
+use wasmparser::{ComponentExternalKind, Encoding, Operator, Parser, Payload};
 use wit_component::ComponentEncoder;
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -30,7 +30,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     check_component(&component)?;
 
     println!(
-        "Notebook Core WASM verified: 0 module imports, 0 component imports, 512 MiB memory cap, WIT exports present ({}, component={})",
+        "Notebook Core WASM verified: SIMD128, 0 module imports, 0 component imports, 512 MiB memory cap, WIT exports present ({}, component={})",
         path.display(),
         component_path.as_ref().map_or_else(
             || "generated".to_owned(),
@@ -45,6 +45,7 @@ fn check_core_module(module: &[u8]) -> Result<(), Box<dyn Error>> {
     let mut component_metadata = false;
     let mut core_module = false;
     let mut memories = Vec::new();
+    let mut simd128 = false;
 
     for payload in Parser::new(0).parse_all(module) {
         match payload? {
@@ -57,6 +58,17 @@ fn check_core_module(module: &[u8]) -> Result<(), Box<dyn Error>> {
             Payload::MemorySection(section) => {
                 for memory in section {
                     memories.push(memory?);
+                }
+            }
+            Payload::CodeSectionEntry(body) => {
+                let mut operators = body.get_operators_reader()?;
+                while !operators.eof() {
+                    if matches!(
+                        operators.read()?,
+                        Operator::V128Const { .. } | Operator::I8x16Shuffle { .. }
+                    ) {
+                        simd128 = true;
+                    }
                 }
             }
             Payload::CustomSection(section) if section.name().starts_with("component-type") => {
@@ -74,6 +86,9 @@ fn check_core_module(module: &[u8]) -> Result<(), Box<dyn Error>> {
     }
     if !component_metadata {
         return Err("wit-bindgen component-type metadata is missing".into());
+    }
+    if !simd128 {
+        return Err("required SIMD128 instructions are missing".into());
     }
     if memories.len() != 1 {
         return Err(format!("expected one linear memory, found {}", memories.len()).into());

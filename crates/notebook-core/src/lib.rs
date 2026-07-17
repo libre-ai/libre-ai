@@ -1,5 +1,7 @@
 #![deny(unsafe_code)]
 
+use std::borrow::Cow;
+
 mod canonical;
 #[cfg(target_arch = "wasm32")]
 #[allow(unsafe_code)]
@@ -16,14 +18,14 @@ mod validate;
 
 use zeroize::Zeroizing;
 
-use crate::canonical::{canonicalize_context_document, serialize_jcs};
+use crate::canonical::canonicalize_context_document;
 use crate::crypto::{
-    aad_for_metadata, decode_canonical_base64, decrypt_in_place, derive_key, digest_for_body,
-    digest_matches, encode_base64, encrypt_in_place, sha256_hex,
+    aad_for_metadata, canonical_base64_decoded_len, decode_canonical_base64, decrypt_in_place,
+    derive_key, digest_for_body, digest_matches, encode_base64, encode_sealed_envelope,
+    encrypt_in_place,
 };
 use crate::model::{
-    CIPHER, ENVELOPE_SCHEMA_VERSION, Envelope, EnvelopeBody, EnvelopeKdf, EnvelopeMetadataRef,
-    KDF_ALGORITHM,
+    CIPHER, ENVELOPE_SCHEMA_VERSION, Envelope, EnvelopeKdf, EnvelopeMetadataRef, KDF_ALGORITHM,
 };
 use crate::validate::{
     MAX_ENVELOPE_BYTES, valid_secret_length, validate_envelope_before_decode,
@@ -38,7 +40,6 @@ pub use crate::validate::{
     MIN_RECOVERY_SECRET_BYTES, NONCE_BYTES, SALT_BYTES,
 };
 
-const ENVELOPE_JCS_OVERHEAD: usize = 2048;
 const INVALID_SECRET: [u8; MIN_RECOVERY_SECRET_BYTES] = [0u8; MIN_RECOVERY_SECRET_BYTES];
 
 pub fn canonicalize_context(document: &[u8]) -> Result<Vec<u8>, ErrorCode> {
@@ -62,13 +63,13 @@ pub fn seal_backup(
     let encoded_salt = encode_base64(&request.kdf.salt)?;
     let encoded_nonce = encode_base64(&request.nonce)?;
     let envelope_kdf = EnvelopeKdf {
-        algorithm: KDF_ALGORITHM.to_owned(),
+        algorithm: Cow::Borrowed(KDF_ALGORITHM),
         version: request.kdf.version,
         memory_kib: request.kdf.memory_kib,
         iterations: request.kdf.iterations,
         parallelism: request.kdf.parallelism,
         output_length_bytes: request.kdf.output_length_bytes,
-        salt: encoded_salt,
+        salt: Cow::Owned(encoded_salt),
     };
     let metadata = EnvelopeMetadataRef {
         schema_version: ENVELOPE_SCHEMA_VERSION,
@@ -91,24 +92,12 @@ pub fn seal_backup(
     )?;
 
     encrypt_in_place(&mut ciphertext_and_tag, &key, &request.nonce, &aad)?;
-    let encoded_ciphertext = encode_base64(ciphertext_and_tag.as_slice())?;
-
-    let body = EnvelopeBody {
-        schema_version: ENVELOPE_SCHEMA_VERSION.to_owned(),
-        id: std::mem::take(&mut request.id),
-        cipher: CIPHER.to_owned(),
-        kdf: envelope_kdf,
-        nonce: encoded_nonce,
-        ciphertext: encoded_ciphertext,
-    };
-    let digest = sha256_hex(&digest_for_body(&body, body.ciphertext.len())?)?;
-    let envelope = body.with_digest(digest);
-    let reserve = envelope
-        .ciphertext
-        .len()
-        .checked_add(ENVELOPE_JCS_OVERHEAD)
-        .ok_or(ErrorCode::ResourceLimitExceeded)?;
-    serialize_jcs(&envelope, reserve)
+    encode_sealed_envelope(
+        &request.id,
+        &envelope_kdf,
+        &encoded_nonce,
+        ciphertext_and_tag.as_slice(),
+    )
 }
 
 pub fn open_backup(
@@ -126,14 +115,24 @@ pub fn open_backup(
     validate_envelope_before_decode(&envelope)?;
     #[cfg(feature = "qualification-faults")]
     qualification_faults::trigger(&envelope.id);
+    let salt_len =
+        canonical_base64_decoded_len(&envelope.kdf.salt).ok_or(ErrorCode::InvalidEnvelope)?;
+    let nonce_len =
+        canonical_base64_decoded_len(&envelope.nonce).ok_or(ErrorCode::InvalidEnvelope)?;
+    let ciphertext_len =
+        canonical_base64_decoded_len(&envelope.ciphertext).ok_or(ErrorCode::InvalidEnvelope)?;
+    validate_envelope_decoded_lengths(salt_len, nonce_len, ciphertext_len)?;
     let salt = decode_canonical_base64(&envelope.kdf.salt)?;
     let nonce = decode_canonical_base64(&envelope.nonce)?;
-    let ciphertext = decode_canonical_base64(&envelope.ciphertext)?;
-    validate_envelope_decoded_lengths(salt.len(), nonce.len(), ciphertext.len())?;
 
     #[cfg(feature = "qualification-faults")]
     qualification_faults::arm_jcs_allocation(&envelope.id);
-    let expected_digest = digest_for_body(&envelope.body(), envelope.ciphertext.len())?;
+    let expected_digest = digest_for_body(
+        &envelope.id,
+        &envelope.kdf,
+        &envelope.nonce,
+        &envelope.ciphertext,
+    )?;
     let digest_valid = digest_matches(&envelope.digest, &expected_digest);
     let aad = aad_for_metadata(&envelope.metadata())?;
 
@@ -154,6 +153,8 @@ pub fn open_backup(
         envelope.kdf.parallelism,
     )?;
 
+    let ciphertext = decode_canonical_base64(&envelope.ciphertext)?;
+    validate_envelope_decoded_lengths(salt.len(), nonce.len(), ciphertext.len())?;
     let mut plaintext = Zeroizing::new(ciphertext);
     let tag_valid = decrypt_in_place(&mut plaintext, &key, &nonce, &aad);
     if !(digest_valid & tag_valid & secret_valid) {
@@ -163,9 +164,9 @@ pub fn open_backup(
     // This is the only deliberate escape from a Zeroizing buffer: both the
     // digest and GCM tag are valid, and plaintext is the WIT success payload.
     Ok(OpenedBackup {
-        schema_version: envelope.schema_version,
-        id: envelope.id,
-        digest: envelope.digest,
+        schema_version: envelope.schema_version.into_owned(),
+        id: envelope.id.into_owned(),
+        digest: envelope.digest.into_owned(),
         plaintext: std::mem::take(&mut *plaintext),
     })
 }
