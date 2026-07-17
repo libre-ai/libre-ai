@@ -16,11 +16,11 @@ This increment responds to `ENGSEC-BLK-001` and `ENGSEC-MAJ-001` in
   values. Traversal, URI and absolute forms are rejected. The gate rejects symlinks, paths escaping
   the repository, missing files and hash mismatches.
 - High-confidence credential material, private-key headers, standalone or embedded email
-  identifiers, traversal segments and local file URIs are rejected recursively by the shared schema.
-  Two byte-exact public-test exceptions preserve locked Radar refusal evidence:
-  `https://user:secret@example.org/…` for userinfo and `file:///etc/passwd` for forbidden URL scheme.
-  Committed payloads remain synthetic public test material; refusal canaries are not credentials,
-  personal identifiers or paths that the envelope resolves.
+  identifiers, private object keys, traversal segments and local file URIs are rejected recursively by
+  the shared schema. Two byte-exact public-test exceptions preserve locked Radar refusal evidence:
+  `https://user:secret@example.org/feed.xml` for userinfo and `file:///etc/passwd` for forbidden URL
+  scheme. Committed payloads remain synthetic public test material; refusal canaries are not
+  credentials, personal identifiers or paths that the envelope resolves.
 - Radar, Notebook, Policy v1/v2 and Boussole golden corpora are all compiled against this shared
   envelope by `check-contracts.ts`; engine-specific checkers remain authoritative for semantics and
   expected outputs.
@@ -37,7 +37,8 @@ This increment responds to `ENGSEC-BLK-001` and `ENGSEC-MAJ-001` in
 - `contracts/../secrets.txt` in `contractFiles`;
 - standalone or embedded `alice@example.org` and `sk_live_example_secret` in public payload
   evidence;
-- recursive `../../secrets.txt` and non-approved `file:///var/private/data` payloads;
+- email-shaped property names, userinfo-prefix suffix injection, recursive `../../secrets.txt` and
+  non-approved `file:///var/private/data` payloads;
 - a status above its 128-character bound.
 
 The generic gate independently validates exact contract-file hashes and the aggregate resource

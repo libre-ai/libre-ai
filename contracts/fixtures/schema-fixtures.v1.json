@@ -2032,6 +2032,20 @@
           }
         },
         {
+          "name": "approved userinfo prefix with private suffix",
+          "path": "/reproductionEvidence",
+          "value": {
+            "url": "https://user:secret@example.org/feed.xml alice@example.org"
+          }
+        },
+        {
+          "name": "private identifier in property name",
+          "path": "/reproductionEvidence",
+          "value": {
+            "alice@example.org": "safe"
+          }
+        },
+        {
           "name": "recursive path traversal payload",
           "path": "/reproductionEvidence",
           "value": {

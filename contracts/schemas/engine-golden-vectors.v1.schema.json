@@ -86,9 +86,7 @@
         {
           "anyOf": [
             { "not": { "pattern": "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}" } },
-            {
-              "pattern": "^https://user:secret@example\\.org(?:[/?#]|$)"
-            }
+            { "const": "https://user:secret@example.org/feed.xml" }
           ]
         },
         {
@@ -134,7 +132,14 @@
         {
           "type": "object",
           "maxProperties": 512,
-          "propertyNames": { "minLength": 1, "maxLength": 128 },
+          "propertyNames": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "not": {
+              "pattern": "(?:[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}|sk_live_[A-Za-z0-9_-]{8,}|sk-(?:proj|svcacct)-[A-Za-z0-9_-]{16,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|file:|\\.\\.[/\\\\])"
+            }
+          },
           "additionalProperties": { "$ref": "#/$defs/publicValue" }
         }
       ]
