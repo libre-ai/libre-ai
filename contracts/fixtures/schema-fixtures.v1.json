@@ -1991,7 +1991,10 @@
         "schemaVersion": "libre-ai.engine-golden-vectors.v1",
         "world": "boussole-scoring-v2",
         "status": "candidate",
-        "cases": []
+        "cases": [],
+        "reproductionEvidence": {
+          "label": "Café démonstration"
+        }
       },
       "invalidMutations": [
         {
@@ -2134,6 +2137,48 @@
           "path": "/reproductionEvidence",
           "value": {
             "contact": "alice&commatexample.org"
+          }
+        },
+        {
+          "name": "terminated small-form decimal entity private payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice&#65131;example.org"
+          }
+        },
+        {
+          "name": "terminated fullwidth decimal entity private payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice&#65312;example.org"
+          }
+        },
+        {
+          "name": "terminated small-form hex entity private payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice&#xFE6B;example.org"
+          }
+        },
+        {
+          "name": "terminated fullwidth hex entity private payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice&#xFF20;example.org"
+          }
+        },
+        {
+          "name": "uppercase javascript-encoded at-sign private payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice%U00000040example.org"
+          }
+        },
+        {
+          "name": "double-percent-encoded fullwidth at-sign private payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice%25EF%25BC%25A0example.org"
           }
         },
         {
