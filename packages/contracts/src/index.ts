@@ -4,6 +4,13 @@ export {
   type AgentReviewQuorumResult,
   evaluateAgentReviewQuorum,
 } from "./agent-review-quorum";
+export {
+  type AcceptedEventCollision,
+  evaluateOrchestratorEventChain,
+  type OrchestratorBudgetCounters,
+  type OrchestratorCausalEventFacts,
+  type OrchestratorEventChainResult,
+} from "./orchestrator-event-chain";
 
 export {
   ContractNotFoundError,
