@@ -2182,6 +2182,48 @@
           }
         },
         {
+          "name": "leading-zero terminated ascii decimal entity",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice&#000064;example.org"
+          }
+        },
+        {
+          "name": "leading-zero terminated small-form decimal entity",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice&#00065131;example.org"
+          }
+        },
+        {
+          "name": "leading-zero terminated fullwidth decimal entity",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice&#00065312;example.org"
+          }
+        },
+        {
+          "name": "leading-zero terminated ascii hex entity",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice&#x000040;example.org"
+          }
+        },
+        {
+          "name": "leading-zero terminated small-form hex entity",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice&#x000FE6B;example.org"
+          }
+        },
+        {
+          "name": "leading-zero terminated fullwidth hex entity",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice&#x000FF20;example.org"
+          }
+        },
+        {
           "name": "unbounded public string",
           "path": "/status",
           "value": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"

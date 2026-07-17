@@ -41,7 +41,8 @@ This increment responds to `ENGSEC-BLK-001` and `ENGSEC-MAJ-001` in
   payload evidence;
 - any suffix, alternate credentials, percent/JS/HTML encoding, Unicode host confusable or
   alternate at-sign around the byte-exact Radar userinfo canary;
-- the terminated and unterminated decimal/hex forms of ASCII, small-form and fullwidth at-signs,
+- the terminated, unterminated and leading-zero decimal/hex forms of ASCII, small-form and fullwidth
+  at-signs,
   while retaining a positive accented-Unicode public label;
 - a status above its 128-character bound.
 
