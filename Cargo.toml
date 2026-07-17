@@ -7,6 +7,7 @@ aes = { version = "=0.8.4", default-features = false, features = ["zeroize"] }
 aes-gcm = { version = "=0.10.3", default-features = false, features = ["aes", "zeroize"] }
 argon2 = { version = "=0.5.3", default-features = false, features = ["zeroize"] }
 base64 = { version = "=0.22.1", default-features = false, features = ["alloc"] }
+biscuit-auth = { version = "=5.0.0", default-features = false }
 biscuit-parser = "=0.2.0"
 chrono = { version = "=0.4.45", default-features = false, features = ["serde", "std"] }
 ghash = { version = "=0.5.1", default-features = false, features = ["zeroize"] }
