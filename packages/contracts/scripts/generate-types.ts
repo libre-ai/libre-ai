@@ -95,8 +95,15 @@ function renderType(
   if (typeof schema === "boolean") return schema ? "unknown" : "never";
   if (schema.$ref) {
     const target = resolveReference(schema.$ref, schemaName, documents);
-    if (stack.has(target.key))
+    if (stack.has(target.key)) {
+      if (
+        typeof target.schema !== "boolean" &&
+        target.schema.$comment === "libre-ai-static-projection-recursion=opaque"
+      ) {
+        return "unknown";
+      }
       throw new Error(`${schemaName}: recursive references are not projectable`);
+    }
     const nextStack = new Set(stack);
     nextStack.add(target.key);
     return renderType(target.schema, target.schemaName, documents, nextStack);
