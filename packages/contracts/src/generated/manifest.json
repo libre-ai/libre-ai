@@ -28,12 +28,12 @@
     },
     {
       "schema": "boussole-method.v2.schema.json",
-      "schemaSha256": "7539d5f9ca19065a1887a6141656561e72a3b2656e8128687035943cd332a86c",
+      "schemaSha256": "2595aa22dd994882a5694bf49b350e6fd8a03fbd725416a0a393c97372abd893",
       "declaration": "boussole-method.v2.d.ts"
     },
     {
       "schema": "boussole-response-set.v2.schema.json",
-      "schemaSha256": "47c94b59a49da8f4a255c5024a33288670ae1a5e70bc30a26511b50f9ad3298d",
+      "schemaSha256": "f321841591dc534e0760a98d90688e3f396c64f4f52e0400f06f05a811018b1e",
       "declaration": "boussole-response-set.v2.d.ts"
     },
     {
@@ -108,7 +108,7 @@
     },
     {
       "schema": "local-comparison.v2.schema.json",
-      "schemaSha256": "c759c3b8776bcb00a928c80feaf81afabc35e3bc0fb01812c12430da1fecf959",
+      "schemaSha256": "1b85bf05268124fb40dc2e06c4c780741bc46927f3048ccaa4fac6a203ef741b",
       "declaration": "local-comparison.v2.d.ts"
     },
     {
@@ -198,7 +198,7 @@
     },
     {
       "schema": "public-vote-dataset.v2.schema.json",
-      "schemaSha256": "83f5ce0e3737efd5cdc01f94bc78862888cd462bcd0b33c8eea2965288e631cb",
+      "schemaSha256": "1cbd6b677be4204c6d497390b424adcc5720cad177caa776040eb10c17f1ebdb",
       "declaration": "public-vote-dataset.v2.d.ts"
     },
     {
