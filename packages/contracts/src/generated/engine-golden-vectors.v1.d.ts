@@ -7,18 +7,25 @@
 export type LibreAiSpecializedEngineGoldenVectorIndexV1 = {
   schemaVersion: string;
   world?: string;
-  status?: string & unknown & (unknown | "https://user:secret@example.org/feed.xml") & string;
+  status?: string &
+    unknown &
+    unknown &
+    (unknown | "https://user:secret@example.org/feed.xml") &
+    string;
   semantics?: string;
   engineVersion?: string;
   digestAlgorithm?: string &
+    unknown &
     unknown &
     (unknown | "https://user:secret@example.org/feed.xml") &
     string;
   canonicalization?: string &
     unknown &
+    unknown &
     (unknown | "https://user:secret@example.org/feed.xml") &
     string;
   testMaterialWarning?: string &
+    unknown &
     unknown &
     (unknown | "https://user:secret@example.org/feed.xml") &
     string;
@@ -27,7 +34,7 @@ export type LibreAiSpecializedEngineGoldenVectorIndexV1 = {
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
+    | (string & unknown & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
     | Array<unknown>
     | { [key: string]: unknown }
   >;
@@ -35,7 +42,7 @@ export type LibreAiSpecializedEngineGoldenVectorIndexV1 = {
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
+    | (string & unknown & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
     | Array<unknown>
     | { [key: string]: unknown }
   >;
@@ -43,7 +50,7 @@ export type LibreAiSpecializedEngineGoldenVectorIndexV1 = {
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
+    | (string & unknown & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
     | Array<unknown>
     | { [key: string]: unknown }
   >;
@@ -51,7 +58,7 @@ export type LibreAiSpecializedEngineGoldenVectorIndexV1 = {
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
+    | (string & unknown & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
     | Array<unknown>
     | { [key: string]: unknown }
   >;
@@ -59,7 +66,7 @@ export type LibreAiSpecializedEngineGoldenVectorIndexV1 = {
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
+    | (string & unknown & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
     | Array<unknown>
     | { [key: string]: unknown }
   >;
@@ -67,7 +74,7 @@ export type LibreAiSpecializedEngineGoldenVectorIndexV1 = {
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
+    | (string & unknown & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
     | Array<unknown>
     | { [key: string]: unknown }
   >;
@@ -75,47 +82,51 @@ export type LibreAiSpecializedEngineGoldenVectorIndexV1 = {
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
+    | (string & unknown & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
     | Array<unknown>
     | { [key: string]: unknown };
   mutations?: Array<
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
+    | (string & unknown & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
     | Array<unknown>
     | { [key: string]: unknown }
   >;
-  standards?: Array<string & unknown & (unknown | "https://user:secret@example.org/feed.xml")>;
+  standards?: Array<
+    string & unknown & unknown & (unknown | "https://user:secret@example.org/feed.xml")
+  >;
   reproductionEvidence?:
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
+    | (string & unknown & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
     | Array<unknown>
     | { [key: string]: unknown };
   contextCanonicalization?:
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
+    | (string & unknown & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
     | Array<unknown>
     | { [key: string]: unknown };
   recoverySecretCodeProfile?:
     | null
     | boolean
     | number
-    | (string & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
+    | (string & unknown & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
     | Array<unknown>
     | { [key: string]: unknown };
 };
 
 export type Shortpublicstring = string &
   unknown &
+  unknown &
   (unknown | "https://user:secret@example.org/feed.xml") &
   string;
 
 export type Publicstring = string &
+  unknown &
   unknown &
   (unknown | "https://user:secret@example.org/feed.xml");
 
@@ -129,7 +140,7 @@ export type Vectorlist = Array<
   | null
   | boolean
   | number
-  | (string & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
+  | (string & unknown & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
   | Array<unknown>
   | { [key: string]: unknown }
 >;
@@ -138,12 +149,12 @@ export type Publicvalue =
   | null
   | boolean
   | number
-  | (string & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
+  | (string & unknown & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
   | Array<
       | null
       | boolean
       | number
-      | (string & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
+      | (string & unknown & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
       | Array<unknown>
       | { [key: string]: unknown }
     >
@@ -152,7 +163,7 @@ export type Publicvalue =
         | null
         | boolean
         | number
-        | (string & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
+        | (string & unknown & unknown & (unknown | "https://user:secret@example.org/feed.xml"))
         | Array<unknown>
         | { [key: string]: unknown };
     };

@@ -2067,6 +2067,48 @@
           }
         },
         {
+          "name": "percent-encoded at-sign private payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice%40example.org"
+          }
+        },
+        {
+          "name": "double-percent-encoded at-sign private payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice%2540example.org"
+          }
+        },
+        {
+          "name": "javascript-encoded at-sign private payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice%u0040example.org"
+          }
+        },
+        {
+          "name": "numeric-entity at-sign private payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice&#64;example.org"
+          }
+        },
+        {
+          "name": "hex-entity at-sign private payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice&#x40;example.org"
+          }
+        },
+        {
+          "name": "named-entity at-sign private payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice&commat;example.org"
+          }
+        },
+        {
           "name": "unbounded public string",
           "path": "/status",
           "value": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
