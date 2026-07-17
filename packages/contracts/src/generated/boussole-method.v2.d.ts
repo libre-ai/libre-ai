@@ -19,9 +19,16 @@ export type LibreAiBoussoleMethodV2 = {
     role: "methodological-review" | "legal-privacy-review";
     actorKind: "human";
     reviewerId: string;
+    professionalCapacity: "methodology-expert" | "privacy-legal-expert";
     approvedAt: string;
     reference: string;
     subjectDigest: string;
+    attestation: {
+      uri: string;
+      digest: string;
+      publicationBasis: "explicit-publication-consent";
+      identityBoundary: "professional-attestation-only";
+    };
   }> &
     unknown &
     unknown;
@@ -31,7 +38,14 @@ export type Reviewapproval = {
   role: "methodological-review" | "legal-privacy-review";
   actorKind: "human";
   reviewerId: string;
+  professionalCapacity: "methodology-expert" | "privacy-legal-expert";
   approvedAt: string;
   reference: string;
   subjectDigest: string;
+  attestation: {
+    uri: string;
+    digest: string;
+    publicationBasis: "explicit-publication-consent";
+    identityBoundary: "professional-attestation-only";
+  };
 };
