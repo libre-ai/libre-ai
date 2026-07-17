@@ -15,11 +15,12 @@ This increment responds to `ENGSEC-BLK-001` and `ENGSEC-MAJ-001` in
 - `contractFiles` is a closed list of repository-relative `contracts/…` paths and lowercase SHA-256
   values. Traversal, URI and absolute forms are rejected. The gate rejects symlinks, paths escaping
   the repository, missing files and hash mismatches.
-- High-confidence credential material, private-key headers and standalone or embedded email
-  identifiers are rejected by the shared schema. The sole email-shaped exception is the exact
-  byte-exact reserved-domain canary `https://user:secret@example.org/feed.xml` needed by Radar's
-  userinfo refusal case. Public object property names are separately limited to machine tokens. Committed payloads remain synthetic public test material; refusal canaries are not
-  credentials or personal identifiers.
+- High-confidence credential material and private-key headers are rejected. Any ASCII, fullwidth or
+  small-form at-sign is forbidden in public values except for the byte-exact reserved-domain canary
+  `https://user:secret@example.org/feed.xml` required by Radar's userinfo refusal case. This closes
+  Unicode/IDN host confusables without forbidding legitimate accented public test wording. Public
+  object property names are separately limited to ASCII machine tokens. Committed payloads remain
+  synthetic public test material; refusal canaries are not credentials or personal identifiers.
 - Radar, Notebook, Policy v1/v2 and Boussole golden corpora are all compiled against this shared
   envelope by `check-contracts.ts`; engine-specific checkers remain authoritative for semantics and
   expected outputs.
@@ -36,7 +37,8 @@ This increment responds to `ENGSEC-BLK-001` and `ENGSEC-MAJ-001` in
 - `contracts/../secrets.txt` in `contractFiles`;
 - standalone, embedded or property-name `alice@example.org` and `sk_live_example_secret` in public
   payload evidence;
-- any suffix or alternate credentials around the byte-exact Radar userinfo canary;
+- any suffix, alternate credentials, Unicode host confusable or alternate at-sign around the
+  byte-exact Radar userinfo canary;
 - a status above its 128-character bound.
 
 The generic gate independently validates exact contract-file hashes and the aggregate resource

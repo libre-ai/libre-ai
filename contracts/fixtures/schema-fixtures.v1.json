@@ -2046,6 +2046,27 @@
           }
         },
         {
+          "name": "unicode-confusable canary host",
+          "path": "/reproductionEvidence",
+          "value": {
+            "url": "https://user:secret@examplｅ.org/feed.xml"
+          }
+        },
+        {
+          "name": "fullwidth at-sign private payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice＠example.org"
+          }
+        },
+        {
+          "name": "small-form at-sign private payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice﹫example.org"
+          }
+        },
+        {
           "name": "unbounded public string",
           "path": "/status",
           "value": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
