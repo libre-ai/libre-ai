@@ -88,7 +88,7 @@
     },
     {
       "schema": "engine-golden-vectors.v1.schema.json",
-      "schemaSha256": "4755fedbd8797525b158c05f463bbea1ee2e9f0d27e29f701bfd25c67aac2ccf",
+      "schemaSha256": "e06c2eb6e5c9ecd46552395b1f3f6e23cd8c74d9b64c92cd41f4cd0924631493",
       "declaration": "engine-golden-vectors.v1.d.ts"
     },
     {
