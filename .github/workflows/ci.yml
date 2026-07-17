@@ -28,8 +28,9 @@ jobs:
         run: |
           missing=0
           while read -r commit; do
-            if ! git show --no-patch --format=%B "$commit" | git interpret-trailers --parse | grep -Eq '^Signed-off-by: .+ <[^<>[:space:]]+@[^<>[:space:]]+>$'; then
-              echo "::error::Missing valid Signed-off-by trailer on $commit"
+            expected="Signed-off-by: $(git show --no-patch --format='%an <%ae>' "$commit")"
+            if ! git show --no-patch --format=%B "$commit" | git interpret-trailers --parse | grep -Fqx "$expected"; then
+              echo "::error::Missing author-matching Signed-off-by trailer on $commit"
               missing=1
             fi
           done < <(git rev-list "$BASE_SHA..$HEAD_SHA")
