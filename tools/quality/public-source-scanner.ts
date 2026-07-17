@@ -279,8 +279,7 @@ function hasValidDomain(value: string, start: number): boolean {
     : hasValidDnsDomain(value, start);
 }
 
-export function containsEmailIdentifier(input: string): boolean {
-  const value = removeEmailComments(input);
+function containsEmailIdentifierWithoutComments(value: string): boolean {
   for (let at = value.indexOf("@"); at >= 0; at = value.indexOf("@", at + 1)) {
     const localEnd = skipWhitespaceBackward(value, at);
     const domainStart = skipWhitespaceForward(value, at + 1);
@@ -288,6 +287,12 @@ export function containsEmailIdentifier(input: string): boolean {
     if (hasValidDotAtomLocal(value, localEnd) || hasValidQuotedLocal(value, localEnd)) return true;
   }
   return false;
+}
+
+export function containsEmailIdentifier(input: string): boolean {
+  if (containsEmailIdentifierWithoutComments(input)) return true;
+  const withoutComments = removeEmailComments(input);
+  return withoutComments !== input && containsEmailIdentifierWithoutComments(withoutComments);
 }
 
 function exceedsDecodedCodePointLimit(value: string): boolean {
@@ -340,6 +345,14 @@ export const publicSourceScannerSelfTests: ReadonlyArray<
   ["quoted escaped local email", '"ali\\\\ce"@example.org', true],
   ["quoted Unicode local email", '"álîçé"@example.org', true],
   ["encoded quoted local email", "&quot;alice&quot;&commat;example&period;org", true],
+  ["parenthesized email", "Contact (alice@example.org).", true],
+  ["encoded parenthesized email", "%28alice%40example.org%29", true],
+  ["HTML parenthesized email", "&lpar;alice&commat;example&period;org&rpar;", true],
+  ["parenthesized quoted email", '("alice"@example.org)', true],
+  ["parenthesized EAI email", "(😀@example.org)", true],
+  ["parenthesized IDN email", "(alice@example.орг)", true],
+  ["parenthesized IPv4 email", "(alice@[127.0.0.1])", true],
+  ["parenthesized IPv6 email", "(alice@[IPv6:2001:db8::1])", true],
   ["commented local email", "alice(comment)@example.org", true],
   ["commented domain email", "alice@(comment)example.org", true],
   ["CFWS email", "alice (comment) @ example.org", true],

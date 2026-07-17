@@ -100,9 +100,15 @@ et clés. Le record est conservé dans
 [`CANDIDATE-INTEGRATION-REJECT-26AC8FE.md`](CANDIDATE-INTEGRATION-REJECT-26AC8FE.md), SHA-256
 `103db06edc4d8eeef97d435df1d139c9b4a6a7656b1320e101dc96d10b475ba8`.
 
-La remédiation courante traite les points ASCII/Unicode terminaux comme ponctuation hors domaine tout
-en conservant les labels internes stricts. `entities@8.0.0` est une devDependency BSD-2-Clause sans
-transitive ni service/donnée externe, qualifiée dans
+La remédiation sur `b491dbc` a fermé les points terminaux, mais sa candidate-integration a montré que
+la projection CFWS supprimait un e-mail entièrement entouré de parenthèses avant de le scanner. Ce
+rejet est conservé dans
+[`CANDIDATE-INTEGRATION-REJECT-B491DBC.md`](CANDIDATE-INTEGRATION-REJECT-B491DBC.md), SHA-256
+`826d8d9b4858197aa391978f5404b3f6cf609f1b756c4a2585768f8079e162a4`.
+
+La remédiation courante scanne d'abord le contexte original, puis sa projection sans commentaires
+pour les CFWS internes. Les points terminaux et labels stricts restent couverts. `entities@8.0.0` est
+une devDependency BSD-2-Clause sans transitive ni service/donnée externe, qualifiée dans
 [`DEPENDENCY-QUALIFICATION-ENTITIES.md`](DEPENDENCY-QUALIFICATION-ENTITIES.md), SHA-256
 `6b01ff7a92f21593f2ca76f0ee3c12e9c8a525adbc07e1d373273140f534a7ae` ; son ajout exige néanmoins un
 contrôle owner explicite avant promotion. Aucune autorité normative moteur n'est
@@ -110,7 +116,7 @@ modifiée.
 
 ## Gates restants
 
-1. intégrer la remédiation de ponctuation après candidate-integration favorable ;
+1. intégrer la remédiation contexte/CFWS après candidate-integration favorable ;
 2. rejouer Architecture et Security sur son merge immuable ;
 3. persister uniquement ces nouveaux records et enregistrer le contrôle owner ;
 4. préparer une promotion catalog-only séparée avec revue promotion/integration avant

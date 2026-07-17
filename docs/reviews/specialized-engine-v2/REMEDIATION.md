@@ -42,17 +42,18 @@ expected outputs.
   references such as non-HTML5 `at` or mixed-case `CommaT`. A local parser then validates RFC-length
   dot-atom or quoted EAI local-parts, nested comments/CFWS, IDNA/punycode DNS labels and bounded IPv4/
   IPv6 literals before classifying an email. Terminal ASCII/Unicode dots are sentence punctuation,
-  while internal empty labels remain invalid. Invalid token boundaries, local-parts over 64 octets,
-  empty/overlong/hyphen-invalid labels and non-domain handles stay representable. Work remains bounded
-  by the preflight string limit and maximum adversarial tests; normalization expansion beyond the
-  same 65,536-code-point ceiling fails closed. Only decoded email identifiers or
-  high-confidence credentials are rejected, without echoing content; unrelated `@`, `&#` or `%` text
-  is not reinterpreted.
+  while internal empty labels remain invalid. It scans the original context first, then a
+  comment-free projection for internal CFWS, so surrounding parentheses cannot hide an identifier.
+  Invalid token boundaries, local-parts over 64 octets, empty/overlong/hyphen-invalid labels and
+  non-domain handles stay representable. Work remains bounded by the preflight string limit and
+  maximum adversarial tests; normalization expansion beyond 65,536 code points fails closed. Only
+  decoded email identifiers or high-confidence credentials are rejected, without echoing content.
 - The only sensitive-looking allowlist entry is Radar's locked synthetic userinfo refusal canary,
   byte-exact and file-bound `https://user:secret@example.org/feed.xml`. `file:///etc/passwd` is
   ordinary inert payload data and receives no resolver capability or lexical exception.
-- Exported scanner tests and executable gate self-tests reject direct/encoded dot-atom, quoted and EAI
-  local-parts, comments/CFWS, Unicode/combining-mark/punycode/IP-literal domains, default-ignorables,
+- Exported scanner tests and executable gate self-tests reject direct/encoded/parenthesized dot-atom,
+  quoted and EAI local-parts, comments/CFWS, Unicode/combining-mark/punycode/IP-literal domains,
+  default-ignorables,
   nested HTML5 references and credentials. They preserve malformed/overlong address shapes,
   case-unknown references and maximum-length non-emails plus `R&D`, `R&amplitude`, `50%`, `release@2`,
   `https://example.org/a%2Fb`, `Café démonstration` and inert path payloads.
