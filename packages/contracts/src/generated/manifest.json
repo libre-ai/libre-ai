@@ -12,9 +12,34 @@
       "declaration": "activity-outcome.v1.d.ts"
     },
     {
+      "schema": "agent-contributor-lineage.v1.schema.json",
+      "schemaSha256": "1a282addcd6dd7d4fa63fadf405844ba8937f89f05ce8bf7ebf33d74c8a3f25d",
+      "declaration": "agent-contributor-lineage.v1.d.ts"
+    },
+    {
       "schema": "agent-handoff.v1.schema.json",
       "schemaSha256": "90ad4f5f0fb78b89df74b2f445e4590957b1989aa5e3352f38f56907a99db8f1",
       "declaration": "agent-handoff.v1.d.ts"
+    },
+    {
+      "schema": "agent-review-quorum-view.v1.schema.json",
+      "schemaSha256": "7f380b3747687ea4d047ad816336b90eed437a5ded210eb7f47c4b7de690dfba",
+      "declaration": "agent-review-quorum-view.v1.d.ts"
+    },
+    {
+      "schema": "agent-review-quorum.v1.schema.json",
+      "schemaSha256": "c47ab6243f50570c850da2005d59210b62500b7038935a38b020cc02f184c8bc",
+      "declaration": "agent-review-quorum.v1.d.ts"
+    },
+    {
+      "schema": "agent-review-session-attestation.v1.schema.json",
+      "schemaSha256": "04dec8b0397461950da23f0df299843f14a8c6bf26ab5fb2d11fe04bd97a5a96",
+      "declaration": "agent-review-session-attestation.v1.d.ts"
+    },
+    {
+      "schema": "agent-review.v1.schema.json",
+      "schemaSha256": "631fc1fa3b412223354a0dd28187f64bd86d12c1380e7c4a38015ee57c1b320c",
+      "declaration": "agent-review.v1.d.ts"
     },
     {
       "schema": "artifact-manifest.v1.schema.json",
@@ -97,9 +122,29 @@
       "declaration": "evidence-report.v1.d.ts"
     },
     {
+      "schema": "execution-authorization.v1.schema.json",
+      "schemaSha256": "466696d00232f6899fb11ca06c96dbbb02a6a912b5ba0b1dbbd2129fbdadd77c",
+      "declaration": "execution-authorization.v1.d.ts"
+    },
+    {
+      "schema": "execution-plan-body.v1.schema.json",
+      "schemaSha256": "e156817a7f6b41eb7a94bde1b4dac67964ae6713971ec118eabcdc307b4fa776",
+      "declaration": "execution-plan-body.v1.d.ts"
+    },
+    {
       "schema": "feed-fetch.v1.schema.json",
       "schemaSha256": "187b32216df63f07f50f40cd98d1b76502bb7191f43914e9bb1eec8995e6f045",
       "declaration": "feed-fetch.v1.d.ts"
+    },
+    {
+      "schema": "harness-attestation.v1.schema.json",
+      "schemaSha256": "ce65dae99a54ed6136c45409ca89c5903905c8e8a0ca66a639b16cb49115c6aa",
+      "declaration": "harness-attestation.v1.d.ts"
+    },
+    {
+      "schema": "harness-profile.v1.schema.json",
+      "schemaSha256": "04e0e29d593b329fd8b7be1071086ff59dea921f3e9717ee08c1ab23af386cb8",
+      "declaration": "harness-profile.v1.d.ts"
     },
     {
       "schema": "local-comparison.v1.schema.json",
@@ -115,6 +160,11 @@
       "schema": "mission-record.v1.schema.json",
       "schemaSha256": "7679cb0719cf71ed26032a55819614b33bcf3427b1d12a5cf74346817bb5c45c",
       "declaration": "mission-record.v1.d.ts"
+    },
+    {
+      "schema": "mission-record.v2.schema.json",
+      "schemaSha256": "85322af7a76ca9ca4878371284d17f4ea724e8f8ad9b726bef2df408ed832b2b",
+      "declaration": "mission-record.v2.d.ts"
     },
     {
       "schema": "model-snapshot.v1.schema.json",
@@ -142,9 +192,19 @@
       "declaration": "notebook-backup.v2.d.ts"
     },
     {
+      "schema": "orchestrator-control.v1.schema.json",
+      "schemaSha256": "fce3f868256cde03a80219e9c635d0998655851badc821409a7b2faa82176853",
+      "declaration": "orchestrator-control.v1.d.ts"
+    },
+    {
       "schema": "orchestrator-event.v1.schema.json",
       "schemaSha256": "f107dbdd793e8c93c4f65b4919ee37bfd0cea635e7bb1eba8fc6be382097637e",
       "declaration": "orchestrator-event.v1.d.ts"
+    },
+    {
+      "schema": "orchestrator-event.v2.schema.json",
+      "schemaSha256": "c36425b727075308382e0aebfdf6a71d7ac4284897cd7767b71263b33dd01fe6",
+      "declaration": "orchestrator-event.v2.d.ts"
     },
     {
       "schema": "policy-definition.v1.schema.json",

@@ -1,7 +1,8 @@
 # Canonical Bun application template
 
 Runnable reference for direct `Bun.serve`, React 19 SSR/document hydration, deterministic static
-output, JSON, local assets and an offline static PWA shell.
+output, JSON, local assets and an offline static PWA shell. The standalone template refuses Bun
+versions below `1.4.0` before build, start and test scripts.
 
 ```sh
 bun run --cwd distribution/templates/bun-app build
