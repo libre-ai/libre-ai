@@ -13,6 +13,8 @@ export type LibreAiPublicVoteDatasetV2 = {
   methodDigest: string;
   statements: Array<{
     id: string;
+    subjectKind: "public-policy-proposal";
+    personTargeting: "prohibited";
     wording: string;
     source: { uri: string; retrievedAt: string; digest: string; licence: string };
     votesFor: number;
