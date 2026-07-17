@@ -3,16 +3,28 @@ resolver = "3"
 members = ["crates/*"]
 
 [workspace.dependencies]
+aes = { version = "=0.8.4", default-features = false, features = ["zeroize"] }
+aes-gcm = { version = "=0.10.3", default-features = false, features = ["aes", "zeroize"] }
+argon2 = { version = "=0.5.3", default-features = false, features = ["zeroize"] }
+base64 = { version = "=0.22.1", default-features = false, features = ["alloc"] }
 biscuit-parser = "=0.2.0"
 chrono = { version = "=0.4.45", default-features = false, features = ["serde", "std"] }
+ghash = { version = "=0.5.1", default-features = false, features = ["zeroize"] }
 jsonschema = { version = "=0.47.0", default-features = false }
+polyval = { version = "=0.6.2", default-features = false, features = ["zeroize"] }
 regress = { version = "=0.11.1", default-features = false, features = ["backend-pikevm", "prohibit-unsafe", "std"] }
 schemars = "=0.8.22"
 serde = { version = "=1.0.228", features = ["derive"] }
+serde_jcs = "=0.2.0"
 serde_json = { version = "=1.0.150", features = ["float_roundtrip"] }
 sha2 = { version = "=0.11.0", default-features = false }
+subtle = { version = "=2.6.1", default-features = false }
 typify = { version = "=0.7.0", default-features = false }
+wasmparser = "=0.253.0"
+wit-bindgen = { version = "=0.59.0", default-features = false, features = ["macros", "realloc"] }
+wit-component = "=0.253.0"
 wit-parser = { version = "=0.253.0", default-features = false, features = ["std"] }
+zeroize = { version = "=1.9.0", features = ["zeroize_derive"] }
 
 [workspace.package]
 edition = "2024"
