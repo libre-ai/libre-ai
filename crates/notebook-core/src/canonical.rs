@@ -40,9 +40,15 @@ pub(crate) fn canonicalize_context_document(document: &[u8]) -> Result<Vec<u8>, 
         return Err(ErrorCode::InvalidDocument);
     }
 
+    #[cfg(feature = "qualification-faults")]
+    crate::qualification_faults::arm_serde_allocation(document);
     let mut context: ContextDocument =
         serde_json::from_slice(document).map_err(|_| ErrorCode::InvalidDocument)?;
+    #[cfg(feature = "qualification-faults")]
+    crate::qualification_faults::trigger(&context.id);
     context.validate_and_normalize()?;
+    #[cfg(feature = "qualification-faults")]
+    crate::qualification_faults::arm_jcs_allocation(&context.id);
     serialize_jcs(&context, document.len())
 }
 

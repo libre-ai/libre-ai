@@ -30,4 +30,4 @@ thread pool, PHC string, or external service. The export-scoped id, salt, nonce,
   `aes/zeroize`, `ghash/zeroize`, and `polyval/zeroize`; Gate B must verify the exact WASM backend.
 - The AES-GCM implementation and JCS serializer are third-party cryptographic/canonicalization code;
   golden vectors, component qualification, advisories, source provenance, and Gate R remain required.
-- First-party code denies unsafe Rust. Generated WIT glue and dependencies are audited separately.
+- First-party release code denies unsafe Rust. The sole exception is the `qualification-faults`-and-WASM-only `GlobalAlloc` wrapper used to fail exactly the next dependency allocation; it delegates every other allocation/deallocation to `System`, is absent from normal artifacts, and remains review-only harness code. Generated WIT glue and dependencies are audited separately.
