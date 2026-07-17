@@ -41,7 +41,8 @@ expected outputs.
   follows case-sensitive HTML5 names, including legacy semicolonless forms, and preserves unknown
   references such as non-HTML5 `at` or mixed-case `CommaT`. A local parser then validates RFC-length
   dot-atom or quoted EAI local-parts, nested comments/CFWS, IDNA/punycode DNS labels and bounded IPv4/
-  IPv6 literals before classifying an email. Invalid token boundaries, local-parts over 64 octets,
+  IPv6 literals before classifying an email. Terminal ASCII/Unicode dots are sentence punctuation,
+  while internal empty labels remain invalid. Invalid token boundaries, local-parts over 64 octets,
   empty/overlong/hyphen-invalid labels and non-domain handles stay representable. Work remains bounded
   by the preflight string limit and maximum adversarial tests; normalization expansion beyond the
   same 65,536-code-point ceiling fails closed. Only decoded email identifiers or
@@ -66,5 +67,7 @@ expected outputs.
 
 No product engine, runtime file resolver, network/storage/clock/randomness capability, real dataset,
 user-data path, public scoring, release, infrastructure or deployment is introduced or authorized.
-Promotion remains blocked until fresh role-separated Architecture and Security verdicts approve one
-immutable commit, followed by a distinct promotion pass and the recorded owner milestone.
+`entities@8.0.0` is pinned BSD-2-Clause, dev-only and dependency-free, but still requires explicit
+owner acceptance as a new dependency. Promotion remains blocked until fresh role-separated
+Architecture and Security verdicts approve one immutable commit, followed by a distinct promotion
+pass and the recorded owner milestone.

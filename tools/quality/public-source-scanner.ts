@@ -223,10 +223,24 @@ function hasValidDomainBoundary(value: string, end: number): boolean {
   return !domainBoundaryContinuation.test(value.slice(end, next));
 }
 
+function isDomainDot(character: string): boolean {
+  return character === "." || character === "。" || character === "．" || character === "｡";
+}
+
+function skipTrailingDomainDots(value: string, start: number): number {
+  let cursor = start;
+  while (cursor < value.length) {
+    const end = nextCodePointEnd(value, cursor);
+    if (!isDomainDot(value.slice(cursor, end))) break;
+    cursor = end;
+  }
+  return cursor;
+}
+
 function hasValidDomainLiteral(value: string, start: number): boolean {
   const closing = value.indexOf("]", start + 1);
-  if (closing < 0 || closing - start > 72 || !hasValidDomainBoundary(value, closing + 1))
-    return false;
+  const boundary = closing < 0 ? closing : skipTrailingDomainDots(value, closing + 1);
+  if (closing < 0 || closing - start > 72 || !hasValidDomainBoundary(value, boundary)) return false;
   const literal = value.slice(start + 1, closing);
   if (literal.startsWith("IPv6:")) return isIP(literal.slice(5)) === 6;
   return isIP(literal) === 4;
@@ -237,18 +251,16 @@ function hasValidDnsDomain(value: string, start: number): boolean {
   while (end < value.length) {
     const next = nextCodePointEnd(value, end);
     const character = value.slice(end, next);
-    if (
-      !(
-        domainCodePoint.test(character) ||
-        character === "。" ||
-        character === "．" ||
-        character === "｡"
-      )
-    )
-      break;
+    if (!(domainCodePoint.test(character) || isDomainDot(character))) break;
     end = next;
   }
   if (end === start || !hasValidDomainBoundary(value, end)) return false;
+  while (end > start) {
+    const previous = previousCodePointStart(value, end);
+    if (!isDomainDot(value.slice(previous, end))) break;
+    end = previous;
+  }
+  if (end === start) return false;
   const ascii = domainToASCII(value.slice(start, end));
   if (ascii.length === 0 || ascii.length > 253) return false;
   const labels = ascii.toLowerCase().split(".");
@@ -300,6 +312,12 @@ export const publicSourceScannerSelfTests: ReadonlyArray<
   readonly [label: string, value: string, expectedSensitive: boolean]
 > = [
   ["direct email", "alice@example.org", true],
+  ["trailing sentence-dot email", "alice@example.org.", true],
+  ["trailing Unicode-dot email", "alice@example.org。", true],
+  ["encoded trailing-dot email", "alice&commat;example&period;org&period;", true],
+  ["quoted trailing-dot email", '"alice"@example.org.', true],
+  ["EAI trailing-dot email", "😀@example.org.", true],
+  ["domain-literal trailing-dot email", "alice@[127.0.0.1].", true],
   ["percent email", "alice%40example.org", true],
   ["double-percent email", "alice%2540example.org", true],
   ["JavaScript escape email", "alice%u0040example.org", true],
@@ -355,10 +373,14 @@ export const publicSourceScannerSelfTests: ReadonlyArray<
   ["prefixed quoted local", `x"alice"@example.org`, false],
   ["suffixed quoted local", `"alice"x@example.org`, false],
   ["leading-hyphen domain", "alice@-example.org", false],
+  ["leading-hyphen domain with punctuation", "alice@-example.org.", false],
   ["trailing-hyphen domain", "alice@example-.org", false],
   ["empty domain label", "alice@example..org", false],
+  ["empty domain label with punctuation", "alice@example..org.", false],
   ["overlong domain label", `alice@${"a".repeat(64)}.org`, false],
   ["single-letter TLD", "alice@example.c", false],
+  ["single-letter TLD with punctuation", "alice@example.c.", false],
+  ["machine handle with punctuation", "release@2.", false],
   ["maximum public non-email", "a".repeat(65_536), false],
   ["normalization expansion overflow", "ﷺ".repeat(4_000), true],
   ["maximum malformed quoted local", `${"a".repeat(65_520)}"@example.org`, false],

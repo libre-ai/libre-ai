@@ -87,16 +87,30 @@ domaines et casse HTML5 non valides. Le record est conservé dans
 [`CANDIDATE-INTEGRATION-REJECT-1523BCD.md`](CANDIDATE-INTEGRATION-REJECT-1523BCD.md), SHA-256
 `9f401d8d3caad8dbe9df2abbc784b54738001cb1292ddfeb4467fa4cca379206`.
 
-La remédiation courante remplace le sous-ensemble d'aliases ad hoc par le décodeur HTML5 exact
-`entities` BSD-2-Clause, puis applique un parseur local borné : dot-atom et quoted local-parts,
-EAI UTF-8, commentaires/CFWS, domaines IDNA/punycode et IP literals. Longueurs RFC, labels DNS et
-frontières de tokens sont validés avant le refus, afin de préserver les formes non-email. Les tests
-exportés couvrent valeurs, clés, encodages imbriqués, cas invalides et entrées maximales. Aucune
-autorité normative moteur n'est modifiée ; une passe avec Bun épinglé reste obligatoire.
+Sur `d37f047`, Architecture a approuvé
+([`ARCHITECTURE-VERDICT-D37.md`](ARCHITECTURE-VERDICT-D37.md),
+`a9254ca4ae1ba1d088f68c511f34e9b464bb624a73f6fc6ab5dfc3204e65d76e`) mais Security a rejeté les
+aliases HTML5 Unicode non décodés ([`SECURITY-VERDICT-D37.md`](SECURITY-VERDICT-D37.md),
+`2e58aef87825823914e6093451be14c98d8c839580c4af89d7ffb11ccff20f05`). Le rejet gouverne et
+l'approbation Architecture est stale après modification du scanner.
+
+Le merge `26ac8fe` a remplacé le sous-ensemble ad hoc par `entities` et un parseur RFC/EAI/IDNA borné.
+Sa candidate-integration a rejeté les e-mails suivis d'un point de fin de phrase, acceptés en valeurs
+et clés. Le record est conservé dans
+[`CANDIDATE-INTEGRATION-REJECT-26AC8FE.md`](CANDIDATE-INTEGRATION-REJECT-26AC8FE.md), SHA-256
+`103db06edc4d8eeef97d435df1d139c9b4a6a7656b1320e101dc96d10b475ba8`.
+
+La remédiation courante traite les points ASCII/Unicode terminaux comme ponctuation hors domaine tout
+en conservant les labels internes stricts. `entities@8.0.0` est une devDependency BSD-2-Clause sans
+transitive ni service/donnée externe, qualifiée dans
+[`DEPENDENCY-QUALIFICATION-ENTITIES.md`](DEPENDENCY-QUALIFICATION-ENTITIES.md), SHA-256
+`6b01ff7a92f21593f2ca76f0ee3c12e9c8a525adbc07e1d373273140f534a7ae` ; son ajout exige néanmoins un
+contrôle owner explicite avant promotion. Aucune autorité normative moteur n'est
+modifiée.
 
 ## Gates restants
 
-1. intégrer la remédiation du scanner RFC/EAI après candidate-integration favorable ;
+1. intégrer la remédiation de ponctuation après candidate-integration favorable ;
 2. rejouer Architecture et Security sur son merge immuable ;
 3. persister uniquement ces nouveaux records et enregistrer le contrôle owner ;
 4. préparer une promotion catalog-only séparée avec revue promotion/integration avant
