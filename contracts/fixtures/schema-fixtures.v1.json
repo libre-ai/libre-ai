@@ -2224,6 +2224,27 @@
           }
         },
         {
+          "name": "unterminated small-form decimal entity private payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice&#65131example.org"
+          }
+        },
+        {
+          "name": "unterminated small-form hex entity private payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice&#xFE6Bexample.org"
+          }
+        },
+        {
+          "name": "unterminated fullwidth hex entity private payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice&#xFF20example.org"
+          }
+        },
+        {
           "name": "unbounded public string",
           "path": "/status",
           "value": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
