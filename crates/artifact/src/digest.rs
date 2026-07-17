@@ -11,11 +11,11 @@ const MAX_MEDIA_TYPE_LENGTH: usize = 255;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct ContentDescriptor<'a> {
-    path: &'a str,
-    size: u64,
-    digest: String,
-    media_type: &'a str,
+pub(crate) struct ContentDescriptor<'a> {
+    pub(crate) path: &'a str,
+    pub(crate) size: u64,
+    pub(crate) digest: String,
+    pub(crate) media_type: &'a str,
 }
 
 #[must_use]
@@ -37,13 +37,18 @@ pub fn canonical_document_digest(document: &Value) -> Result<String, ArtifactRef
 }
 
 pub fn artifact_content_digest(files: &[CandidateFile<'_>]) -> Result<String, ArtifactRefusal> {
-    let descriptors = content_descriptors(files)?;
+    descriptor_set_digest(&content_descriptors(files)?)
+}
+
+pub(crate) fn descriptor_set_digest(
+    descriptors: &[ContentDescriptor<'_>],
+) -> Result<String, ArtifactRefusal> {
     let canonical =
-        serde_jcs::to_vec(&descriptors).map_err(|_| ArtifactRefusal::CanonicalizationFailed)?;
+        serde_jcs::to_vec(descriptors).map_err(|_| ArtifactRefusal::CanonicalizationFailed)?;
     Ok(sha256_hex(&canonical))
 }
 
-fn content_descriptors<'a>(
+pub(crate) fn content_descriptors<'a>(
     files: &[CandidateFile<'a>],
 ) -> Result<Vec<ContentDescriptor<'a>>, ArtifactRefusal> {
     if files.is_empty() {
@@ -83,11 +88,15 @@ fn content_descriptors<'a>(
 
 fn path_is_valid(path: &str) -> bool {
     !path.is_empty()
-        && path.chars().count() <= MAX_PATH_LENGTH
+        && path.is_ascii()
+        && path.len() <= MAX_PATH_LENGTH
         && !path.starts_with('/')
         && !path.contains('\\')
-        && !path.contains('\0')
-        && !path.split('/').any(|segment| segment == "..")
+        && !path.contains(':')
+        && !path.bytes().any(|byte| byte.is_ascii_control())
+        && !path
+            .split('/')
+            .any(|segment| segment.is_empty() || matches!(segment, "." | ".."))
 }
 
 fn media_type_is_valid(media_type: &str) -> bool {

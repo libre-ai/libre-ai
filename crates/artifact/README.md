@@ -16,7 +16,7 @@ The v1 artifact content digest is SHA-256 over RFC 8785 JCS bytes for the array 
 {"path":"…","size":0,"digest":"…","mediaType":"…"}
 ```
 
-Each file digest is SHA-256 over its exact bytes. Sorting makes input and manifest array order non-authoritative. Duplicate, absolute, backslash or parent-traversal paths fail closed.
+Each file digest is SHA-256 over its exact bytes. Sorting makes input and manifest array order non-authoritative. Candidate paths must be portable relative ASCII paths: duplicate paths, drive/absolute forms, backslashes, control characters and empty, `.` or `..` segments fail closed.
 
 An Evidence Report reference digest is SHA-256 over the RFC 8785 JCS representation of the complete report. For `build` and `release` manifests, verification requires:
 
