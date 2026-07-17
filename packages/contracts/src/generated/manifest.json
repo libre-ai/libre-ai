@@ -198,7 +198,7 @@
     },
     {
       "schema": "public-vote-dataset.v2.schema.json",
-      "schemaSha256": "1cbd6b677be4204c6d497390b424adcc5720cad177caa776040eb10c17f1ebdb",
+      "schemaSha256": "e43b79d3444d3fb8aa785f07c1b8a733e2009803ef29ccd51fdbbb88841419ec",
       "declaration": "public-vote-dataset.v2.d.ts"
     },
     {
