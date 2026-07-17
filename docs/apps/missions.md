@@ -7,7 +7,7 @@
 
 ## Purpose and actors
 
-Missions lets requesters propose, risk-assess, review, observe and validate bounded agent missions while keeping reported activity distinct from validated results. The locked v1 baseline uses human approvers/verdicts. The candidate v2 requires two reviewer agents, distinct from every contributor, to approve the same immutable plan digest and then the same immutable result digest. Protected canonical contracts, auth, migrations, releases and deployments retain an additional human control gate.
+Missions lets requesters propose, risk-assess, review, observe and validate bounded agent missions while keeping reported activity distinct from validated results. The locked v1 baseline uses human approvers/verdicts. The locked, unimplemented v2 contract requires two reviewer agents, distinct from every contributor, to approve the same immutable plan digest and then the same immutable result digest. Protected canonical contracts, auth, migrations, releases and deployments retain an additional human control gate.
 
 ## Journeys
 
@@ -30,13 +30,15 @@ Missions lets requesters propose, risk-assess, review, observe and validate boun
 
 **Queries v1:** `GetMission`, `ListMissions`, `GetMissionEvents`, `GetOpenDecisionRequests`, `GetResultEvidence`, `GetApprovalHistory`, `GetMissionExport`.
 
-**Commands v2 candidate:** `ProposeMission`, `AssessMissionRisk`, `SubmitExecutionPlan`, `SubmitAgentReview`, `StartMission`, `PauseMission`, `ResumeMission`, `CancelMission`, `RecordOrchestratorEvent`, `AnswerDecisionRequest`, `SubmitMissionResult`, `AbandonMission`, `ExportMissionRecord`.
+The v2 protocol below is a locked contract and remains unimplemented.
 
-**Queries v2 candidate:** `GetMission`, `ListMissions`, `GetMissionEvents`, `GetOpenDecisionRequests`, `GetResultEvidence`, `GetReviewQuorum`, `GetMissionExport`.
+**Commands v2:** `ProposeMission`, `AssessMissionRisk`, `SubmitExecutionPlan`, `SubmitAgentReview`, `StartMission`, `PauseMission`, `ResumeMission`, `CancelMission`, `RecordOrchestratorEvent`, `AnswerDecisionRequest`, `SubmitMissionResult`, `AbandonMission`, `ExportMissionRecord`.
+
+**Queries v2:** `GetMission`, `ListMissions`, `GetMissionEvents`, `GetOpenDecisionRequests`, `GetResultEvidence`, `GetReviewQuorum`, `GetMissionExport`.
 
 **Events:** `MissionProposed`, `MissionRiskAssessed`, `MissionApproved`, `MissionRefused`, `MissionStarted`, `MissionBlocked`, `HumanDecisionRequested`, `MissionPaused`, `MissionCancelled`, `MissionResultSubmitted`, `MissionResultAccepted`, `MissionResultRejected`, `MissionAbandoned`.
 
-Both state machines are fail-closed and revisioned. Only the orchestrator adapter can report execution events. In candidate v2, only Missions can compute quorum from two signed, unexpired, one-shot reviews whose agent identities are distinct from each other and from the harness-derived contributor lineage. `result-submitted` is never terminal success.
+Both state machines are fail-closed and revisioned. Only the orchestrator adapter can report execution events. In v2, only Missions can compute quorum from two signed, unexpired, one-shot reviews whose agent identities are distinct from each other and from the harness-derived contributor lineage. `result-submitted` is never terminal success.
 
 ## Refusal matrix
 
@@ -66,11 +68,11 @@ PostgreSQL owns the mission aggregate, review references, verified quorum state,
 
 ## Authentication and authorization
 
-Browser uses opaque session. Biscuit resources are exact mission, run, review-subject and artifact/evidence refs. Authority includes user, mandatory tenant, `role(user, role)`, root token ID and expiration. Candidate v2 reviewer tokens are attenuated to one subject digest and can only read that subject then submit one review; they cannot modify, execute or see a sibling verdict before submission. Author, reviewer, orchestrator and harness tokens cannot individually fabricate quorum. Revocation and RLS are checked for each command.
+Browser uses opaque session. Biscuit resources are exact mission, run, review-subject and artifact/evidence refs. Authority includes user, mandatory tenant, `role(user, role)`, root token ID and expiration. V2 reviewer tokens are attenuated to one subject digest and can only read that subject then submit one review; they cannot modify, execute or see a sibling verdict before submission. Author, reviewer, orchestrator and harness tokens cannot individually fabricate quorum. Revocation and RLS are checked for each command.
 
 ## Runtime boundaries
 
-TypeScript owns the mission domain, review-quorum workflow, persistence and projection. WP-G2-S01 does not implement an orchestrator or harness. Any future Rust orchestration owns process/tool scheduling and budget enforcement only behind a separately approved execution-plan/control protocol, attenuated authorization and sandbox; it emits authorized protocol events without shared DB. Until that Specification Lock exists, Missions may use contract fixtures for UI/domain tests but cannot start a real mission or claim orchestrator integration.
+TypeScript owns the mission domain, review-quorum workflow, persistence and projection. WP-G2-S01 does not implement an orchestrator or harness. The agent-orchestration Specification Lock fixes the execution-plan/control protocol, attenuated authorization and sandbox boundaries. Any future Rust orchestration owns only process/tool scheduling and budget enforcement behind those authorities and emits authorized protocol events without shared DB. Until a bounded implementation work package and conformance review are approved, Missions may use contract fixtures for UI/domain tests but cannot start a real mission or claim orchestrator integration.
 
 ## Accessibility and degraded mode
 
@@ -81,15 +83,15 @@ Timeline has ordered textual/table view, filters and live announcements that do 
 - MissionRecord v1 — `contracts/schemas/mission-record.v1.schema.json` ;
 - Agent Handoff v1 — `contracts/schemas/agent-handoff.v1.schema.json` ;
 - Orchestrator Event v1 — `contracts/schemas/orchestrator-event.v1.schema.json` ;
-- candidate v2 plan/review/quorum/control/harness family — cataloged schemas headed by `contracts/schemas/execution-plan-body.v1.schema.json` and `contracts/agent-orchestration/SEMANTICS.md` ;
-- candidate MissionRecord v2 — `contracts/schemas/mission-record.v2.schema.json` ;
+- locked, unimplemented v2 plan/review/quorum/control/harness family — cataloged schemas headed by `contracts/schemas/execution-plan-body.v1.schema.json` and `contracts/agent-orchestration/SEMANTICS.md` ;
+- locked, unimplemented MissionRecord v2 — `contracts/schemas/mission-record.v2.schema.json` ;
 - Evidence/Artifact refs — canonical schemas ;
-- Missions APIs — `contracts/openapi/missions.v1.yaml` and candidate `contracts/openapi/missions.v2.yaml` ;
-- Biscuit policies — `contracts/authz/missions-v1.datalog` and candidate `contracts/authz/agent-runs-v1.datalog`.
+- Missions APIs — `contracts/openapi/missions.v1.yaml` and locked, unimplemented `contracts/openapi/missions.v2.yaml` ;
+- Biscuit policies — `contracts/authz/missions-v1.datalog` and locked, unimplemented `contracts/authz/agent-runs-v1.datalog`.
 
 ## Evidence
 
-Unit tests exhaust every state/role transition, revisions and idempotency. Candidate v2 tests additionally reject self-review, duplicate reviewers, omitted contributors, stale digests, disclosed sibling verdicts, replayed nonces and invalid signatures. Integration runs a simulated orchestrator, PostgreSQL RLS, revocation and budget stop. Security tests prove no individual author/reviewer/orchestrator/harness identity can fabricate quorum.
+Unit tests exhaust every state/role transition, revisions and idempotency. V2 contract tests additionally reject self-review, duplicate reviewers, omitted contributors, stale digests, disclosed sibling verdicts, replayed nonces and invalid signatures. Future implementation integration must run a simulated orchestrator, PostgreSQL RLS, revocation and budget stop. Its security qualification must prove no individual author/reviewer/orchestrator/harness identity can fabricate quorum.
 
 ## Work packages
 
@@ -100,7 +102,7 @@ Unit tests exhaust every state/role transition, revisions and idempotency. Candi
 5. Proof/Artifact verification integration — Specialized Rust ;
 6. adversarial authorization/budget/replay qualification — Infrastructure and Release.
 
-Domain/UI and orchestrator can proceed in parallel against protocol fixtures; integration starts only after transition/authz lock.
+Future bounded domain/UI and orchestrator work packages may proceed in parallel against protocol fixtures after their own approval; integration additionally requires transition/authz conformance and unchanged locked hashes.
 
 ## Release and rollback
 
