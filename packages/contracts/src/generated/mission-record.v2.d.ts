@@ -39,7 +39,12 @@ export type LibreAiMissionrecordV2 = {
   plan?: { id: string; digest: string; mediaType: string };
   planQuorum?: { id: string; digest: string; mediaType: string };
   executionAuthorization?: { id: string; digest: string; mediaType: string };
-  planReviewOutcome?: { status: "rejected"; reasonCode: string; decidedAt: string };
+  planReviewOutcome?: {
+    status: "rejected";
+    rejectionReview: { id: string; digest: string; mediaType: string };
+    reasonCode: string;
+    decidedAt: string;
+  };
   protectedHumanGate?: {
     role: string;
     approvedAt: string;
@@ -59,6 +64,7 @@ export type LibreAiMissionrecordV2 = {
   resultQuorum?: { id: string; digest: string; mediaType: string };
   validation?: {
     status: "validated" | "rejected" | "abandoned";
+    rejectionReview?: { id: string; digest: string; mediaType: string };
     reasonCode: string;
     decidedAt: string;
   };
