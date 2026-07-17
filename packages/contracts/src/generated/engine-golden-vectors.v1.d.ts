@@ -166,6 +166,8 @@ export type Publicstring = string &
   (unknown | "https://user:secret@example.org/feed.xml") &
   (unknown | "file:///etc/passwd");
 
+export type Publicpropertyname = string;
+
 export type Contractpath = string;
 
 export type Contractfile = { path: string; sha256: string };
