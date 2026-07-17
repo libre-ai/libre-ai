@@ -7,6 +7,11 @@ mod component;
 mod crypto;
 mod error;
 mod model;
+#[cfg(all(feature = "qualification-faults", target_arch = "wasm32"))]
+#[allow(unsafe_code)]
+mod qualification_allocator;
+#[cfg(feature = "qualification-faults")]
+mod qualification_faults;
 mod validate;
 
 use zeroize::Zeroizing;
@@ -51,6 +56,8 @@ pub fn seal_backup(
         ciphertext_and_tag.len(),
         recovery_secret.as_slice(),
     )?;
+    #[cfg(feature = "qualification-faults")]
+    qualification_faults::trigger(&request.id);
 
     let encoded_salt = encode_base64(&request.kdf.salt)?;
     let encoded_nonce = encode_base64(&request.nonce)?;
@@ -70,7 +77,11 @@ pub fn seal_backup(
         kdf: &envelope_kdf,
         nonce: &encoded_nonce,
     };
+    #[cfg(feature = "qualification-faults")]
+    qualification_faults::arm_jcs_allocation(&request.id);
     let aad = aad_for_metadata(&metadata)?;
+    #[cfg(feature = "qualification-faults")]
+    qualification_faults::arm_argon2_allocation(&request.id);
     let key = derive_key(
         recovery_secret.as_slice(),
         &request.kdf.salt,
@@ -104,22 +115,28 @@ pub fn open_backup(
     envelope_bytes: &[u8],
     recovery_secret: Vec<u8>,
 ) -> Result<OpenedBackup, ErrorCode> {
+    let recovery_secret = Zeroizing::new(recovery_secret);
     if envelope_bytes.is_empty() || envelope_bytes.len() > MAX_ENVELOPE_BYTES {
         return Err(ErrorCode::InvalidEnvelope);
     }
+    #[cfg(feature = "qualification-faults")]
+    qualification_faults::arm_serde_allocation(envelope_bytes);
     let envelope: Envelope =
         serde_json::from_slice(envelope_bytes).map_err(|_| ErrorCode::InvalidEnvelope)?;
     validate_envelope_before_decode(&envelope)?;
+    #[cfg(feature = "qualification-faults")]
+    qualification_faults::trigger(&envelope.id);
     let salt = decode_canonical_base64(&envelope.kdf.salt)?;
     let nonce = decode_canonical_base64(&envelope.nonce)?;
     let ciphertext = decode_canonical_base64(&envelope.ciphertext)?;
     validate_envelope_decoded_lengths(salt.len(), nonce.len(), ciphertext.len())?;
 
+    #[cfg(feature = "qualification-faults")]
+    qualification_faults::arm_jcs_allocation(&envelope.id);
     let expected_digest = digest_for_body(&envelope.body(), envelope.ciphertext.len())?;
     let digest_valid = digest_matches(&envelope.digest, &expected_digest);
     let aad = aad_for_metadata(&envelope.metadata())?;
 
-    let recovery_secret = Zeroizing::new(recovery_secret);
     let invalid_secret = Zeroizing::new(INVALID_SECRET);
     let secret_valid = valid_secret_length(recovery_secret.len());
     let secret_for_kdf = if secret_valid {
@@ -127,6 +144,8 @@ pub fn open_backup(
     } else {
         invalid_secret.as_slice()
     };
+    #[cfg(feature = "qualification-faults")]
+    qualification_faults::arm_argon2_allocation(&envelope.id);
     let key = derive_key(
         secret_for_kdf,
         &salt,

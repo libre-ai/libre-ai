@@ -11,6 +11,11 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 path = "src/lib.rs"
 
+[features]
+default = []
+# Qualification-only sentinels compile internal panic/OOM paths into a separate ignored artifact.
+qualification-faults = []
+
 [dependencies]
 # Feature anchors ensure AES schedules and GHASH/POLYVAL state wipe on the WASM target.
 aes.workspace = true
