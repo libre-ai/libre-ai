@@ -16,6 +16,8 @@ Pure Rust/WASM implementation of the locked authorities in
 - only the closed WIT `error-code` crosses the boundary;
 - recovery secrets, derived keys, AES/GHASH state, Argon2 memory, failed plaintexts, and owned Context copies are zeroized on ordinary returns.
 
+The disabled-by-default `qualification-faults` feature exists only to build a separate ignored harness artifact. Reserved public fixture ID suffixes trigger a panic, a 600 MiB allocator request against the 512 MiB WASM cap, or a fail-next-allocation point at the `serde_json`, JCS, and Argon2id boundaries. Its `GlobalAlloc` wrapper is the only handwritten unsafe module and is compiled solely for WASM with that feature. The normal release artifact is built without this feature, the qualification build is checked for identical WIT exports and zero imports, and neither generated module is committed.
+
 ## Status
 
 Experimental Gate B input only. It is not a user backup producer and must not process personal data,
