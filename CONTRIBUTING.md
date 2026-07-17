@@ -12,3 +12,7 @@ During the Big Bang reconstruction:
 6. obtain human approval for contracts, auth, data, releases and deployment.
 
 Historical sibling repositories are read-only evidence. Do not submit new architecture there.
+
+## Device qualification contributions
+
+Owners of modest Apple Silicon Macs can contribute public-fixture Notebook performance evidence without sharing the device or any personal data. Physical and VM procedures, expected artifacts and acceptance criteria are documented in [`tools/qualification/notebook-core-v2/CONTRIBUTING-DEVICE-QUALIFICATION.md`](tools/qualification/notebook-core-v2/CONTRIBUTING-DEVICE-QUALIFICATION.md). VM results are diagnostic-only and can never promote a supported hardware class.
