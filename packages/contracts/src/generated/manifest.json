@@ -123,7 +123,7 @@
     },
     {
       "schema": "model-snapshot.v2.schema.json",
-      "schemaSha256": "50082a7125ae583c38d267c4b6115f2b2a7634bcde9392919a38e7c8a29ad993",
+      "schemaSha256": "d866aeef87550a6efc9dce71a6b8733e47d8a7cf6c3f2df92a8229b1dd352e4b",
       "declaration": "model-snapshot.v2.d.ts"
     },
     {
@@ -153,7 +153,7 @@
     },
     {
       "schema": "policy-definition.v2.schema.json",
-      "schemaSha256": "c429db6666bf7ad27c0debd3d7660f50b5d612b27b4f4694d8bf574a049d755c",
+      "schemaSha256": "5e8f607bbd873d78bd97da4c86c43dd6aca55dff1c4a395d5d0611448e21904c",
       "declaration": "policy-definition.v2.d.ts"
     },
     {
@@ -173,7 +173,7 @@
     },
     {
       "schema": "policy-need.v2.schema.json",
-      "schemaSha256": "f5bf333ccda5aa24f465498297198a826455c780a740505dde34fc0d842b0690",
+      "schemaSha256": "13493c60123e88a76ee0eabef2714c75c4af07984f069e1b3d7d9b67dade5bd2",
       "declaration": "policy-need.v2.d.ts"
     },
     {
