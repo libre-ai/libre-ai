@@ -10,12 +10,12 @@ export type LibreAiContextDocumentV2 = {
   rootBlockIds: Array<string>;
   blocks: Array<{
     id: string;
-    revision: number;
     mediaType: "text/plain" | "text/markdown" | "application/json";
     content: string;
     links: Array<string>;
   }>;
   totalBytes: number;
-  excludedBlockIds?: Array<string>;
   digest: string;
 };
+
+export type Exportblockid = string;

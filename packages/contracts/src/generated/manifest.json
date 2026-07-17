@@ -53,7 +53,7 @@
     },
     {
       "schema": "context-document.v2.schema.json",
-      "schemaSha256": "fe030c2642076588289f5da7814cb44bbff75e7684f487c0c7e4c230e25be455",
+      "schemaSha256": "f205f1a246ce88221a21a16d69d66966ff33c989f915d2879df77e5f7f5f96d4",
       "declaration": "context-document.v2.d.ts"
     },
     {
@@ -68,7 +68,7 @@
     },
     {
       "schema": "curated-item-export.v2.schema.json",
-      "schemaSha256": "336076fa44343db64ecc84592edad0a82c28a6eccc615861dec181f7daef31bb",
+      "schemaSha256": "f55f65c8d121dfbef781bce0732d76020725f392825fc68ba3421625a88aa422",
       "declaration": "curated-item-export.v2.d.ts"
     },
     {
