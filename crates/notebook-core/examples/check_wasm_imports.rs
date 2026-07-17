@@ -7,22 +7,35 @@ use wasmparser::{ComponentExternalKind, Encoding, Parser, Payload};
 use wit_component::ComponentEncoder;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let path = env::args_os()
-        .nth(1)
+    let mut arguments = env::args_os().skip(1);
+    let path = arguments
+        .next()
         .map(PathBuf::from)
-        .ok_or("usage: check_wasm_imports <module.wasm>")?;
+        .ok_or("usage: check_wasm_imports <module.wasm> [component.wasm]")?;
+    let component_path = arguments.next().map(PathBuf::from);
+    if arguments.next().is_some() {
+        return Err("usage: check_wasm_imports <module.wasm> [component.wasm]".into());
+    }
     let module = fs::read(&path)?;
     check_core_module(&module)?;
 
-    let component = ComponentEncoder::default()
-        .module(&module)?
-        .validate(true)
-        .encode()?;
+    let component = if let Some(component_path) = &component_path {
+        fs::read(component_path)?
+    } else {
+        ComponentEncoder::default()
+            .module(&module)?
+            .validate(true)
+            .encode()?
+    };
     check_component(&component)?;
 
     println!(
-        "Notebook Core WASM verified: 0 module imports, 0 component imports, 512 MiB memory cap, WIT exports present ({})",
-        path.display()
+        "Notebook Core WASM verified: 0 module imports, 0 component imports, 512 MiB memory cap, WIT exports present ({}, component={})",
+        path.display(),
+        component_path.as_ref().map_or_else(
+            || "generated".to_owned(),
+            |value| value.display().to_string()
+        )
     );
     Ok(())
 }
