@@ -57,7 +57,7 @@ jobs:
           echo "$BUN_ARCHIVE_SHA256  $RUNNER_TEMP/bun.zip" | sha256sum --check --strict
           unzip -q "$RUNNER_TEMP/bun.zip" -d "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/bun-linux-x64" >> "$GITHUB_PATH"
-      - name: Verify exact Bun revision
+      - name: Verify Bun 1.4+ floor and exact CI revision
         run: |
           test "$(bun --revision)" = "1.4.0-canary.1+57f349f63"
           bun run check:toolchain

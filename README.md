@@ -5,7 +5,7 @@ Monorepo canonique de l’écosystème Libre AI reconstruit pour l’ère IA-nat
 ## Décisions actives
 
 - migration Big Bang depuis les repositories historiques figés ;
-- Bun fullstack + TypeScript strict + React 19 pour le web ;
+- Bun `>=1.4.0` fullstack + TypeScript strict + React 19 pour le web ; la CI conserve le pin qualifié exact ;
 - Rust pour les moteurs spécialisés, WASM, sécurité, preuve et tooling système ;
 - un `bun.lock`, un workspace Cargo, une source de contrats ;
 - Clever Cloud Paris/UE comme cible de déploiement ;
