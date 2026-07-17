@@ -59,7 +59,7 @@ No server account or session is required in local-only v1. Workspace unlock is l
 
 ## Runtime boundaries
 
-TypeScript owns block graph, UI, IndexedDB, local index, export selection and generation of fresh opaque 128-bit backup/context IDs plus fresh salt/nonce bytes. Before Context export it remaps every selected local block ID to a fresh export-scoped CSPRNG ID, rewrites roots/links, and keeps revisions and exclusions only in the local preview/receipt. Any product timestamp belongs inside the encrypted plaintext or local receipt, never in the portable payload. Notebook Core v2 is a locked Rust/WASM boundary for canonical context bytes and Argon2id/AES-256-GCM sealing/opening. An experimental capability-free component now implements that boundary, but no product host or backup producer exists; Gate B remains mandatory before any user backup, production use, or release. No native FFI or server service is allowed in v1; sensitive bytes cross transiently, DOM and IndexedDB handles do not.
+TypeScript owns block graph, UI, IndexedDB, local index, export selection and generation of fresh opaque 128-bit backup/context IDs plus fresh salt/nonce bytes. Before Context export it remaps every selected local block ID to a fresh export-scoped CSPRNG ID, rewrites roots/links, and keeps revisions and exclusions only in the local preview/receipt. Any product timestamp belongs inside the encrypted plaintext or local receipt, never in the portable payload. Notebook Core v2 is a locked Rust/WASM boundary for canonical context bytes and Argon2id/AES-256-GCM sealing/opening. Un premier host produit sous feature gate exerce cette frontière avec une fixture publique, un worker jetable, un téléchargement neutre et un staging IndexedDB chiffré ; il ne constitue ni un producteur de sauvegarde utilisateur ni une approbation Gate B. Aucun contenu réel ne peut l'utiliser avant les revues et la décision de release. No native FFI or server service is allowed in v1; sensitive bytes cross transiently, DOM and IndexedDB handles do not.
 
 ## Accessibility and degraded mode
 
@@ -81,7 +81,7 @@ No OpenAPI contract exists for v1 local data.
 
 ## Evidence
 
-Unit tests cover graph closure, local-only exclusions/revisions, export-scoped ID remapping, canonical hashes and conflicts. Contract vectors cover corrupt ciphertext, unknown KDF, missing dependencies and old versions. Browser tests cover offline reload, quota errors, export/import/delete and keyboard/screen reader. Security review proves no content network requests and no plaintext persistence/logging. Cross-browser backup vectors must round-trip.
+Unit tests cover graph closure, local-only exclusions/revisions, export-scoped ID remapping, canonical hashes and conflicts. Contract vectors cover corrupt ciphertext, unknown KDF, missing dependencies and old versions. Le host Gate B rejoue déjà sur trois moteurs le chiffrement réel d'une fixture publique, le téléchargement neutre, le staging IndexedDB, la restauration, le mauvais recovery et la reprise après page interrompue, sans persister de plaintext ou de recovery. Les tests produit complets doivent encore couvrir le modèle blocs/révisions, le quota, l'import atomique, les fautes processus et la suppression. Security review proves no content network requests and no plaintext persistence/logging. Cross-browser backup vectors must round-trip.
 
 ## Work packages
 
