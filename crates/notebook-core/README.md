@@ -13,10 +13,14 @@ Pure Rust/WASM implementation of the locked authorities in
 - one-shot plaintext and Context content are capped at 16 MiB; hostile raw inputs are capped at 22,370,044 bytes;
 - Context v2 enforces export-scoped IDs, graph closure, binary64/JCS, depth 64, 100,000 JSON nodes, and 16,384 total links;
 - WebAssembly linear memory has an explicit 512 MiB maximum verified from the built module;
+- wasm32 requires SIMD128 for the pinned SHA-256 backend, while AES-256 uses the vendored RustCrypto
+  constant-time `fixslice64` implementation selected by the audited one-line backend patch;
+- large envelope strings are borrowed during open, ciphertext is decoded only after KDF memory is
+  released, and seal emits the exact canonical envelope without duplicate Base64/JCS buffers;
 - only the closed WIT `error-code` crosses the boundary;
 - recovery secrets, derived keys, AES/GHASH state, Argon2 memory, failed plaintexts, and owned Context copies are zeroized on ordinary returns.
 
-The disabled-by-default `qualification-faults` feature exists only to build a separate ignored harness artifact. Reserved public fixture ID suffixes trigger a panic, a 600 MiB allocator request against the 512 MiB WASM cap, or a fail-next-allocation point at the `serde_json`, JCS, and Argon2id boundaries. Its `GlobalAlloc` wrapper is the only handwritten unsafe module and is compiled solely for WASM with that feature. The normal release artifact is built without this feature, the qualification build is checked for identical WIT exports and zero imports, and neither generated module is committed.
+The disabled-by-default `qualification-faults` feature exists only to build a separate ignored harness artifact. Reserved public fixture ID suffixes trigger a panic, a 600 MiB allocator request against the 512 MiB WASM cap, or a fail-next-allocation point at the `serde_json`, JCS, and Argon2id boundaries. Because valid envelopes now parse with borrowed strings and no heap allocation, the non-shipping `serde_json` fault uses an explicit owned-string parser probe before the production parse. Its `GlobalAlloc` wrapper is the only handwritten unsafe module and is compiled solely for WASM with that feature. The normal release artifact is built without this feature, the qualification build is checked for identical WIT exports and zero imports, and neither generated module is committed.
 
 ## Status
 
