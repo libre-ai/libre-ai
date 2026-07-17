@@ -18,7 +18,8 @@ This increment responds to `ENGSEC-BLK-001` and `ENGSEC-MAJ-001` in
 - High-confidence credential material and private-key headers are rejected. Any ASCII, fullwidth or
   small-form at-sign is forbidden in public values except for the byte-exact reserved-domain canary
   `https://user:secret@example.org/feed.xml` required by Radar's userinfo refusal case. Percent/JS
-  escapes and numeric/named HTML entities for at-signs are also forbidden. This closes encoded and
+  escapes and numeric/named HTML entities for at-signs, with or without a terminator, are also
+  forbidden. This closes encoded and
   Unicode/IDN confusables without forbidding legitimate accented public test wording. Public object
   property names are separately limited to ASCII machine tokens. Committed payloads remain
   synthetic public test material; refusal canaries are not credentials or personal identifiers.

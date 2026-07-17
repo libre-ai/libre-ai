@@ -2109,6 +2109,34 @@
           }
         },
         {
+          "name": "unterminated numeric-entity at-sign private payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice&#000064example.org"
+          }
+        },
+        {
+          "name": "unterminated fullwidth numeric-entity private payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice&#65312example.org"
+          }
+        },
+        {
+          "name": "unterminated hex-entity at-sign private payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice&#x40example.org"
+          }
+        },
+        {
+          "name": "unterminated named-entity at-sign private payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "contact": "alice&commatexample.org"
+          }
+        },
+        {
           "name": "unbounded public string",
           "path": "/status",
           "value": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
