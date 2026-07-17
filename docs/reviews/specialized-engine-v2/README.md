@@ -69,9 +69,16 @@ les local-parts RFC entre guillemets ([`SECURITY-VERDICT-79D02.md`](SECURITY-VER
 `442fc6009a56c930143e2704fdddf2a4a37f0f1e24bb5ee95d08708bdcd6bc13`). Le rejet Security gouverne ;
 les deux approbations ne sont pas citables pour promotion.
 
-La remédiation courante couvre les aliases HTML5 de la syntaxe e-mail supportée, les chaînes `&amp`
-legacy, les local-parts dot-atom ou quoted et les domaines DNS/punycode ou literals. `&at;` reste
-inconnu et les scans restent bornés. Aucune autorité normative moteur n'est modifiée.
+La remédiation sur `a4e74a6` a fermé les local-parts quoted, domaines literals et chaînes `&amp`, mais
+sa passe d'intégration a rejeté le décodage non-HTML5 de noms sans point-virgule comme `&commat`.
+Ce sixième rejet est conservé dans
+[`CANDIDATE-INTEGRATION-REJECT-A4E74A6.md`](CANDIDATE-INTEGRATION-REJECT-A4E74A6.md), SHA-256
+`b55a0e87af9841dcc2081091c00aa277c342b817e798be60a20e14d416b9e2bc`.
+
+La remédiation courante exige `;` pour toute entité nommée HTML5 ; seul le préfixe legacy `&amp` peut
+être sans point-virgule lorsqu'il encapsule ensuite une entité e-mail connue. Les local-parts
+dot-atom/quoted, domaines DNS/punycode/literals et scans bornés restent couverts. Aucune autorité
+normative moteur n'est modifiée.
 
 ## Gates restants
 

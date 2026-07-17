@@ -37,10 +37,10 @@ expected outputs.
   and reject credential-shaped names.
 - Engine payload strings retain their semantics. Before AJV, a separate public-source scanner applies
   NFKC normalization, removes default-ignorable code points, linearly collapses nested percent/HTML
-  marker chains, including legacy semicolonless `amp`, and performs four bounded decoding rounds over
-  percent octets, `%u`, numeric HTML and the complete lowercased HTML5 alias set whose exact scalar
-  participates in the supported RFC email syntax. Unknown entities, including non-HTML5 `at`, remain
-  unchanged. The detector finds bounded DNS/punycode/domain-literal suffixes from `@`, then validates
+  marker chains and performs four bounded decoding rounds over percent octets, `%u`, numeric HTML and
+  the complete lowercased HTML5 alias set whose exact scalar participates in the supported RFC email
+  syntax. Named entities require `;`; only a legacy semicolonless `amp` wrapper before a known entity
+  is collapsed. Unknown and other semicolonless names, including non-HTML5 `at`, remain unchanged. The detector finds bounded DNS/punycode/domain-literal suffixes from `@`, then validates
   a dot-atom or quoted local-part by code point. Only decoded email identifiers or high-confidence
   credentials are rejected, without echoing content; unrelated `@`, `&#` or `%` is not reinterpreted.
 - The only sensitive-looking allowlist entry is Radar's locked synthetic userinfo refusal canary,
