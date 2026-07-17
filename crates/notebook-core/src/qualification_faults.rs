@@ -28,6 +28,13 @@ pub(crate) fn arm_serde_allocation(document: &[u8]) {
         .any(|window| window == SERDE_OOM_SUFFIX)
     {
         crate::qualification_allocator::fail_next_allocation();
+        // Valid envelopes now deserialize entirely through borrowed strings, so
+        // their production parser path deliberately performs no heap allocation.
+        // Keep the non-shipping dependency fault boundary executable with an
+        // owned-string parse whose first allocation must hit the armed allocator.
+        let probe = serde_json::from_slice::<String>(b"\"qualification-serde-allocation\"");
+        std::hint::black_box(probe);
+        panic!("qualification-only serde allocation unexpectedly succeeded");
     }
 
     #[cfg(not(target_arch = "wasm32"))]
