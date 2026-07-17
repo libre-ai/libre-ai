@@ -105,6 +105,8 @@ export type Shortpublicstring = string & unknown & (unknown | unknown) & string;
 
 export type Publicstring = string & unknown & (unknown | unknown);
 
+export type Publicpropertyname = string;
+
 export type Contractpath = string;
 
 export type Contractfile = { path: string; sha256: string };
