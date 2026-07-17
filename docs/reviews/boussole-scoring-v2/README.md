@@ -11,11 +11,21 @@ Les verdicts historiques restent immuables :
 - les passes attribuables publiées sur l'issue #23 ont ensuite rejeté `1f2628f` en architecture et
   vie privée, tout en approuvant la méthodologie avec réserve mineure.
 
-Le présent incrément remédie ces derniers constats. Tout verdict antérieur à son SHA final devient
-stale pour la promotion, même quand il reste une preuve technique utile.
+Le commit immuable `7ad0695b563745d2c6223f4d2cdcafc9fd9e3d0a` remédie ces derniers constats et
+reçoit quatre verdicts finaux favorables. Tout verdict antérieur reste une preuve historique mais ne
+vaut pas pour ces hashes.
 
-La promotion exige quatre records issus de passes review-only séparées par rôle, conformément à
-[`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md) :
+## Verdicts finaux enregistrés
+
+| Rôle | Record durable | Verdict | SHA-256 du rapport |
+| --- | --- | --- | --- |
+| Architecture | [`ARCHITECTURE-VERDICT.md`](ARCHITECTURE-VERDICT.md) | `APPROVE` | `47a9f615047ea78670634fdf0591331e8e66aae2b476defcb81304ccbb2c56b9` |
+| Sécurité | [`SECURITY-VERDICT-2.md`](SECURITY-VERDICT-2.md) | `APPROVE` | `b1371979c3cdc42959919d22bc6cf11689d3a33c5dccb43c9d4f2fd92168264f` |
+| Méthodologie | [`METHODOLOGY-VERDICT-3.md`](METHODOLOGY-VERDICT-3.md) | `APPROVE` | `564a9d8afaca637ebbd9415d30bc1cb587a57eb347baba73986b87f6c5760610` |
+| Vie privée France/UE | [`PRIVACY-VERDICT.md`](PRIVACY-VERDICT.md) | `APPROVE` | `181df0904924cf66483bab3c3fb556329c873e220790e44218101acf795b0cfb` |
+
+La promotion reste une passe séparée sous
+[`../AGENT-REVIEW-PROTOCOL.md`](../AGENT-REVIEW-PROTOCOL.md). Les quatre rôles vérifiés sont :
 
 1. architecture — cohérence WIT/JSON Schema, URN kind-specific et catalogue complet ;
 2. sécurité — bornes, refus, arithmétique, publication agrégée et imports WASM ;
@@ -45,6 +55,5 @@ jamais relâcher ce plancher contractuel. Les identités professionnelles resten
 forme d'attestations publiques consenties et vérifiées par le caller de release, jamais par le
 composant pur.
 
-Jusqu'aux quatre verdicts, à une passe de promotion séparée et au contrôle humain explicite, le code,
-les schémas et les données peuvent être testés mais toute fonctionnalité de scoring public reste
-désactivée à la compilation/release.
+Malgré les quatre verdicts favorables, une passe de promotion séparée et le contrôle humain explicite
+restent requis. Toute fonctionnalité de scoring public demeure désactivée à la compilation/release.
