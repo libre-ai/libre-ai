@@ -228,21 +228,21 @@ mod tests {
     #[test]
     fn maximum_envelope_bound_matches_the_canonical_shape() {
         let envelope = Envelope {
-            schema_version: "libre-ai.notebook-backup.v2".to_owned(),
-            id: format!("urn:libre-ai:backup:{}", "a".repeat(32)),
-            cipher: "aes-256-gcm".to_owned(),
+            schema_version: "libre-ai.notebook-backup.v2".into(),
+            id: format!("urn:libre-ai:backup:{}", "a".repeat(32)).into(),
+            cipher: "aes-256-gcm".into(),
             kdf: EnvelopeKdf {
-                algorithm: "argon2id".to_owned(),
+                algorithm: "argon2id".into(),
                 version: 19,
                 memory_kib: 131_072,
                 iterations: 4,
                 parallelism: 4,
                 output_length_bytes: 32,
-                salt: format!("{}==", "A".repeat(22)),
+                salt: format!("{}==", "A".repeat(22)).into(),
             },
-            nonce: "A".repeat(16),
-            ciphertext: String::new(),
-            digest: "a".repeat(64),
+            nonce: "A".repeat(16).into(),
+            ciphertext: String::new().into(),
+            digest: "a".repeat(64).into(),
         };
         let empty_ciphertext_envelope = serde_jcs::to_vec(&envelope).unwrap();
         assert_eq!(
