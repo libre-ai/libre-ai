@@ -59,7 +59,7 @@ No server account or session is required in local-only v1. Workspace unlock is l
 
 ## Runtime boundaries
 
-TypeScript owns block graph, UI, IndexedDB, local index, export selection and generation of fresh opaque 128-bit backup/context IDs plus fresh salt/nonce bytes. Before Context export it remaps every selected local block ID to a fresh export-scoped CSPRNG ID, rewrites roots/links, and keeps revisions and exclusions only in the local preview/receipt. Any product timestamp belongs inside the encrypted plaintext or local receipt, never in the portable payload. Notebook Core v2 is a candidate Rust/WASM boundary for canonical context bytes and Argon2id/AES-256-GCM sealing/opening; this amendment implements no engine. Promotion requires separate architecture, security, cryptography and privacy agent verdicts, followed by the owner’s merge authorization, which is not a technical review. The future component imports no host capability. No native FFI or server service is allowed in v1; sensitive bytes cross transiently, DOM and IndexedDB handles do not.
+TypeScript owns block graph, UI, IndexedDB, local index, export selection and generation of fresh opaque 128-bit backup/context IDs plus fresh salt/nonce bytes. Before Context export it remaps every selected local block ID to a fresh export-scoped CSPRNG ID, rewrites roots/links, and keeps revisions and exclusions only in the local preview/receipt. Any product timestamp belongs inside the encrypted plaintext or local receipt, never in the portable payload. Notebook Core v2 is a locked Rust/WASM boundary for canonical context bytes and Argon2id/AES-256-GCM sealing/opening; this amendment implements no engine. experimental implementation is allowed after Gate A/promotion; Gate B remains mandatory before any user backup, production use, or release. The future component imports no host capability. No native FFI or server service is allowed in v1; sensitive bytes cross transiently, DOM and IndexedDB handles do not.
 
 ## Accessibility and degraded mode
 
@@ -70,7 +70,7 @@ All core journeys work offline and keyboard-only. Editor announces formatting/st
 - Notebook Backup v2 — `contracts/schemas/notebook-backup.v2.schema.json` ;
 - Backup Seal Request v2 — `contracts/schemas/notebook-backup-seal-request.v2.schema.json` ;
 - Context Document v2 — `contracts/schemas/context-document.v2.schema.json` ;
-- canonicalization/backup crypto candidate — `contracts/wit/notebook-core-v2/world.wit` and `SEMANTICS.md` ;
+- canonicalization/backup crypto boundary — `contracts/wit/notebook-core-v2/world.wit` and `SEMANTICS.md` ;
 - public test vectors — `contracts/fixtures/notebook-core-v2/golden-vectors.v1.json`.
 
 No OpenAPI contract exists for v1 local data.
@@ -87,7 +87,7 @@ Unit tests cover graph closure, local-only exclusions/revisions, export-scoped I
 4. PWA offline/storage/accessibility shell — Web Platform ;
 5. restore/delete/privacy/browser qualification — Infrastructure and Release.
 
-The Rust boundary remains justified because memory-hard Argon2id is not supplied by browser Web Crypto, but implementation is NO-GO until an independent cryptographer reproduces the vectors and validates browser budgets, AAD, anti-oracle behavior and zeroization. Golden vectors and zeroized transient key material remain release gates.
+La frontière Rust reste justifiée car Argon2id mémoire dure n’est pas fournie par Web Crypto du navigateur, et la preuve Gate A montre la cohérence cryptographique. Le moteur expérimental peut démarrer après Gate A + décision propriétaire, mais Gate B reste obligatoire avant toute sauvegarde utilisateur, toute production ou release. Les vecteurs de golden et la gestion des matières sensibles demeurent les gates de release.
 
 ## Release and rollback
 
