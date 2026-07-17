@@ -65,6 +65,10 @@ TypeScript owns block graph, UI, IndexedDB, local index, export selection and ge
 
 All core journeys work offline and keyboard-only. Editor announces formatting/state without trapping focus; graph has a list/table equivalent. Export preview is readable text with included/excluded counts and warnings. Storage quota or key failure blocks mutation with export/recovery guidance and preserves previous data.
 
+## Resource floor
+
+Le minimum produit candidat est une machine macOS arm64 avec 8 Gio de mémoire physique, 8 CPU logiques, les capacités navigateur WASM SIMD128/Worker/Web Crypto/IndexedDB et un quota local candidat de 512 Mio. Ce n'est pas encore une promesse de support : les classes physiques 8 Gio et 16–24 Gio restent à qualifier avec les budgets verrouillés. Les bornes, statuts et commandes sont définis dans [`notebook-resource-floor.md`](notebook-resource-floor.md) et `toolchains/notebook-resource-classes.json`. Les propriétaires de machines correspondantes peuvent suivre l'[appel à contribution](../../tools/qualification/notebook-core-v2/CONTRIBUTING-DEVICE-QUALIFICATION.md) ; les VM 8/16 Gio y sont admises uniquement comme diagnostics non promouvables.
+
 ## Contracts
 
 - Notebook Backup v2 — `contracts/schemas/notebook-backup.v2.schema.json` ;
@@ -91,4 +95,4 @@ La frontière Rust reste justifiée car Argon2id mémoire dure n’est pas fourn
 
 ## Release and rollback
 
-Release requires offline create/edit/search, exact preview/export, encrypted backup/restore, conflict and deletion proof across supported browsers. Application rollback must continue reading current stored contract; a release that writes a new storage major cannot ship without a backward reader and export-first rollback plan. No rollback may resurrect a deleted key or workspace.
+Release requires offline create/edit/search, exact preview/export, encrypted backup/restore, conflict and deletion proof across supported browsers. Elle exige aussi une preuve réelle sur la classe minimale déclarée ; une simulation exécutée sur la machine de référence ne peut pas promouvoir une classe matérielle. Application rollback must continue reading current stored contract; a release that writes a new storage major cannot ship without a backward reader and export-first rollback plan. No rollback may resurrect a deleted key or workspace.

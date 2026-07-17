@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt;
 
 use serde::{Deserialize, Serialize};
@@ -51,15 +52,17 @@ impl fmt::Debug for OpenedBackup {
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub(crate) struct EnvelopeKdf {
-    pub algorithm: String,
+pub(crate) struct EnvelopeKdf<'a> {
+    #[serde(borrow)]
+    pub algorithm: Cow<'a, str>,
     pub version: u32,
     #[serde(rename = "memoryKiB")]
     pub memory_kib: u32,
     pub iterations: u32,
     pub parallelism: u32,
     pub output_length_bytes: u32,
-    pub salt: String,
+    #[serde(borrow)]
+    pub salt: Cow<'a, str>,
 }
 
 #[derive(Debug, Serialize)]
@@ -68,45 +71,30 @@ pub(crate) struct EnvelopeMetadataRef<'a> {
     pub schema_version: &'a str,
     pub id: &'a str,
     pub cipher: &'a str,
-    pub kdf: &'a EnvelopeKdf,
+    pub kdf: &'a EnvelopeKdf<'a>,
     pub nonce: &'a str,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct EnvelopeBodyRef<'a> {
-    pub schema_version: &'a str,
-    pub id: &'a str,
-    pub cipher: &'a str,
-    pub kdf: &'a EnvelopeKdf,
-    pub nonce: &'a str,
-    pub ciphertext: &'a str,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub(crate) struct EnvelopeBody {
-    pub schema_version: String,
-    pub id: String,
-    pub cipher: String,
-    pub kdf: EnvelopeKdf,
-    pub nonce: String,
-    pub ciphertext: String,
+pub(crate) struct Envelope<'a> {
+    #[serde(borrow)]
+    pub schema_version: Cow<'a, str>,
+    #[serde(borrow)]
+    pub id: Cow<'a, str>,
+    #[serde(borrow)]
+    pub cipher: Cow<'a, str>,
+    #[serde(borrow)]
+    pub kdf: EnvelopeKdf<'a>,
+    #[serde(borrow)]
+    pub nonce: Cow<'a, str>,
+    #[serde(borrow)]
+    pub ciphertext: Cow<'a, str>,
+    #[serde(borrow)]
+    pub digest: Cow<'a, str>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub(crate) struct Envelope {
-    pub schema_version: String,
-    pub id: String,
-    pub cipher: String,
-    pub kdf: EnvelopeKdf,
-    pub nonce: String,
-    pub ciphertext: String,
-    pub digest: String,
-}
-
-impl Envelope {
+impl Envelope<'_> {
     pub(crate) fn metadata(&self) -> EnvelopeMetadataRef<'_> {
         EnvelopeMetadataRef {
             schema_version: &self.schema_version,
@@ -114,31 +102,6 @@ impl Envelope {
             cipher: &self.cipher,
             kdf: &self.kdf,
             nonce: &self.nonce,
-        }
-    }
-
-    pub(crate) fn body(&self) -> EnvelopeBodyRef<'_> {
-        EnvelopeBodyRef {
-            schema_version: &self.schema_version,
-            id: &self.id,
-            cipher: &self.cipher,
-            kdf: &self.kdf,
-            nonce: &self.nonce,
-            ciphertext: &self.ciphertext,
-        }
-    }
-}
-
-impl EnvelopeBody {
-    pub(crate) fn with_digest(self, digest: String) -> Envelope {
-        Envelope {
-            schema_version: self.schema_version,
-            id: self.id,
-            cipher: self.cipher,
-            kdf: self.kdf,
-            nonce: self.nonce,
-            ciphertext: self.ciphertext,
-            digest,
         }
     }
 }
