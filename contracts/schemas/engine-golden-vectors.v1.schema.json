@@ -91,7 +91,7 @@
         },
         {
           "anyOf": [
-            { "not": { "pattern": "(?:file:|\\.\\.[/\\\\])" } },
+            { "not": { "pattern": "(?:[Ff][Ii][Ll][Ee]:|\\.\\.[/\\\\])" } },
             { "const": "file:///etc/passwd" }
           ]
         }

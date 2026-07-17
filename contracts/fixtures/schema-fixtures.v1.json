@@ -2060,6 +2060,20 @@
           }
         },
         {
+          "name": "uppercase local file URI payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "url": "FILE:///var/private/data"
+          }
+        },
+        {
+          "name": "mixed-case local file URI payload",
+          "path": "/reproductionEvidence",
+          "value": {
+            "url": "FiLe:///tmp/x"
+          }
+        },
+        {
           "name": "unbounded public string",
           "path": "/status",
           "value": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"

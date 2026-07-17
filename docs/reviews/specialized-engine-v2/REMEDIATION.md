@@ -38,7 +38,7 @@ This increment responds to `ENGSEC-BLK-001` and `ENGSEC-MAJ-001` in
 - standalone or embedded `alice@example.org` and `sk_live_example_secret` in public payload
   evidence;
 - email-shaped property names, userinfo-prefix suffix injection, recursive `../../secrets.txt` and
-  non-approved `file:///var/private/data` payloads;
+  non-approved lowercase, uppercase or mixed-case local `file:` payloads;
 - a status above its 128-character bound.
 
 The generic gate independently validates exact contract-file hashes and the aggregate resource
