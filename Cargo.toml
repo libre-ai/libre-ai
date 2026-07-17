@@ -29,7 +29,7 @@ zeroize = { version = "=1.9.0", features = ["zeroize_derive"] }
 [workspace.package]
 edition = "2024"
 rust-version = "1.97"
-license = "MIT OR Apache-2.0"
+license = "EUPL-1.2"
 repository = "https://github.com/libre-ai/libre-ai"
 
 [profile.release]
