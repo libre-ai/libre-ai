@@ -26,19 +26,47 @@ export type LibreAiPublicVoteDatasetV2 = {
     role: "methodological-review" | "legal-privacy-review";
     actorKind: "human";
     reviewerId: string;
+    professionalCapacity: "methodology-expert" | "privacy-legal-expert";
     approvedAt: string;
     reference: string;
     subjectDigest: string;
+    attestation: {
+      uri: string;
+      digest: string;
+      publicationBasis: "explicit-publication-consent";
+      identityBoundary: "professional-attestation-only";
+    };
   }> &
     unknown &
     unknown;
+  publicationPolicy: {
+    sourceMode: "aggregate-only" | "public-roll-call-aggregated";
+    minimumGroupSize: number;
+    smallGroupAction: "exclude-statement";
+    identityExposure: "prohibited";
+    publicationReviewExpiresAt: string;
+  };
 };
 
 export type Reviewapproval = {
   role: "methodological-review" | "legal-privacy-review";
   actorKind: "human";
   reviewerId: string;
+  professionalCapacity: "methodology-expert" | "privacy-legal-expert";
   approvedAt: string;
   reference: string;
   subjectDigest: string;
+  attestation: {
+    uri: string;
+    digest: string;
+    publicationBasis: "explicit-publication-consent";
+    identityBoundary: "professional-attestation-only";
+  };
+};
+
+export type Publicaggregatesource = {
+  uri: string;
+  retrievedAt: string;
+  digest: string;
+  licence: string;
 };
