@@ -15,7 +15,7 @@ Historical sibling repositories are read-only evidence. Do not submit new archit
 
 ## Device qualification contributions
 
-Owners of modest Apple Silicon Macs can contribute public-fixture Notebook performance evidence without sharing the device or any personal data. Physical and VM procedures, expected artifacts and acceptance criteria are documented in [`tools/qualification/notebook-core-v2/CONTRIBUTING-DEVICE-QUALIFICATION.md`](tools/qualification/notebook-core-v2/CONTRIBUTING-DEVICE-QUALIFICATION.md). VM results are diagnostic-only and can never promote a supported hardware class.
+Owners of modest Apple Silicon Macs can optionally contribute public-fixture Notebook performance evidence without sharing the device or any personal data. Physical and VM procedures, expected artifacts and acceptance criteria are documented in [`tools/qualification/notebook-core-v2/CONTRIBUTING-DEVICE-QUALIFICATION.md`](tools/qualification/notebook-core-v2/CONTRIBUTING-DEVICE-QUALIFICATION.md). The absence of 8 Gio or 16–24 Gio contributions cannot block the current Gate B, and those classes remain unsupported until independently qualified. VM results are diagnostic-only and can never promote a supported hardware class.
 
 ## Licence and Developer Certificate of Origin
 
