@@ -20,14 +20,15 @@ Lire dans cet ordre :
 5. [`docs/adr/0001-bun-fullstack-rust-specialized-big-bang.md`](docs/adr/0001-bun-fullstack-rust-specialized-big-bang.md)
 6. [`docs/adr/0002-g1-cross-cutting-product-decisions.md`](docs/adr/0002-g1-cross-cutting-product-decisions.md)
 7. [`docs/adr/0004-licensing-governance.md`](docs/adr/0004-licensing-governance.md)
-8. [`docs/specifications/SPECIFICATION-STANDARD.md`](docs/specifications/SPECIFICATION-STANDARD.md)
-9. [`docs/specifications/DATA-LIFECYCLE.md`](docs/specifications/DATA-LIFECYCLE.md) et [`IDENTITY-AUTHORIZATION.md`](docs/specifications/IDENTITY-AUTHORIZATION.md)
-10. [`docs/architecture/TARGET.md`](docs/architecture/TARGET.md)
-11. [`docs/transformation/CLEANUP.md`](docs/transformation/CLEANUP.md)
-12. [`docs/transformation/BIG-BANG.md`](docs/transformation/BIG-BANG.md)
-13. [`docs/transformation/WORKSTREAMS.md`](docs/transformation/WORKSTREAMS.md)
-14. [`prompts/`](prompts/) pour l’exécution par phase
+8. [`docs/adr/0005-notebook-gate-b-host-qualification.md`](docs/adr/0005-notebook-gate-b-host-qualification.md)
+9. [`docs/specifications/SPECIFICATION-STANDARD.md`](docs/specifications/SPECIFICATION-STANDARD.md)
+10. [`docs/specifications/DATA-LIFECYCLE.md`](docs/specifications/DATA-LIFECYCLE.md) et [`IDENTITY-AUTHORIZATION.md`](docs/specifications/IDENTITY-AUTHORIZATION.md)
+11. [`docs/architecture/TARGET.md`](docs/architecture/TARGET.md)
+12. [`docs/transformation/CLEANUP.md`](docs/transformation/CLEANUP.md)
+13. [`docs/transformation/BIG-BANG.md`](docs/transformation/BIG-BANG.md)
+14. [`docs/transformation/WORKSTREAMS.md`](docs/transformation/WORKSTREAMS.md)
+15. [`prompts/`](prompts/) pour l’exécution par phase
 
 ## État
 
-Les 18 repositories historiques sont figés et archivés aux SHAs enregistrés dans `ecosystem/LEGACY-MANIFEST.yaml`. G0 est fermé ; le Specification Lock est rouvert uniquement pour les candidats WP-G2-S01 de l’ADR-0003, en attente de revues agentiques indépendantes et attribuables. Foundation Build démarre par la qualification de la toolchain. Le monorepo reste en préproduction : aucun produit historique n’est encore reconstruit et aucune disponibilité produit n’est revendiquée.
+Les 18 repositories historiques sont figés et archivés aux SHAs enregistrés dans `ecosystem/LEGACY-MANIFEST.yaml`. G0 et le Specification Lock sont fermés ; les 85 autorités du catalogue sont verrouillées. Foundation Build poursuit uniquement la qualification Notebook Core v2 Gate B et les autres fondations explicitement contrôlées. Un host Notebook désactivé peut traiter les fixtures publiques de qualification, mais Gate B, les données utilisateur, les nouveaux moteurs produit, la production et la release restent bloqués.
