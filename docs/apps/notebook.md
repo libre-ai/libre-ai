@@ -85,7 +85,7 @@ Unit tests cover graph closure, local-only exclusions/revisions, export-scoped I
 
 Une campagne storage macOS arm64 place maintenant chaque profil navigateur dans une image APFS sparse jetable et bornée à 6 Gio. Après un vrai marqueur OS `ENOSPC`, le host refuse le staging d'une enveloppe publique déterministe de 16 Mio avant de démarrer un worker ; la relance du même profil retrouve l'état produit antérieur, puis restauration et sauvegarde réussissent après suppression du filler. Cette preuve vaut pour le comportement local sous épuisement physique du filesystem, pas pour une classe matérielle ni pour la fiabilité de `navigator.storage.estimate()`.
 
-Les tests produit complets doivent encore couvrir le modèle blocs/révisions, l'OOM réel et attribuable du processus, l'import atomique et la suppression. Les classes physiques 8 Gio et 16–24 Gio restent sans preuve et hors support déclaré, mais leurs contributions ne bloquent plus Gate B. Security review proves no content network requests and no plaintext persistence/logging. Cross-browser backup vectors must round-trip.
+Les tests produit complets doivent encore couvrir le modèle blocs/révisions, l'import atomique et la suppression. Conformément à l'ADR-0007, l'OOM réel du processus reste un diagnostic facultatif : Gate B exige à la place la reprise bornée après terminaison abrupte et crash dans les trois moteurs, sans autoriser l'épuisement global de l'hôte. Les classes physiques 8 Gio et 16–24 Gio restent sans preuve et hors support déclaré, mais leurs contributions ne bloquent plus Gate B. Security review proves no content network requests and no plaintext persistence/logging. Cross-browser backup vectors must round-trip.
 
 ## Work packages
 
