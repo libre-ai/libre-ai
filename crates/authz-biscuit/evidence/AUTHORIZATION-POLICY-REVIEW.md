@@ -1,6 +1,6 @@
 # WP-G2-Z01 authorization policy review
 
-Status: **awaiting independent human approval**
+Status: **fresh independent agent review required after adversarial remediation**
 Production authorization: **not granted**
 
 ## Authorities reviewed by the implementation
@@ -12,8 +12,9 @@ Production authorization: **not granted**
 | `contracts/authz/missions-v1.datalog` | `9bfa33eda5e34b8a8d1262881fc951e2455c47769ccaf48d0359bed14a20d2be` |
 
 The contract files are read-only in `Z01`; policy sources are embedded directly
-from them. The verifier independently checks the signed authority shape and its
-15-minute maximum TTL before executing an authorizer.
+from them. The verifier independently checks the signed authority shape, the
+mandatory canonical first attenuation block and the 15-minute maximum remaining
+lifetime before executing an authorizer.
 
 ## Evidence vectors
 
@@ -23,7 +24,9 @@ from them. The verifier independently checks the signed authority shape and its
 | unknown operation | deny |
 | missing authority tenant | deny |
 | missing authority expiry check | deny |
-| cross-tenant resource | deny |
+| canonical signed authority without initial attenuation | deny |
+| malformed/non-canonical initial attenuation | deny |
+| cross-tenant resource or divergent resource-tenant witness | deny |
 | role not recognized by mission policy | deny |
 | participant private read without matching ownership | deny |
 | participant private read with authoritative ownership | allow |
@@ -34,8 +37,9 @@ from them. The verifier independently checks the signed authority shape and its
 | unknown key ID | deny before policy |
 | revoked verified root block | deny before policy |
 | unavailable revocation store without fresh cache | deny before policy |
+| cache TTL expiry or clock rollback with unavailable store | deny before policy |
 | malformed or oversized revocation root ID | reject before store access |
-| expired revocation record | reject before store write |
+| shorter child attenuation targets the same root family | retain revocation to authority expiry |
 | token/principal debug formatting | redacted |
 
 Tests: `crates/authz-biscuit/tests/authz.rs`.
@@ -51,5 +55,6 @@ Tests: `crates/authz-biscuit/tests/authz.rs`.
 - Are the five locked refusal codes sufficiently generic while retaining useful
   root/policy evidence?
 
-No agent answer constitutes approval. Approval must identify the reviewer and
-bind this file, the three authority hashes and the reviewed commit SHA.
+The dedicated review-only pass must follow `docs/reviews/AGENT-REVIEW-PROTOCOL.md`,
+identify its pass/provider/model metadata and bind this file, the three
+authority hashes and the reviewed commit SHA.

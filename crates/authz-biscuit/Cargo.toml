@@ -9,6 +9,6 @@ publish = false
 
 [dependencies]
 biscuit-auth.workspace = true
-biscuit-parser.workspace = true
+biscuit-parser-legacy.workspace = true
 sha2.workspace = true
 zeroize.workspace = true

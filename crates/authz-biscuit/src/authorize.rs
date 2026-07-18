@@ -1,13 +1,13 @@
 use crate::AuthzError;
 use crate::keys::VerificationKeyRing;
-use crate::revocation::{RevocationChecker, RevocationStore};
+use crate::revocation::{RevocationChecker, RevocationStore, RevocationTarget};
 use crate::token::{
     SensitiveToken, root_block_id, valid_operation, valid_prefixed_id, valid_resource,
 };
 use biscuit_auth::builder::{date, fact, string};
 use biscuit_auth::{AuthorizerLimits, Biscuit, UnverifiedBiscuit};
-use biscuit_parser::builder::{Binary, CheckKind, Op, Term};
-use biscuit_parser::parser::parse_source;
+use biscuit_parser_legacy::builder::{Binary, Check, CheckKind, Op, Rule, Term};
+use biscuit_parser_legacy::parser::parse_source;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const SESSIONS_POLICY: &str = include_str!("../../../contracts/authz/sessions-v1.datalog");
@@ -53,6 +53,14 @@ pub struct AuthorizationDecision {
     pub principal: VerifiedPrincipal,
     pub root_block_id: String,
     pub matched_policy: usize,
+    revocation_target: RevocationTarget,
+}
+
+impl AuthorizationDecision {
+    #[must_use]
+    pub fn revocation_target(&self) -> &RevocationTarget {
+        &self.revocation_target
+    }
 }
 
 impl std::fmt::Debug for AuthorizationDecision {
@@ -87,6 +95,7 @@ pub fn authorize<S: RevocationStore>(
     let root_block_id = root_block_id(&token)?;
     revocations.check(&root_block_id, context.now)?;
     let (principal, expires_at) = authority_principal(&token, &root_block_id)?;
+    validate_initial_attenuation(&token, &principal, expires_at, &root_block_id)?;
     if principal.tenant_id != context.request_tenant {
         return Err(AuthzError::for_root("auth.tenant_mismatch", &root_block_id));
     }
@@ -131,10 +140,12 @@ pub fn authorize<S: RevocationStore>(
             max_time: Duration::from_millis(50),
         })
         .map_err(|_| AuthzError::for_root("auth.operation_denied", &root_block_id))?;
+    let revocation_target = RevocationTarget::new(root_block_id.clone(), expires_at);
     Ok(AuthorizationDecision {
         principal,
         root_block_id,
         matched_policy,
+        revocation_target,
     })
 }
 
@@ -186,33 +197,7 @@ fn authority_principal(
         return Err(denied());
     }
 
-    let check = &parsed.checks[0].1;
-    if check.kind != CheckKind::One || check.queries.len() != 1 {
-        return Err(denied());
-    }
-    let query = &check.queries[0];
-    if query.head.name != "query"
-        || !query.head.terms.is_empty()
-        || !query.scopes.is_empty()
-        || query.body.len() != 1
-        || query.expressions.len() != 1
-    {
-        return Err(denied());
-    }
-    let time_variable = match (query.body[0].name.as_str(), query.body[0].terms.as_slice()) {
-        ("time", [Term::Variable(variable)]) => variable,
-        _ => return Err(denied()),
-    };
-    let expires_at = match query.expressions[0].ops.as_slice() {
-        [
-            Op::Value(Term::Variable(variable)),
-            Op::Value(Term::Date(expires_at)),
-            Op::Binary(Binary::LessThan),
-        ] if variable == time_variable => UNIX_EPOCH
-            .checked_add(Duration::from_secs(*expires_at))
-            .ok_or_else(denied)?,
-        _ => return Err(denied()),
-    };
+    let expires_at = exact_expiration_check(&parsed.checks[0].1).ok_or_else(denied)?;
     Ok((
         VerifiedPrincipal {
             user_id,
@@ -221,6 +206,108 @@ fn authority_principal(
         },
         expires_at,
     ))
+}
+
+fn validate_initial_attenuation(
+    token: &Biscuit,
+    principal: &VerifiedPrincipal,
+    authority_expires_at: SystemTime,
+    root_block_id: &str,
+) -> Result<(), AuthzError> {
+    let invalid = || AuthzError::for_root("auth.biscuit_invalid", root_block_id);
+    if token.block_count() < 2 || !matches!(token.context().get(1), Some(None)) {
+        return Err(invalid());
+    }
+    let source = token.print_block_source(1).map_err(|_| invalid())?;
+    let parsed = parse_source(&source).map_err(|_| invalid())?;
+    if !parsed.scopes.is_empty()
+        || !parsed.facts.is_empty()
+        || !parsed.rules.is_empty()
+        || !parsed.policies.is_empty()
+        || parsed.checks.len() != 4
+    {
+        return Err(invalid());
+    }
+
+    let resource = exact_string_check(&parsed.checks[0].1, "resource").ok_or_else(invalid)?;
+    let tenant = exact_string_check(&parsed.checks[2].1, "tenant").ok_or_else(invalid)?;
+    let expires_at = exact_expiration_check(&parsed.checks[3].1).ok_or_else(invalid)?;
+    if !valid_resource(resource)
+        || !canonical_operation_check(&parsed.checks[1].1)
+        || tenant != principal.tenant_id
+        || expires_at != authority_expires_at
+    {
+        return Err(invalid());
+    }
+    Ok(())
+}
+
+fn canonical_query(check: &Check) -> Option<&Rule> {
+    if check.kind != CheckKind::One || check.queries.len() != 1 {
+        return None;
+    }
+    let query = &check.queries[0];
+    if query.head.name != "query" || !query.head.terms.is_empty() || !query.scopes.is_empty() {
+        return None;
+    }
+    Some(query)
+}
+
+fn exact_string_check<'a>(check: &'a Check, predicate: &str) -> Option<&'a str> {
+    let query = canonical_query(check)?;
+    if !query.expressions.is_empty() || query.body.len() != 1 {
+        return None;
+    }
+    match (query.body[0].name.as_str(), query.body[0].terms.as_slice()) {
+        (name, [Term::Str(value)]) if name == predicate => Some(value),
+        _ => None,
+    }
+}
+
+fn canonical_operation_check(check: &Check) -> bool {
+    let Some(query) = canonical_query(check) else {
+        return false;
+    };
+    if query.body.len() != 1 || query.expressions.len() != 1 {
+        return false;
+    }
+    let operation_variable = match (query.body[0].name.as_str(), query.body[0].terms.as_slice()) {
+        ("operation", [Term::Variable(variable)]) => variable,
+        _ => return false,
+    };
+    match query.expressions[0].ops.as_slice() {
+        [
+            Op::Value(Term::Set(operations)),
+            Op::Value(Term::Variable(variable)),
+            Op::Binary(Binary::Contains),
+        ] if variable == operation_variable => {
+            !operations.is_empty()
+                && operations.len() <= 20
+                && operations.iter().all(
+                    |operation| matches!(operation, Term::Str(value) if valid_operation(value)),
+                )
+        }
+        _ => false,
+    }
+}
+
+fn exact_expiration_check(check: &Check) -> Option<SystemTime> {
+    let query = canonical_query(check)?;
+    if query.body.len() != 1 || query.expressions.len() != 1 {
+        return None;
+    }
+    let time_variable = match (query.body[0].name.as_str(), query.body[0].terms.as_slice()) {
+        ("time", [Term::Variable(variable)]) => variable,
+        _ => return None,
+    };
+    match query.expressions[0].ops.as_slice() {
+        [
+            Op::Value(Term::Variable(variable)),
+            Op::Value(Term::Date(expires_at)),
+            Op::Binary(Binary::LessThan),
+        ] if variable == time_variable => UNIX_EPOCH.checked_add(Duration::from_secs(*expires_at)),
+        _ => None,
+    }
 }
 
 fn validate_context(context: &AuthorizationContext) -> Result<(), AuthzError> {

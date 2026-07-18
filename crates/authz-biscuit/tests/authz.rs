@@ -1,11 +1,11 @@
-use biscuit_auth::builder::{BlockBuilder, date, fact, string};
+use biscuit_auth::builder::{BlockBuilder, Term, date, fact, string};
 use biscuit_auth::{Biscuit, KeyPair};
 use libre_ai_authz_biscuit::{
     AttenuationRequest, AuthorizationContext, BiscuitIssuer, CanonicalPolicy, IssuanceRequest,
     RevocationChecker, RevocationRecord, RevocationStore, RevocationStoreUnavailable,
     SensitiveToken, VerificationKey, VerificationKeyRing, VerificationKeyStatus, authorize,
 };
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const USER: &str = "usr_0123456789abcdef";
@@ -13,16 +13,24 @@ const OTHER_USER: &str = "usr_fedcba9876543210";
 const TENANT: &str = "ten_0123456789abcdef";
 const OTHER_TENANT: &str = "ten_fedcba9876543210";
 const RESOURCE: &str = "mission:0123456789abcdef";
+const AUTHORITY_TEMPLATE: &str = include_str!("../../../contracts/authz/authority-v1.datalog");
 
 #[derive(Default)]
 struct MemoryRevocations {
     revoked: BTreeSet<String>,
     unavailable: bool,
+    checks: usize,
+    fail_after_checks: Option<usize>,
 }
 
 impl RevocationStore for MemoryRevocations {
     fn is_revoked(&mut self, root_block_id: &str) -> Result<bool, RevocationStoreUnavailable> {
-        if self.unavailable {
+        self.checks += 1;
+        if self.unavailable
+            || self
+                .fail_after_checks
+                .is_some_and(|allowed| self.checks > allowed)
+        {
             return Err(RevocationStoreUnavailable);
         }
         Ok(self.revoked.contains(root_block_id))
@@ -32,7 +40,7 @@ impl RevocationStore for MemoryRevocations {
         if self.unavailable {
             return Err(RevocationStoreUnavailable);
         }
-        self.revoked.insert(record.root_block_id);
+        self.revoked.insert(record.root_block_id().to_owned());
         Ok(())
     }
 }
@@ -48,7 +56,13 @@ fn operations(values: &[&str]) -> BTreeSet<String> {
 fn issuer_and_ring(key_id: u32, now: SystemTime) -> (BiscuitIssuer, VerificationKeyRing) {
     let key_pair = KeyPair::new();
     let public_key = key_pair.public();
-    let issuer = BiscuitIssuer::new(key_id, key_pair, Duration::from_secs(900)).unwrap();
+    let issuer = BiscuitIssuer::new(
+        key_id,
+        key_pair,
+        Duration::from_secs(900),
+        now - Duration::from_secs(1),
+    )
+    .unwrap();
     let ring = VerificationKeyRing::new(VerificationKey {
         key_id,
         public_key,
@@ -118,7 +132,7 @@ fn minimal_mission_authorization_is_verified_and_deny_by_default() {
     assert_eq!(decision.principal.user_id, USER);
     assert_eq!(decision.principal.tenant_id, TENANT);
     assert_eq!(decision.principal.role, "requester");
-    assert_eq!(decision.root_block_id, token.root_block_id);
+    assert_eq!(decision.root_block_id, token.root_block_id());
 
     let error = authorize(
         &token.token,
@@ -128,10 +142,7 @@ fn minimal_mission_authorization_is_verified_and_deny_by_default() {
     )
     .unwrap_err();
     assert_eq!(error.code, "auth.operation_denied");
-    assert_eq!(
-        error.root_block_id.as_deref(),
-        Some(token.root_block_id.as_str())
-    );
+    assert_eq!(error.root_block_id.as_deref(), Some(token.root_block_id()));
 
     let wrong_role = issue(&issuer, now, "observer", &["read"], 300)
         .serialize()
@@ -211,11 +222,66 @@ fn tenant_role_owner_and_expiration_fail_closed() {
 }
 
 #[test]
+fn tenant_witness_lifetime_and_transport_boundaries_fail_closed() {
+    let now = at(150);
+    let (issuer, ring) = issuer_and_ring(22, now);
+    let token = issue(&issuer, now, "requester", &["read"], 900)
+        .serialize()
+        .unwrap();
+
+    authorize(
+        &token.token,
+        mission_context(now, "read"),
+        &ring,
+        &mut checker(),
+    )
+    .unwrap();
+    assert_eq!(
+        authorize(
+            &token.token,
+            mission_context(now - Duration::from_secs(1), "read"),
+            &ring,
+            &mut checker(),
+        )
+        .unwrap_err()
+        .code,
+        "auth.biscuit_invalid"
+    );
+
+    let mut divergent_tenant_witness = mission_context(now + Duration::from_secs(1), "read");
+    divergent_tenant_witness.resource_tenant = OTHER_TENANT.to_owned();
+    let mismatch = authorize(
+        &token.token,
+        divergent_tenant_witness,
+        &ring,
+        &mut checker(),
+    )
+    .unwrap_err();
+    assert_eq!(mismatch.code, "auth.tenant_mismatch");
+    assert!(mismatch.root_block_id.is_none());
+
+    let malformed = SensitiveToken::from_transport("not-base64".to_owned()).unwrap();
+    assert_eq!(
+        authorize(
+            &malformed,
+            mission_context(now, "read"),
+            &ring,
+            &mut checker(),
+        )
+        .unwrap_err()
+        .code,
+        "auth.biscuit_invalid"
+    );
+}
+
+#[test]
 fn offline_attenuation_can_only_reduce_authority() {
     let now = at(200);
     let (issuer, ring) = issuer_and_ring(3, now);
     let parent = issue(&issuer, now, "requester", &["read", "propose"], 300);
-    let parent_root = parent.serialize().unwrap().root_block_id;
+    let parent_serialized = parent.serialize().unwrap();
+    let parent_root = parent_serialized.root_block_id().to_owned();
+    let root_family_expires_at = parent_serialized.revocation_target().expires_at();
     assert_eq!(
         parent
             .attenuate(
@@ -288,7 +354,12 @@ fn offline_attenuation_can_only_reduce_authority() {
     }
 
     let child = child.serialize().unwrap();
-    assert_eq!(child.root_block_id, parent_root);
+    assert_eq!(child.root_block_id(), parent_root);
+    assert!(child.expires_at() < child.revocation_target().expires_at());
+    assert_eq!(
+        child.revocation_target().expires_at(),
+        root_family_expires_at
+    );
     let mut revocations = checker();
     authorize(
         &child.token,
@@ -346,7 +417,7 @@ fn revocation_is_immediate_and_store_outage_denies() {
         .serialize()
         .unwrap();
     let mut revocations = checker();
-    authorize(
+    let decision = authorize(
         &token.token,
         mission_context(now + Duration::from_secs(1), "read"),
         &ring,
@@ -356,12 +427,8 @@ fn revocation_is_immediate_and_store_outage_denies() {
 
     revocations
         .revoke(
-            RevocationRecord {
-                root_block_id: token.root_block_id.clone(),
-                reason_code: "session.logout".to_owned(),
-                revoked_at: now + Duration::from_secs(2),
-                expires_at: token.expires_at,
-            },
+            decision.revocation_target(),
+            "session.logout".to_owned(),
             now + Duration::from_secs(2),
         )
         .unwrap();
@@ -413,6 +480,7 @@ fn two_key_rotation_has_a_bounded_overlap() {
                     status: VerificationKeyStatus::Current,
                 },
                 now + Duration::from_secs(909),
+                now,
             )
             .unwrap_err()
             .code,
@@ -432,6 +500,51 @@ fn two_key_rotation_has_a_bounded_overlap() {
                     status: VerificationKeyStatus::Current,
                 },
                 now + Duration::from_secs(920),
+                now,
+            )
+            .unwrap_err()
+            .code,
+        "auth.key_unavailable"
+    );
+
+    let mut exact_overlap_ring = ring.clone();
+    let exact_overlap_pair = KeyPair::new();
+    exact_overlap_ring
+        .begin_rotation(
+            VerificationKey {
+                key_id: 11,
+                public_key: exact_overlap_pair.public(),
+                valid_from: now + Duration::from_secs(10),
+                valid_until: None,
+                status: VerificationKeyStatus::Current,
+            },
+            now + Duration::from_secs(910),
+            now,
+        )
+        .unwrap();
+
+    let stale_current_pair = KeyPair::new();
+    let mut stale_ring = VerificationKeyRing::new(VerificationKey {
+        key_id: 20,
+        public_key: stale_current_pair.public(),
+        valid_from: now - Duration::from_secs(2_000),
+        valid_until: None,
+        status: VerificationKeyStatus::Current,
+    })
+    .unwrap();
+    let stale_new_pair = KeyPair::new();
+    assert_eq!(
+        stale_ring
+            .begin_rotation(
+                VerificationKey {
+                    key_id: 21,
+                    public_key: stale_new_pair.public(),
+                    valid_from: now - Duration::from_secs(1_000),
+                    valid_until: None,
+                    status: VerificationKeyStatus::Current,
+                },
+                now - Duration::from_secs(100),
+                now,
             )
             .unwrap_err()
             .code,
@@ -440,7 +553,30 @@ fn two_key_rotation_has_a_bounded_overlap() {
 
     let new_pair = KeyPair::new();
     let new_public = new_pair.public();
-    let new_issuer = BiscuitIssuer::new(11, new_pair, Duration::from_secs(900)).unwrap();
+    let new_issuer = BiscuitIssuer::new(
+        11,
+        new_pair,
+        Duration::from_secs(900),
+        now + Duration::from_secs(10),
+    )
+    .unwrap();
+    assert_eq!(
+        new_issuer
+            .issue(
+                IssuanceRequest {
+                    user_id: USER.to_owned(),
+                    tenant_id: TENANT.to_owned(),
+                    role: "requester".to_owned(),
+                    resource: RESOURCE.to_owned(),
+                    operations: operations(&["read"]),
+                    ttl: Duration::from_secs(300),
+                },
+                now,
+            )
+            .unwrap_err()
+            .code,
+        "auth.key_unavailable"
+    );
     ring.begin_rotation(
         VerificationKey {
             key_id: 11,
@@ -450,9 +586,31 @@ fn two_key_rotation_has_a_bounded_overlap() {
             status: VerificationKeyStatus::Current,
         },
         now + Duration::from_secs(920),
+        now,
     )
     .unwrap();
     assert_eq!(ring.public_keys().len(), 2);
+
+    let mut retiring_survivor = ring.clone();
+    retiring_survivor.revoke_key(11);
+    let replacement_pair = KeyPair::new();
+    assert_eq!(
+        retiring_survivor
+            .begin_rotation(
+                VerificationKey {
+                    key_id: 12,
+                    public_key: replacement_pair.public(),
+                    valid_from: now + Duration::from_secs(20),
+                    valid_until: None,
+                    status: VerificationKeyStatus::Current,
+                },
+                now + Duration::from_secs(920),
+                now + Duration::from_secs(20),
+            )
+            .unwrap_err()
+            .code,
+        "auth.key_unavailable"
+    );
 
     let new_token = issue(
         &new_issuer,
@@ -464,6 +622,13 @@ fn two_key_rotation_has_a_bounded_overlap() {
     .serialize()
     .unwrap();
     let mut revocations = checker();
+    authorize(
+        &new_token.token,
+        mission_context(now + Duration::from_secs(10), "read"),
+        &ring,
+        &mut revocations,
+    )
+    .unwrap();
     authorize(
         &old_token.token,
         mission_context(now + Duration::from_secs(20), "read"),
@@ -490,6 +655,7 @@ fn two_key_rotation_has_a_bounded_overlap() {
                 status: VerificationKeyStatus::Current,
             },
             now + Duration::from_secs(930),
+            now + Duration::from_secs(20),
         )
         .unwrap_err()
         .code,
@@ -543,6 +709,7 @@ fn two_key_rotation_has_a_bounded_overlap() {
                     status: VerificationKeyStatus::Current,
                 },
                 now + Duration::from_secs(1_300),
+                now + Duration::from_secs(922),
             )
             .unwrap_err()
             .code,
@@ -564,6 +731,41 @@ fn malformed_signed_authority_without_tenant_or_expiry_is_denied() {
         status: VerificationKeyStatus::Current,
     })
     .unwrap();
+
+    let mut parameters = HashMap::<String, Term>::new();
+    parameters.insert("user".to_owned(), USER.into());
+    parameters.insert("tenant".to_owned(), TENANT.into());
+    parameters.insert("role".to_owned(), "requester".into());
+    parameters.insert(
+        "expires_at".to_owned(),
+        (now + Duration::from_secs(300)).into(),
+    );
+    let mut authority_only_builder = Biscuit::builder();
+    authority_only_builder.set_root_key_id(20);
+    authority_only_builder
+        .add_code_with_params(AUTHORITY_TEMPLATE, parameters, HashMap::new())
+        .unwrap();
+    let authority_only = authority_only_builder.build(&key_pair).unwrap();
+    let root_only = authority_only.to_base64().unwrap();
+    let empty_attenuation = authority_only
+        .append(BlockBuilder::new())
+        .unwrap()
+        .to_base64()
+        .unwrap();
+    for malformed in [root_only, empty_attenuation] {
+        let malformed = SensitiveToken::from_transport(malformed).unwrap();
+        assert_eq!(
+            authorize(
+                &malformed,
+                mission_context(now + Duration::from_secs(1), "export"),
+                &ring,
+                &mut checker(),
+            )
+            .unwrap_err()
+            .code,
+            "auth.biscuit_invalid"
+        );
+    }
 
     let mut without_expiry_builder = Biscuit::builder();
     without_expiry_builder.set_root_key_id(20);
@@ -639,7 +841,7 @@ fn session_audience_is_required_and_debug_output_is_redacted() {
         assert!(!debug.contains(TENANT));
         assert!(!debug.contains(token.token.expose()));
     }
-    assert_eq!(token.root_block_id.len(), 64);
+    assert_eq!(token.root_block_id().len(), 64);
 }
 
 #[test]
@@ -666,7 +868,7 @@ fn cache_ttl_and_input_bounds_are_enforced() {
         "auth.biscuit_invalid"
     );
     assert_eq!(
-        BiscuitIssuer::new(39, KeyPair::new(), Duration::from_secs(901))
+        BiscuitIssuer::new(39, KeyPair::new(), Duration::from_secs(901), UNIX_EPOCH,)
             .err()
             .unwrap()
             .code,
@@ -682,38 +884,61 @@ fn cache_ttl_and_input_bounds_are_enforced() {
             .code,
         "auth.biscuit_invalid"
     );
-    assert_eq!(
-        revocations
-            .revoke(
-                RevocationRecord {
-                    root_block_id: "a".repeat(64),
-                    reason_code: "test.invalid-retention".to_owned(),
-                    revoked_at: now,
-                    expires_at: now + Duration::from_secs(901),
-                },
-                now,
-            )
-            .unwrap_err()
-            .code,
-        "auth.biscuit_invalid"
-    );
-    assert_eq!(
-        revocations
-            .revoke(
-                RevocationRecord {
-                    root_block_id: "a".repeat(64),
-                    reason_code: "test.expired-record".to_owned(),
-                    revoked_at: now - Duration::from_secs(60),
-                    expires_at: now - Duration::from_secs(1),
-                },
-                now,
-            )
-            .unwrap_err()
-            .code,
-        "auth.biscuit_invalid"
-    );
+
+    let root_block_id = "b".repeat(64);
+    let mut rollback_sensitive = RevocationChecker::new(
+        MemoryRevocations {
+            fail_after_checks: Some(1),
+            ..MemoryRevocations::default()
+        },
+        Duration::from_secs(30),
+    )
+    .unwrap();
+    rollback_sensitive.check(&root_block_id, now).unwrap();
+    rollback_sensitive
+        .check(&root_block_id, now + Duration::from_secs(30))
+        .unwrap();
+    for invalid_now in [now + Duration::from_secs(31), now - Duration::from_secs(1)] {
+        assert_eq!(
+            rollback_sensitive
+                .check(&root_block_id, invalid_now)
+                .unwrap_err()
+                .code,
+            "auth.biscuit_invalid"
+        );
+    }
 
     let (issuer, ring) = issuer_and_ring(40, now);
+    let bounded_target = issue(&issuer, now, "requester", &["read"], 900)
+        .serialize()
+        .unwrap();
+    for invalid_now in [now - Duration::from_secs(1), now + Duration::from_secs(901)] {
+        assert_eq!(
+            revocations
+                .revoke(
+                    bounded_target.revocation_target(),
+                    "test.invalid-retention".to_owned(),
+                    invalid_now,
+                )
+                .unwrap_err()
+                .code,
+            "auth.biscuit_invalid"
+        );
+    }
+    let mut exact_retention = checker();
+    exact_retention
+        .revoke(
+            bounded_target.revocation_target(),
+            "test.exact-retention".to_owned(),
+            now,
+        )
+        .unwrap();
+    assert!(
+        exact_retention
+            .into_store()
+            .revoked
+            .contains(bounded_target.root_block_id())
+    );
     assert_eq!(
         issuer
             .issue(
