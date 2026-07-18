@@ -69,6 +69,6 @@ Le protocole public et les règles de confidentialité sont détaillés dans [`.
 
 Une VM macOS arm64 avec 8 ou 16 Gio assignés peut révéler tôt un dépassement, mais ne reproduit ni mémoire unifiée, ni pression physique, ni swap, ni thermique. Son résumé reste `vm-diagnostic`, `promotableEvidence: false` et ne qualifie aucune classe.
 
-## Conditions restantes hors matrice matérielle
+## Conditions hors matrice matérielle
 
-La qualification 32+ Gio ne ferme pas les autres axes : OOM processus navigateur attribuable, modèle produit complet, import atomique, suppression, offline et release conservent leurs gates propres. L'effacement logique/best-effort ne prouve jamais l'effacement physique RAM ou swap.
+La qualification 32+ Gio ne ferme pas le modèle produit complet, l'import atomique, la suppression, l'offline ou la release, qui conservent leurs gates propres. L'ADR-0007 classe l'OOM réel du processus navigateur comme diagnostic facultatif et interdit toute saturation globale de RAM ou swap ; la reprise bornée après terminaison/crash demeure la preuve Gate B obligatoire. L'effacement logique/best-effort ne prouve jamais l'effacement physique RAM ou swap.
