@@ -1,6 +1,9 @@
 # WP-G2-Z01 key rotation review
 
-Status: **fresh independent agent review required after adversarial remediation**
+Status: **APPROVE on code commit `bd7baeb`**
+Recorded verdict: [`reviews/bd7baeb/key-rotation-review.md`](reviews/bd7baeb/key-rotation-review.md), SHA-256 `36ab75267ec5506befc290e9e25bb84d6675c526605b39d9b0cc2f0d2141ef35`
+Scope correction: [`reviews/bd7baeb/SCOPE-NOTICE.md`](reviews/bd7baeb/SCOPE-NOTICE.md)
+Final candidate integration: **APPROVE on evidence-inclusive `22a3bfc`**
 Production authorization: **not granted**
 
 ## Implemented state machine
@@ -64,7 +67,14 @@ resource. Those operations remain prohibited before G4.
 - What G4 secret backend and backup policy satisfy EU residency and separation
   of duties?
 
-The dedicated review-only pass must bind this file and the reviewed commit SHA
-under `docs/reviews/AGENT-REVIEW-PROTOCOL.md`. Its approval does not authorize
-production until the Bun stable/toolchain and G4 infrastructure gates are also
-accepted.
+The completed review-only pass bound this file, code commit `bd7baeb`, its tree
+and the three unchanged authority hashes under
+`docs/reviews/AGENT-REVIEW-PROTOCOL.md`. It approved the positive-only revocation
+cache, whole-second TTL handling, transactional rotation completion and the
+root-family retention invariants with no blocking or major finding.
+
+Its approval qualifies only the bounded Z01 capability. The report's final
+phrase "production-ready" is overbroad assessor prose and is explicitly
+non-authoritative; the adjacent scope notice preserves the report bytes while
+confirming that production, private-key ceremony, durable adapters and Clever
+infrastructure remain blocked until their later gates.
