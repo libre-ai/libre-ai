@@ -68,16 +68,10 @@ pub trait RevocationStore {
     fn revoke(&mut self, record: RevocationRecord) -> Result<(), RevocationStoreUnavailable>;
 }
 
-#[derive(Clone, Debug)]
-struct CachedStatus {
-    revoked: bool,
-    checked_at: SystemTime,
-}
-
 pub struct RevocationChecker<S> {
     store: S,
     cache_ttl: Duration,
-    cache: BTreeMap<String, CachedStatus>,
+    revoked_cache: BTreeMap<String, SystemTime>,
     cache_order: VecDeque<String>,
 }
 
@@ -89,7 +83,7 @@ impl<S: RevocationStore> RevocationChecker<S> {
         Ok(Self {
             store,
             cache_ttl,
-            cache: BTreeMap::new(),
+            revoked_cache: BTreeMap::new(),
             cache_order: VecDeque::new(),
         })
     }
@@ -98,30 +92,27 @@ impl<S: RevocationStore> RevocationChecker<S> {
         if !valid_root_block_id(root_block_id) {
             return Err(AuthzError::new("auth.biscuit_invalid"));
         }
-        if let Some(cached) = self.cache.get(root_block_id) {
+        // Only a *revoked* verdict is ever cached. Revocation is monotonic, so
+        // a fresh cached revocation can be served without a store round trip. A
+        // not-revoked verdict is never cached: every acceptance re-consults the
+        // store, so an emergency revocation written by another verifier instance
+        // to the shared store takes effect immediately. A negative cache would
+        // otherwise let this instance keep accepting a revoked token for up to
+        // `cache_ttl` — a bounded fail-open window this design forbids.
+        if let Some(cached_at) = self.revoked_cache.get(root_block_id) {
             let fresh = now
-                .duration_since(cached.checked_at)
+                .duration_since(*cached_at)
                 .is_ok_and(|age| age <= self.cache_ttl);
             if fresh {
-                return if cached.revoked {
-                    Err(AuthzError::for_root("auth.biscuit_revoked", root_block_id))
-                } else {
-                    Ok(())
-                };
+                return Err(AuthzError::for_root("auth.biscuit_revoked", root_block_id));
             }
         }
         let revoked = self
             .store
             .is_revoked(root_block_id)
             .map_err(|_| AuthzError::for_root("auth.biscuit_invalid", root_block_id))?;
-        self.remember(
-            root_block_id,
-            CachedStatus {
-                revoked,
-                checked_at: now,
-            },
-        );
         if revoked {
+            self.remember(root_block_id, now);
             Err(AuthzError::for_root("auth.biscuit_revoked", root_block_id))
         } else {
             Ok(())
@@ -158,28 +149,23 @@ impl<S: RevocationStore> RevocationChecker<S> {
                 expires_at: target.expires_at,
             })
             .map_err(|_| AuthzError::for_root("auth.biscuit_invalid", &root_block_id))?;
-        self.remember(
-            &root_block_id,
-            CachedStatus {
-                revoked: true,
-                checked_at: now,
-            },
-        );
+        self.remember(&root_block_id, now);
         Ok(())
     }
 
-    fn remember(&mut self, root_block_id: &str, status: CachedStatus) {
-        if !self.cache.contains_key(root_block_id) {
-            while self.cache.len() >= MAX_CACHE_ENTRIES {
+    fn remember(&mut self, root_block_id: &str, cached_at: SystemTime) {
+        if !self.revoked_cache.contains_key(root_block_id) {
+            while self.revoked_cache.len() >= MAX_CACHE_ENTRIES {
                 let Some(evicted) = self.cache_order.pop_front() else {
-                    self.cache.clear();
+                    self.revoked_cache.clear();
                     break;
                 };
-                self.cache.remove(&evicted);
+                self.revoked_cache.remove(&evicted);
             }
             self.cache_order.push_back(root_block_id.to_owned());
         }
-        self.cache.insert(root_block_id.to_owned(), status);
+        self.revoked_cache
+            .insert(root_block_id.to_owned(), cached_at);
     }
 
     pub fn into_store(self) -> S {
