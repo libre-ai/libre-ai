@@ -5,7 +5,7 @@ use crate::token::{
     SensitiveToken, root_block_id, valid_operation, valid_prefixed_id, valid_resource,
 };
 use biscuit_auth::builder::{date, fact, string};
-use biscuit_auth::{AuthorizerLimits, Biscuit, UnverifiedBiscuit};
+use biscuit_auth::{Authorizer, AuthorizerLimits, Biscuit, UnverifiedBiscuit};
 use biscuit_parser_legacy::builder::{Binary, Check, CheckKind, Op, Rule, Term};
 use biscuit_parser_legacy::parser::parse_source;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -93,6 +93,21 @@ pub fn authorize<S: RevocationStore>(
     let token = Biscuit::from_base64(serialized.expose(), public_key)
         .map_err(|_| AuthzError::new("auth.biscuit_invalid"))?;
     let root_block_id = root_block_id(&token)?;
+    let mut authorizer = token
+        .authorizer()
+        .map_err(|_| AuthzError::for_root("auth.operation_denied", &root_block_id))?;
+    // The structural validation below trusts the printed Datalog source of
+    // blocks 0 and 1. biscuit-auth 5.0's printer emits `Term::Str`, variable
+    // names and predicate names without escaping, so a holder of the root key
+    // could otherwise sign a block whose reprinted source reparses to a
+    // canonical shape while the binary the authorizer actually evaluates is
+    // weaker (e.g. an unbounded `operation($x)` printed as a set-restricted
+    // check). Reject any decoded term that would not survive the pinned
+    // print/parse grammar unchanged, restoring the injectivity the validators
+    // rely on. See SECURITY.md and evidence/reviews/fbbe360/.
+    if !blocks_roundtrip_safe(&authorizer) {
+        return Err(AuthzError::for_root("auth.biscuit_invalid", &root_block_id));
+    }
     revocations.check(&root_block_id, context.now)?;
     let (principal, expires_at) = authority_principal(&token, &root_block_id)?;
     validate_initial_attenuation(&token, &principal, expires_at, &root_block_id)?;
@@ -106,9 +121,6 @@ pub fn authorize<S: RevocationStore>(
         return Err(AuthzError::for_root("auth.biscuit_invalid", &root_block_id));
     }
 
-    let mut authorizer = token
-        .authorizer()
-        .map_err(|_| AuthzError::for_root("auth.operation_denied", &root_block_id))?;
     for ambient_fact in [
         fact("time", &[date(&context.now)]),
         fact("resource", &[string(&context.resource)]),
@@ -330,4 +342,62 @@ fn validate_context(context: &AuthorizationContext) -> Result<(), AuthzError> {
         return Err(AuthzError::new("auth.operation_denied"));
     }
     Ok(())
+}
+
+/// Reject any token whose decoded terms would not survive the pinned
+/// print/parse round trip unchanged.
+///
+/// [`authority_principal`] and [`validate_initial_attenuation`] validate the
+/// canonical shape of blocks 0 and 1 by reprinting them with biscuit-auth 5.0's
+/// printer and reparsing with biscuit-parser 0.1.2. That printer emits string
+/// values (`"{}"`), variable names (`${}`) and predicate names verbatim, with
+/// no escaping, while the parser terminates a string at the first raw `"`,
+/// treats `\` as an escape introducer and stops an identifier at the first
+/// non-identifier byte. A term carrying one of those bytes therefore reparses
+/// into a *different* structure than the binary the authorizer evaluates. This
+/// guard removes that entire differential class up front: if every decoded
+/// `Term::Str` is free of `"`/`\` and every emitted identifier is a plain
+/// datalog identifier, the printed source is a faithful (injective) rendering
+/// of the binary and the structural validators can be trusted.
+fn blocks_roundtrip_safe(authorizer: &Authorizer) -> bool {
+    use biscuit_auth::builder::{Op, Predicate, Rule, Term};
+
+    fn safe_string(value: &str) -> bool {
+        !value.bytes().any(|byte| byte == b'"' || byte == b'\\')
+    }
+    fn safe_identifier(value: &str) -> bool {
+        !value.is_empty()
+            && value
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b':')
+    }
+    fn term_ok(term: &Term) -> bool {
+        match term {
+            Term::Str(value) => safe_string(value),
+            Term::Variable(name) => safe_identifier(name),
+            Term::Set(members) => members.iter().all(term_ok),
+            _ => true,
+        }
+    }
+    fn predicate_ok(predicate: &Predicate) -> bool {
+        safe_identifier(&predicate.name) && predicate.terms.iter().all(term_ok)
+    }
+    fn rule_ok(rule: &Rule) -> bool {
+        predicate_ok(&rule.head)
+            && rule.body.iter().all(predicate_ok)
+            && rule.expressions.iter().all(|expression| {
+                expression.ops.iter().all(|op| match op {
+                    Op::Value(term) => term_ok(term),
+                    _ => true,
+                })
+            })
+    }
+
+    let (facts, rules, checks, policies) = authorizer.dump();
+    facts.iter().all(|fact| predicate_ok(&fact.predicate))
+        && rules.iter().all(rule_ok)
+        && checks.iter().all(|check| check.queries.iter().all(rule_ok))
+        && policies
+            .iter()
+            .all(|policy| policy.queries.iter().all(rule_ok))
 }

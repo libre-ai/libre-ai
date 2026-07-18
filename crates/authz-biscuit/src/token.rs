@@ -125,7 +125,7 @@ impl BoundedBiscuit {
     ) -> Result<Self, AuthzError> {
         validate_bounds(&request.tenant_id, &request.resource, &request.operations)?;
         validate_time(now)?;
-        if request.ttl.is_zero() {
+        if !is_whole_second_ttl(request.ttl) {
             return Err(AuthzError::new("auth.biscuit_invalid"));
         }
         let expires_at = now
@@ -207,7 +207,7 @@ impl BiscuitIssuer {
     ) -> Result<Self, AuthzError> {
         // biscuit-auth 5.0 exposes Ed25519 keys only; no alternate signing
         // algorithm enters this dependency closure.
-        if max_ttl.is_zero()
+        if !is_whole_second_ttl(max_ttl)
             || max_ttl > Duration::from_secs(900)
             || valid_from.duration_since(UNIX_EPOCH).is_err()
         {
@@ -242,7 +242,7 @@ impl BiscuitIssuer {
         }
         validate_identity(&request.user_id, &request.tenant_id, &request.role)?;
         validate_bounds(&request.tenant_id, &request.resource, &request.operations)?;
-        if request.ttl.is_zero() || request.ttl > self.max_ttl {
+        if !is_whole_second_ttl(request.ttl) || request.ttl > self.max_ttl {
             return Err(AuthzError::new("auth.biscuit_invalid"));
         }
         let expires_at = now
@@ -364,6 +364,19 @@ fn validate_time(value: SystemTime) -> Result<(), AuthzError> {
         .duration_since(UNIX_EPOCH)
         .map(|_| ())
         .map_err(|_| AuthzError::new("auth.biscuit_invalid"))
+}
+
+/// A token lifetime must be a whole, non-zero number of seconds.
+///
+/// Biscuit encodes expiry as `Term::Date`, whose resolution is one second, so a
+/// sub-second or fractional TTL is silently floored on serialization. That can
+/// mint a token that is already expired (the floored expiry lands on the issue
+/// second, failing `time < expiry`) or one whose lifetime is unpredictably
+/// shortened. Constraining the request to whole seconds removes the ambiguity;
+/// the real-clock `now` may still carry nanoseconds and is floored
+/// conservatively, never extending the lifetime past `max_ttl`.
+fn is_whole_second_ttl(ttl: Duration) -> bool {
+    !ttl.is_zero() && ttl.subsec_nanos() == 0
 }
 
 fn effective_expiration(value: SystemTime) -> Result<SystemTime, AuthzError> {

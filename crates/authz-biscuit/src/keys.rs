@@ -96,18 +96,31 @@ impl VerificationKeyRing {
     }
 
     pub fn finish_rotation(&mut self, now: SystemTime) -> Result<(), AuthzError> {
-        self.keys.retain(|_, key| {
-            key.status == VerificationKeyStatus::Current
-                || key.valid_until.is_some_and(|valid_until| now < valid_until)
-        });
-        if self.keys.len() != 1
-            || self
-                .keys
-                .values()
-                .any(|key| key.status != VerificationKeyStatus::Current)
-        {
+        // Compute the survivors first and validate the post-condition BEFORE
+        // mutating, so a rejected finish leaves the ring byte-for-byte
+        // unchanged. Retaining in place and validating afterwards could empty
+        // the ring on the error path (e.g. after the new Current was revoked and
+        // the old Retiring key has expired) — fail-closed, but a silent
+        // mutation the caller did not ask for.
+        let survivors: BTreeSet<u32> = self
+            .keys
+            .iter()
+            .filter(|(_, key)| {
+                key.status == VerificationKeyStatus::Current
+                    || key.valid_until.is_some_and(|valid_until| now < valid_until)
+            })
+            .map(|(key_id, _)| *key_id)
+            .collect();
+        let commits_to_single_current = survivors.len() == 1
+            && survivors.iter().all(|key_id| {
+                self.keys
+                    .get(key_id)
+                    .is_some_and(|key| key.status == VerificationKeyStatus::Current)
+            });
+        if !commits_to_single_current {
             return Err(AuthzError::new("auth.key_unavailable"));
         }
+        self.keys.retain(|key_id, _| survivors.contains(key_id));
         Ok(())
     }
 

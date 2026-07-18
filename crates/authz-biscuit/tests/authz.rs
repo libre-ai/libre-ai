@@ -885,8 +885,12 @@ fn cache_ttl_and_input_bounds_are_enforced() {
         "auth.biscuit_invalid"
     );
 
+    // Positive-only cache: a not-revoked verdict is never cached, so every
+    // check re-consults the store within the same TTL window (no negative
+    // cache to serve a stale accept). A store that starts failing after the
+    // first check therefore makes the very next check fail closed.
     let root_block_id = "b".repeat(64);
-    let mut rollback_sensitive = RevocationChecker::new(
+    let mut positive_only = RevocationChecker::new(
         MemoryRevocations {
             fail_after_checks: Some(1),
             ..MemoryRevocations::default()
@@ -894,14 +898,15 @@ fn cache_ttl_and_input_bounds_are_enforced() {
         Duration::from_secs(30),
     )
     .unwrap();
-    rollback_sensitive.check(&root_block_id, now).unwrap();
-    rollback_sensitive
-        .check(&root_block_id, now + Duration::from_secs(30))
-        .unwrap();
-    for invalid_now in [now + Duration::from_secs(31), now - Duration::from_secs(1)] {
+    positive_only.check(&root_block_id, now).unwrap();
+    for consult_now in [
+        now,
+        now + Duration::from_secs(1),
+        now + Duration::from_secs(30),
+    ] {
         assert_eq!(
-            rollback_sensitive
-                .check(&root_block_id, invalid_now)
+            positive_only
+                .check(&root_block_id, consult_now)
                 .unwrap_err()
                 .code,
             "auth.biscuit_invalid"
@@ -1025,5 +1030,342 @@ fn cache_ttl_and_input_bounds_are_enforced() {
         .unwrap_err()
         .code,
         "auth.biscuit_invalid"
+    );
+}
+
+// --- Print/parse injectivity guard: adversarial regressions (finding A) ------
+
+fn authority_only(kp: &KeyPair, key_id: u32, expiry: SystemTime, role: &str) -> Biscuit {
+    let mut params = HashMap::<String, Term>::new();
+    params.insert("user".to_owned(), string(USER));
+    params.insert("tenant".to_owned(), string(TENANT));
+    params.insert("role".to_owned(), string(role));
+    params.insert("expires_at".to_owned(), Term::from(expiry));
+    let mut builder = Biscuit::builder();
+    builder.set_root_key_id(key_id);
+    builder
+        .add_code_with_params(AUTHORITY_TEMPLATE, params, HashMap::new())
+        .unwrap();
+    builder.build(kp).unwrap()
+}
+
+fn ring_for(
+    key_id: u32,
+    public_key: biscuit_auth::PublicKey,
+    now: SystemTime,
+) -> VerificationKeyRing {
+    VerificationKeyRing::new(VerificationKey {
+        key_id,
+        public_key,
+        valid_from: now - Duration::from_secs(1),
+        valid_until: None,
+        status: VerificationKeyStatus::Current,
+    })
+    .unwrap()
+}
+
+#[test]
+fn print_parse_string_injection_channels_fail_closed() {
+    // A holder of the root key forges block 1 as a single real check
+    // `check if resource(<payload>)` whose Term::Str embeds quotes, backslashes,
+    // comments, semicolons and a closing-string sequence. Unescaped printing
+    // would let the reprinted source reparse to a canonical 4-check shape, but
+    // the round-trip guard rejects the decoded poisoned string first.
+    let now = at(800);
+    let expiry = now + Duration::from_secs(300);
+    let kp = KeyPair::new();
+    let ring = ring_for(60, kp.public(), now);
+    for payload in [
+        format!("{RESOURCE}\"); check if operation($o), [\"read\"].contains($o); //"),
+        format!("{RESOURCE}\\evil"),
+        format!("{RESOURCE}\"); check if tenant(\"{TENANT}\"); //"),
+    ] {
+        let mut params = HashMap::<String, Term>::new();
+        params.insert("p".to_owned(), Term::Str(payload));
+        let mut block = BlockBuilder::new();
+        block
+            .add_code_with_params("check if resource({p});", params, HashMap::new())
+            .unwrap();
+        let forged = authority_only(&kp, 60, expiry, "requester")
+            .append(block)
+            .unwrap();
+        let token = SensitiveToken::from_transport(forged.to_base64().unwrap()).unwrap();
+        assert_eq!(
+            authorize(
+                &token,
+                mission_context(now + Duration::from_secs(1), "read"),
+                &ring,
+                &mut checker(),
+            )
+            .unwrap_err()
+            .code,
+            "auth.biscuit_invalid"
+        );
+    }
+}
+
+#[test]
+fn print_parse_variable_name_injection_fails_closed() {
+    use biscuit_auth::builder::{Check, CheckKind, Predicate, Rule};
+    // The confirmed exploit: a WEAK binary operation check `check if operation($X)`
+    // whose variable NAME injects `, ["read"].contains($op)` so the reprinted
+    // source reparses to a canonical set-restricted op check. Without the guard,
+    // authorize() accepted "export" (outside the claimed ["read"]). The guard
+    // now rejects the non-identifier variable name before any structural trust.
+    let now = at(810);
+    let expiry = now + Duration::from_secs(300);
+    let kp = KeyPair::new();
+    let ring = ring_for(61, kp.public(), now);
+    let op_check = Check {
+        queries: vec![Rule {
+            head: Predicate {
+                name: "query".to_owned(),
+                terms: vec![],
+            },
+            body: vec![Predicate {
+                name: "operation".to_owned(),
+                terms: vec![Term::Variable("op), [\"read\"].contains($op".to_owned())],
+            }],
+            expressions: vec![],
+            parameters: None,
+            scopes: vec![],
+            scope_parameters: None,
+        }],
+        kind: CheckKind::One,
+    };
+    let mut block = BlockBuilder::new();
+    let mut resource_param = HashMap::<String, Term>::new();
+    resource_param.insert("resource".to_owned(), string(RESOURCE));
+    block
+        .add_code_with_params(
+            "check if resource({resource});",
+            resource_param,
+            HashMap::new(),
+        )
+        .unwrap();
+    block.add_check(op_check).unwrap();
+    let mut tail = HashMap::<String, Term>::new();
+    tail.insert("tenant".to_owned(), string(TENANT));
+    tail.insert("expires_at".to_owned(), Term::from(expiry));
+    block
+        .add_code_with_params(
+            "check if tenant({tenant});\ncheck if time($time), $time < {expires_at};",
+            tail,
+            HashMap::new(),
+        )
+        .unwrap();
+    let forged = authority_only(&kp, 61, expiry, "requester")
+        .append(block)
+        .unwrap();
+    let token = SensitiveToken::from_transport(forged.to_base64().unwrap()).unwrap();
+    assert_eq!(
+        authorize(
+            &token,
+            mission_context(now + Duration::from_secs(1), "export"),
+            &ring,
+            &mut checker(),
+        )
+        .unwrap_err()
+        .code,
+        "auth.biscuit_invalid"
+    );
+}
+
+#[test]
+fn resources_with_slashes_still_authorize() {
+    // The guard rejects only the round-trip-unsafe bytes " and \. A resource
+    // carrying '/', '//', ':', '.', '-', '_' round-trips faithfully and is
+    // accepted, so the guard does not false-reject legitimate resources.
+    let now = at(820);
+    let (issuer, ring) = issuer_and_ring(62, now);
+    let resource = "mission:a//b.c-d_e";
+    let token = issuer
+        .issue(
+            IssuanceRequest {
+                user_id: USER.to_owned(),
+                tenant_id: TENANT.to_owned(),
+                role: "requester".to_owned(),
+                resource: resource.to_owned(),
+                operations: operations(&["read"]),
+                ttl: Duration::from_secs(300),
+            },
+            now,
+        )
+        .unwrap()
+        .serialize()
+        .unwrap();
+    let mut context = mission_context(now + Duration::from_secs(1), "read");
+    context.resource = resource.to_owned();
+    authorize(&token.token, context, &ring, &mut checker()).unwrap();
+}
+
+// --- Cross-instance revocation is immediate (finding B) ----------------------
+
+#[derive(Clone, Default)]
+struct SharedRevocations {
+    inner: std::sync::Arc<std::sync::Mutex<BTreeSet<String>>>,
+}
+
+impl RevocationStore for SharedRevocations {
+    fn is_revoked(&mut self, root_block_id: &str) -> Result<bool, RevocationStoreUnavailable> {
+        Ok(self.inner.lock().unwrap().contains(root_block_id))
+    }
+    fn revoke(&mut self, record: RevocationRecord) -> Result<(), RevocationStoreUnavailable> {
+        self.inner
+            .lock()
+            .unwrap()
+            .insert(record.root_block_id().to_owned());
+        Ok(())
+    }
+}
+
+#[test]
+fn cross_instance_revocation_is_immediate_within_cache_ttl() {
+    let now = at(830);
+    let (issuer, ring) = issuer_and_ring(63, now);
+    let token = issue(&issuer, now, "requester", &["read"], 300)
+        .serialize()
+        .unwrap();
+    let shared = SharedRevocations::default();
+    let mut checker_a = RevocationChecker::new(shared.clone(), Duration::from_secs(30)).unwrap();
+    let mut checker_b = RevocationChecker::new(shared.clone(), Duration::from_secs(30)).unwrap();
+
+    // Verifier A accepts once. With a negative cache this would poison A for up
+    // to 30 s; the positive-only cache leaves nothing to serve stale.
+    let decision = authorize(
+        &token.token,
+        mission_context(now + Duration::from_secs(1), "read"),
+        &ring,
+        &mut checker_a,
+    )
+    .unwrap();
+
+    // Verifier B performs the emergency revocation on the shared store.
+    checker_b
+        .revoke(
+            decision.revocation_target(),
+            "emergency.logout".to_owned(),
+            now + Duration::from_secs(2),
+        )
+        .unwrap();
+
+    // Verifier A must fail closed immediately, well inside the cache TTL.
+    assert_eq!(
+        authorize(
+            &token.token,
+            mission_context(now + Duration::from_secs(3), "read"),
+            &ring,
+            &mut checker_a,
+        )
+        .unwrap_err()
+        .code,
+        "auth.biscuit_revoked"
+    );
+}
+
+// --- Whole-second TTL enforcement (finding C) --------------------------------
+
+#[test]
+fn subsecond_and_fractional_ttls_are_rejected_whole_seconds_accepted() {
+    let now = at(850);
+    let (issuer, ring) = issuer_and_ring(64, now);
+    for bad in [
+        Duration::ZERO,
+        Duration::from_millis(50),
+        Duration::from_millis(200),
+        Duration::from_millis(1_500),
+    ] {
+        assert_eq!(
+            issuer
+                .issue(
+                    IssuanceRequest {
+                        user_id: USER.to_owned(),
+                        tenant_id: TENANT.to_owned(),
+                        role: "requester".to_owned(),
+                        resource: RESOURCE.to_owned(),
+                        operations: operations(&["read"]),
+                        ttl: bad,
+                    },
+                    now,
+                )
+                .unwrap_err()
+                .code,
+            "auth.biscuit_invalid"
+        );
+    }
+
+    // A whole-second TTL issued at a fractional real-clock `now` is accepted and
+    // authorizes at issue time (no born-invalid truncation).
+    let fractional_now = now + Duration::from_millis(900);
+    let token = issuer
+        .issue(
+            IssuanceRequest {
+                user_id: USER.to_owned(),
+                tenant_id: TENANT.to_owned(),
+                role: "requester".to_owned(),
+                resource: RESOURCE.to_owned(),
+                operations: operations(&["read"]),
+                ttl: Duration::from_secs(1),
+            },
+            fractional_now,
+        )
+        .unwrap()
+        .serialize()
+        .unwrap();
+    authorize(
+        &token.token,
+        mission_context(fractional_now, "read"),
+        &ring,
+        &mut checker(),
+    )
+    .unwrap();
+}
+
+// --- Transactional finish_rotation (finding D) -------------------------------
+
+#[test]
+fn finish_rotation_preserves_ring_on_error() {
+    let now = at(860);
+    let current = KeyPair::new();
+    let mut ring = VerificationKeyRing::new(VerificationKey {
+        key_id: 1,
+        public_key: current.public(),
+        valid_from: now - Duration::from_secs(1),
+        valid_until: None,
+        status: VerificationKeyStatus::Current,
+    })
+    .unwrap();
+    let next = KeyPair::new();
+    ring.begin_rotation(
+        VerificationKey {
+            key_id: 2,
+            public_key: next.public(),
+            valid_from: now + Duration::from_secs(10),
+            valid_until: None,
+            status: VerificationKeyStatus::Current,
+        },
+        now + Duration::from_secs(920),
+        now,
+    )
+    .unwrap();
+
+    // Revoke the new Current, leaving one Retiring key, then advance past its
+    // validity. finish_rotation must Err WITHOUT emptying the ring.
+    ring.revoke_key(2);
+    assert_eq!(ring.public_keys().len(), 1);
+    assert_eq!(
+        ring.finish_rotation(now + Duration::from_secs(921))
+            .unwrap_err()
+            .code,
+        "auth.key_unavailable"
+    );
+    assert_eq!(
+        ring.public_keys().len(),
+        1,
+        "the ring must be preserved on a rejected finish_rotation"
+    );
+    assert_eq!(
+        ring.public_keys()[0].status,
+        VerificationKeyStatus::Retiring
     );
 }
