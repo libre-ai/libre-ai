@@ -59,7 +59,7 @@ No server account or session is required in local-only v1. Workspace unlock is l
 
 ## Runtime boundaries
 
-TypeScript owns block graph, UI, IndexedDB, local index, export selection and generation of fresh opaque 128-bit backup/context IDs plus fresh salt/nonce bytes. Before Context export it remaps every selected local block ID to a fresh export-scoped CSPRNG ID, rewrites roots/links, and keeps revisions and exclusions only in the local preview/receipt. Any product timestamp belongs inside the encrypted plaintext or local receipt, never in the portable payload. Notebook Core v2 is a locked Rust/WASM boundary for canonical context bytes and Argon2id/AES-256-GCM sealing/opening. Un premier host produit sous feature gate exerce cette frontière avec une fixture publique, un worker jetable, un téléchargement neutre et un staging IndexedDB chiffré ; il ne constitue ni un producteur de sauvegarde utilisateur ni une approbation Gate B. Aucun contenu réel ne peut l'utiliser avant les revues et la décision de release. No native FFI or server service is allowed in v1; sensitive bytes cross transiently, DOM and IndexedDB handles do not.
+TypeScript owns block graph, UI, IndexedDB, local index, export selection and generation of fresh opaque 128-bit backup/context IDs plus fresh salt/nonce bytes. Before Context export it remaps every selected local block ID to a fresh export-scoped CSPRNG ID, rewrites roots/links, and keeps revisions and exclusions only in the local preview/receipt. Any product timestamp belongs inside the encrypted plaintext or local receipt, never in the portable payload. Notebook Core v2 is a locked Rust/WASM boundary for canonical context bytes and Argon2id/AES-256-GCM sealing/opening. Un premier host produit sous feature gate exerce cette frontière avec une fixture publique, un worker jetable, un téléchargement neutre et un staging IndexedDB chiffré ; son introduction seule ne constituait ni un producteur de sauvegarde utilisateur ni une approbation Gate B. Gate B est désormais approuvée sur `9ee3f8d`, mais aucun contenu réel ne peut l'utiliser avant un contrôle propriétaire distinct et la décision de release. No native FFI or server service is allowed in v1; sensitive bytes cross transiently, DOM and IndexedDB handles do not.
 
 ## Accessibility and degraded mode
 
@@ -95,7 +95,7 @@ Les tests produit complets doivent encore couvrir le modèle blocs/révisions, l
 4. PWA offline/storage/accessibility shell — Web Platform ;
 5. restore/delete/privacy/browser qualification — Infrastructure and Release.
 
-La frontière Rust reste justifiée car Argon2id mémoire dure n’est pas fournie par Web Crypto du navigateur, et la preuve Gate A montre la cohérence cryptographique. Le moteur expérimental peut démarrer après Gate A + décision propriétaire, mais Gate B reste obligatoire avant toute sauvegarde utilisateur, toute production ou release. Les vecteurs de golden et la gestion des matières sensibles demeurent les gates de release.
+La frontière Rust reste justifiée car Argon2id mémoire dure n’est pas fournie par Web Crypto du navigateur, et la preuve Gate A montre la cohérence cryptographique. Le moteur expérimental pouvait démarrer après Gate A + décision propriétaire. Gate B est maintenant satisfaite pour la tranche fixture-only, mais toute sauvegarde utilisateur, activation, production ou release exige encore son propre contrôle propriétaire. Les vecteurs golden et la gestion des matières sensibles demeurent des gates de release.
 
 ## Release and rollback
 
