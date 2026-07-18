@@ -10,7 +10,7 @@ Ce paquet est le premier host produit Notebook Core v2. Il reste **désactivé p
 - composant Notebook Core v2 sans import, compilé avec SIMD128 et servi sous une CSP ciblée `wasm-unsafe-eval` sans autoriser `unsafe-eval` JavaScript ;
 - erreurs statiques uniquement ; aucun diagnostic du worker, plaintext ou secret n'est journalisé ;
 - préflight obligatoire du contexte sécurisé, du Worker, du transfert `ArrayBuffer`, de Web Crypto, d’IndexedDB et de 512 Mio de quota disponible ;
-- recovery affiché mais jamais confié à IndexedDB, au téléchargement, au nom de fichier ou au serveur ;
+- recovery affiché seulement après réussite de la persistance chiffrée et du déclenchement du téléchargement, mais jamais confié à IndexedDB, au téléchargement, au nom de fichier ou au serveur ;
 - téléchargement neutre `notebook-backup.lai` ;
 - aucune requête externe runtime.
 
@@ -60,10 +60,13 @@ bun run typecheck
 export NOTEBOOK_QUALIFICATION_NODE=/path/to/node-v26.5.0/bin/node
 bun run --cwd apps/notebook test:e2e
 bun run qualify:notebook-product-host:faults
+bun run qualify:notebook-product-host:storage
 ```
 
 Le parcours Playwright exécute Chromium, Firefox et WebKit : chiffrement réel, nom de téléchargement, absence du recovery dans l'enveloppe et IndexedDB, restauration, mauvais recovery, staging interrompu et reprise sur une nouvelle page. La campagne de fautes produit force ensuite un `SIGKILL` pendant le seal et un crash `SIGABRT` pendant la restauration sur le groupe de processus de chaque moteur, relance le même profil persistant et vérifie l'absence de téléchargement/reçu partiel, le nettoyage du staging et la création de nouveaux workers. Elle teste aussi le refus préflight d'un quota sous le plancher et un abort transactionnel IndexedDB injecté ; ce dernier n'est pas une preuve d'épuisement physique du disque.
 
+La campagne storage, macOS arm64 uniquement, place le profil de chaque moteur sur une image APFS sparse jetable de 6 Gio. Elle conserve un marqueur OS `ENOSPC`, vérifie le refus du staging transactionnel d'une enveloppe publique déterministe de 16 Mio avant tout worker, relance le même profil sans état partiel, puis restaure et sauvegarde après libération de l'espace. Elle échoue si la machine ne peut pas conserver 8 Gio libres hors image. Cette preuve qualifie le comportement produit sous `ENOSPC`, pas une classe matérielle ni l'exactitude de l'estimation de quota du navigateur.
+
 ## Limites ouvertes
 
-Ce host qualifie la mécanique sauvegarde/restauration sur fixture publique ; il n'implémente pas encore le modèle complet blocs/révisions ni son import atomique chiffré. Restent également hors preuve : OOM réel du processus navigateur, épuisement physique du quota, matériel physique 8/16 Gio, effacement physique et passes indépendantes sécurité/cryptographie/vie privée. Gate B et la release demeurent **REJECT**.
+Ce host qualifie la mécanique sauvegarde/restauration sur fixture publique ; il n'implémente pas encore le modèle complet blocs/révisions ni son import atomique chiffré. Restent également hors preuve : OOM réel et attribuable du processus navigateur, matériel physique 8/16–24 Gio, effacement physique et passes spécialisées fraîches sur candidat immuable. La preuve APFS locale ne qualifie aucune classe matérielle. Gate B et la release demeurent **REJECT**.

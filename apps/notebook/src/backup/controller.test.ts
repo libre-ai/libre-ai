@@ -47,7 +47,7 @@ const metadata = {
 } as const;
 
 describe("Notebook backup controller", () => {
-  test("publishes recovery before persisting and downloading only encrypted bytes", async () => {
+  test("publishes recovery only after persisting and downloading encrypted bytes", async () => {
     const persistence = new FakePersistence();
     const events: string[] = [];
     const plaintext = new Uint8Array([1, 2, 3]);
@@ -88,7 +88,86 @@ describe("Notebook backup controller", () => {
       expect(code).toBe("01".repeat(16));
     });
 
-    expect(events).toEqual(["seal", "recovery", "persist", "download"]);
+    expect(events).toEqual(["seal", "persist", "download", "recovery"]);
+    expect(persistence.encryptedBackup && [...persistence.encryptedBackup]).toEqual([9, 8, 7]);
+    expect([...plaintext]).toEqual([0, 0, 0]);
+    expect([...envelope]).toEqual([0, 0, 0]);
+  });
+
+  test("does not publish recovery or download after a persistence refusal", async () => {
+    const plaintext = new Uint8Array([1, 2, 3]);
+    const envelope = new Uint8Array([9, 8, 7]);
+    let published = false;
+    let downloaded = false;
+    const controller = new NotebookBackupController({
+      download: async () => {
+        downloaded = true;
+      },
+      host: {
+        async createBackup() {
+          return { envelope, recoveryCode: "01".repeat(16) };
+        },
+        async openBackupForUse() {
+          throw new Error("not used");
+        },
+      },
+      persistence: {
+        async commitRestore() {},
+        async discardRestore() {},
+        async recordEncryptedBackup() {
+          throw new NotebookBackupRefusal("resource-limit-exceeded");
+        },
+        async recoverInterruptedRestores() {
+          return 0;
+        },
+        async stageEncryptedRestore() {},
+      },
+      restoreConsumer: () => undefined,
+      snapshotProvider: () => plaintext,
+    });
+
+    await expect(
+      controller.createBackup(() => {
+        published = true;
+      }),
+    ).rejects.toMatchObject({ code: "resource-limit-exceeded" });
+
+    expect(published).toBe(false);
+    expect(downloaded).toBe(false);
+    expect([...plaintext]).toEqual([0, 0, 0]);
+    expect([...envelope]).toEqual([0, 0, 0]);
+  });
+
+  test("does not publish recovery after a download refusal", async () => {
+    const persistence = new FakePersistence();
+    const plaintext = new Uint8Array([1, 2, 3]);
+    const envelope = new Uint8Array([9, 8, 7]);
+    let published = false;
+    const controller = new NotebookBackupController({
+      download: async () => {
+        throw new NotebookBackupRefusal("resource-limit-exceeded");
+      },
+      host: {
+        async createBackup() {
+          return { envelope, recoveryCode: "01".repeat(16) };
+        },
+        async openBackupForUse() {
+          throw new Error("not used");
+        },
+      },
+      persistence,
+      restoreConsumer: () => undefined,
+      snapshotProvider: () => plaintext,
+    });
+
+    await expect(
+      controller.createBackup(() => {
+        published = true;
+      }),
+    ).rejects.toMatchObject({ code: "resource-limit-exceeded" });
+
+    expect(published).toBe(false);
+    expect(persistence.calls).toEqual(["record-backup"]);
     expect(persistence.encryptedBackup && [...persistence.encryptedBackup]).toEqual([9, 8, 7]);
     expect([...plaintext]).toEqual([0, 0, 0]);
     expect([...envelope]).toEqual([0, 0, 0]);
