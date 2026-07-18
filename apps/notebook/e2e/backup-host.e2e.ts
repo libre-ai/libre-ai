@@ -86,8 +86,19 @@ test("seals, downloads, stages and restores through the exact product host", asy
   await page.locator("#recovery-code").fill("00".repeat(16));
   await page.getByRole("button", { name: "Restaurer la sauvegarde" }).click();
   await expect(page.getByTestId("backup-status")).toHaveText("Backup authentication failed.");
+  await expect(page.locator("#recovery-code")).toHaveValue("");
   const afterRefusal = await inspectBackupStore(page);
   expect(afterRefusal.keys.some((key) => key.startsWith("pending:"))).toBe(false);
+
+  await page.locator("#backup-file").setInputFiles({
+    buffer: Buffer.alloc(0),
+    mimeType: "application/json",
+    name: "empty.lai",
+  });
+  await page.locator("#recovery-code").fill("00".repeat(16));
+  await page.getByRole("button", { name: "Restaurer la sauvegarde" }).click();
+  await expect(page.getByTestId("backup-status")).toHaveText("Invalid backup envelope.");
+  await expect(page.locator("#recovery-code")).toHaveValue("");
 
   expect(externalRequests).toEqual([]);
   expect(consoleMessages).toEqual([]);
