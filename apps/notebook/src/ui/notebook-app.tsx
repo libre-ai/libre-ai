@@ -96,6 +96,7 @@ export function NotebookApp() {
     event.preventDefault();
     if (busy || !hydrated || !runtimeReady || !NOTEBOOK_BACKUP_FEATURE_ENABLED) return;
     if (!file || file.size < 1 || file.size > MAX_ENVELOPE_BYTES) {
+      setRestoreCode("");
       setStatus({ message: "Invalid backup envelope.", tone: "error" });
       return;
     }
@@ -118,6 +119,7 @@ export function NotebookApp() {
       } catch {
         // The worker owns a successfully transferred envelope.
       }
+      setRestoreCode("");
       setBusy(false);
     }
   };
