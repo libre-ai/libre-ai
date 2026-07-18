@@ -1,18 +1,22 @@
 # WP-G2-Z01 qualification
 
-Status: **implementation candidate complete; human gates pending**
-Human gates: `authorization-policy-review`, `key-rotation-review`
+Status: **adversarial remediation in progress; fresh agent gates pending**
+Required review passes: `authorization-policy-review`, `key-rotation-review`
 Production/Clever authorization: **none**
 
 ## Delivered boundary
 
 - Ed25519 authority issuance with opaque user/private-tenant/role facts;
-- exact resource, operation, tenant and expiry attenuation;
-- verified-root SHA-256 revocation identifier;
+- exact resource, operation, tenant and expiry attenuation, independently
+  required and shape-validated by the verifier;
+- verified-root SHA-256 revocation identifier and opaque verified revocation
+  targets retained to root-authority expiry despite shorter child attenuation;
 - bounded external revocation cache with fail-closed store errors;
 - embedded Sessions/Missions deny-by-default authorizers;
-- exact signed-authority shape, issuer TTL enforcement and verifier remaining-lifetime bound;
-- two-key current/retiring rotation state machine;
+- exact signed-authority shape, issuer activation/TTL enforcement and verifier
+  remaining-lifetime bound;
+- two-key current/retiring rotation state machine with caller-supplied current
+  time, active-state and non-stale timeline checks;
 - zeroized/redacted token transport and the five canonical refusal codes;
 - adversarial tests and mandatory workspace supply-chain checks.
 
@@ -25,17 +29,19 @@ previously test-only selection for this bounded runtime capability:
 
 - `biscuit-auth` 5.0.0, Apache-2.0, crates.io checksum
   `95490f2c91dc452247d00a2fb4779bcedb7693e669354fa1fe2a96679f4950cc`;
-- `biscuit-parser` 0.2.0 and `sha2` 0.11.0, already pinned by the workspace;
-- `zeroize` 1.9.0, MIT OR Apache-2.0, already pinned by the workspace.
+- `biscuit-parser` 0.1.2, Apache-2.0, exposed under the exact
+  `biscuit-parser-legacy` workspace alias solely to keep verified block
+  print/parse inspection aligned with `biscuit-auth` 5.0.0's internal parser;
+- `sha2` 0.11.0 and `zeroize` 1.9.0, already pinned by the workspace.
 
 The Biscuit default feature set is disabled, so the optional Datalog macro,
 PEM, WASM, serde-error and full-regex surfaces are absent. The unavoidable
-minimal closure still includes Biscuit's internal parser 0.1.2 and its bounded
-standard-regex engine. There is no vendored source, mutable Git dependency,
+minimal closure includes the same parser 0.1.2 now used by Z01 block inspection
+and its bounded standard-regex engine. There is no vendored source, mutable Git dependency,
 advisory exception, network call or service SDK. `cargo deny check advisories
 licenses sources` remains mandatory. The generated `Cargo.lock` workspace
-package entry must be integrated under a distinct `WP-G2-T01`-owned change; it
-is not part of the Z01 write path.
+package entry and parser alias must be integrated under a distinct
+`WP-G2-T01`-owned change; they are not part of the Z01 write path.
 
 ## Verification commands
 
@@ -52,7 +58,7 @@ bun test
 ```
 
 The final command outcomes and CI URL must be attached to the PR after a clean
-run. Automated success is evidence, not approval of either human gate.
+run. Automated success is evidence, not a role-separated agent verdict.
 
 ## Deferred and blocked
 

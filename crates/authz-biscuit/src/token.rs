@@ -1,4 +1,4 @@
-use crate::AuthzError;
+use crate::{AuthzError, revocation::RevocationTarget};
 use biscuit_auth::builder::{BlockBuilder, Term};
 use biscuit_auth::{Biscuit, KeyPair, PublicKey};
 use sha2::{Digest, Sha256};
@@ -41,9 +41,36 @@ impl Debug for SensitiveToken {
 
 pub struct SerializedBiscuit {
     pub token: SensitiveToken,
-    pub root_block_id: String,
-    pub key_id: u32,
-    pub expires_at: SystemTime,
+    revocation_target: RevocationTarget,
+    expires_at: SystemTime,
+    key_id: u32,
+}
+
+impl SerializedBiscuit {
+    #[must_use]
+    pub fn token(&self) -> &SensitiveToken {
+        &self.token
+    }
+
+    #[must_use]
+    pub fn root_block_id(&self) -> &str {
+        self.revocation_target.root_block_id()
+    }
+
+    #[must_use]
+    pub fn key_id(&self) -> u32 {
+        self.key_id
+    }
+
+    #[must_use]
+    pub fn expires_at(&self) -> SystemTime {
+        self.expires_at
+    }
+
+    #[must_use]
+    pub fn revocation_target(&self) -> &RevocationTarget {
+        &self.revocation_target
+    }
 }
 
 impl Debug for SerializedBiscuit {
@@ -51,9 +78,9 @@ impl Debug for SerializedBiscuit {
         formatter
             .debug_struct("SerializedBiscuit")
             .field("token", &"[REDACTED]")
-            .field("root_block_id", &self.root_block_id)
+            .field("root_block_id", &self.root_block_id())
             .field("key_id", &self.key_id)
-            .field("expires_at", &self.expires_at)
+            .field("expires_at", &self.expires_at())
             .finish()
     }
 }
@@ -75,6 +102,7 @@ impl Debug for TokenBounds {
 pub struct BoundedBiscuit {
     biscuit: Biscuit,
     bounds: TokenBounds,
+    authority_expires_at: SystemTime,
     key_id: u32,
 }
 
@@ -125,11 +153,15 @@ impl BoundedBiscuit {
         Ok(Self {
             biscuit,
             bounds,
+            authority_expires_at: self.authority_expires_at,
             key_id: self.key_id,
         })
     }
 
     pub fn serialize(&self) -> Result<SerializedBiscuit, AuthzError> {
+        let root_block_id = root_block_id(&self.biscuit)?;
+        let expires_at = effective_expiration(self.bounds.expires_at)?;
+        let authority_expires_at = effective_expiration(self.authority_expires_at)?;
         let mut token = self
             .biscuit
             .to_base64()
@@ -140,9 +172,9 @@ impl BoundedBiscuit {
         }
         Ok(SerializedBiscuit {
             token: SensitiveToken(token),
-            root_block_id: root_block_id(&self.biscuit)?,
+            revocation_target: RevocationTarget::new(root_block_id, authority_expires_at),
+            expires_at,
             key_id: self.key_id,
-            expires_at: self.bounds.expires_at,
         })
     }
 }
@@ -151,6 +183,7 @@ pub struct BiscuitIssuer {
     key_id: u32,
     key_pair: KeyPair,
     max_ttl: Duration,
+    valid_from: SystemTime,
 }
 
 impl Debug for BiscuitIssuer {
@@ -160,21 +193,31 @@ impl Debug for BiscuitIssuer {
             .field("key_id", &self.key_id)
             .field("key_pair", &"[REDACTED]")
             .field("max_ttl", &self.max_ttl)
+            .field("valid_from", &self.valid_from)
             .finish()
     }
 }
 
 impl BiscuitIssuer {
-    pub fn new(key_id: u32, key_pair: KeyPair, max_ttl: Duration) -> Result<Self, AuthzError> {
+    pub fn new(
+        key_id: u32,
+        key_pair: KeyPair,
+        max_ttl: Duration,
+        valid_from: SystemTime,
+    ) -> Result<Self, AuthzError> {
         // biscuit-auth 5.0 exposes Ed25519 keys only; no alternate signing
         // algorithm enters this dependency closure.
-        if max_ttl.is_zero() || max_ttl > Duration::from_secs(900) {
+        if max_ttl.is_zero()
+            || max_ttl > Duration::from_secs(900)
+            || valid_from.duration_since(UNIX_EPOCH).is_err()
+        {
             return Err(AuthzError::new("auth.biscuit_invalid"));
         }
         Ok(Self {
             key_id,
             key_pair,
             max_ttl,
+            valid_from,
         })
     }
 
@@ -194,6 +237,9 @@ impl BiscuitIssuer {
         now: SystemTime,
     ) -> Result<BoundedBiscuit, AuthzError> {
         validate_time(now)?;
+        if now < self.valid_from {
+            return Err(AuthzError::new("auth.key_unavailable"));
+        }
         validate_identity(&request.user_id, &request.tenant_id, &request.role)?;
         validate_bounds(&request.tenant_id, &request.resource, &request.operations)?;
         if request.ttl.is_zero() || request.ttl > self.max_ttl {
@@ -227,6 +273,7 @@ impl BiscuitIssuer {
         Ok(BoundedBiscuit {
             biscuit,
             bounds,
+            authority_expires_at: expires_at,
             key_id: self.key_id,
         })
     }
@@ -317,6 +364,16 @@ fn validate_time(value: SystemTime) -> Result<(), AuthzError> {
         .duration_since(UNIX_EPOCH)
         .map(|_| ())
         .map_err(|_| AuthzError::new("auth.biscuit_invalid"))
+}
+
+fn effective_expiration(value: SystemTime) -> Result<SystemTime, AuthzError> {
+    let seconds = value
+        .duration_since(UNIX_EPOCH)
+        .map_err(|_| AuthzError::new("auth.biscuit_invalid"))?
+        .as_secs();
+    UNIX_EPOCH
+        .checked_add(Duration::from_secs(seconds))
+        .ok_or_else(|| AuthzError::new("auth.biscuit_invalid"))
 }
 
 pub(crate) fn valid_resource(value: &str) -> bool {

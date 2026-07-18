@@ -1,6 +1,6 @@
 # WP-G2-Z01 key rotation review
 
-Status: **awaiting independent human approval**
+Status: **fresh independent agent review required after adversarial remediation**
 Production authorization: **not granted**
 
 ## Implemented state machine
@@ -8,8 +8,11 @@ Production authorization: **not granted**
 - steady state: exactly one `Current` Ed25519 public key;
 - overlap: exactly one `Retiring` old key and one `Current` new key;
 - a third key or nested rotation is rejected;
+- the sole steady-state key must be active `Current`, and caller-supplied
+  trusted current time rejects a stale or already expired rotation timeline;
 - a new key must have a later `valid_from`, a distinct in-process key ID/public
   key and at least 900 seconds of old/new verification overlap;
+- the issuer refuses to sign before its configured `valid_from`;
 - key IDs are explicit `u32` selectors and unknown IDs deny;
 - `valid_from` and `valid_until` are checked before signature verification;
 - emergency key revocation removes the selected verification key immediately;
@@ -21,9 +24,10 @@ Production authorization: **not granted**
 1. Generate a new Ed25519 key in approved EU-resident secret storage; never
    print or export the private value to GitHub or application configuration.
 2. Allocate a never-reused key ID and publish the new public metadata.
-3. Deploy the two-key verification ring with `valid_from` set before issuer
-   switch. Set old `valid_until` later than switch + 900 seconds + accepted
-   clock/deployment tolerance.
+3. Deploy the two-key verification ring with `valid_from` set no earlier than
+   the trusted current ceremony time and before issuer switch. Set old
+   `valid_until` later than switch + 900 seconds + accepted clock/deployment
+   tolerance.
 4. Confirm both old and new test tokens verify, then atomically switch the sole
    issuer to the new private key.
 5. Wait until every old token is expired and all instances observe the new key.
@@ -40,9 +44,10 @@ accept temporary denial rather than fallback verification.
 `two_key_rotation_has_a_bounded_overlap` proves:
 
 - old and new tokens verify during overlap;
-- short overlap, backdated activation, third key, reused ID and reused public
-  key are rejected;
-- early retirement is rejected;
+- exact 900-second overlap is accepted while short overlap, stale/backdated
+  activation, third key, reused ID and reused public key are rejected;
+- pre-activation issuance, restart from a surviving `Retiring` key and early
+  retirement are rejected;
 - old key ID fails after retirement;
 - the current key still issues and verifies after retirement.
 
@@ -59,6 +64,7 @@ resource. Those operations remain prohibited before G4.
 - What G4 secret backend and backup policy satisfy EU residency and separation
   of duties?
 
-Approval must bind this file and the reviewed commit SHA. It does not authorize
+The dedicated review-only pass must bind this file and the reviewed commit SHA
+under `docs/reviews/AGENT-REVIEW-PROTOCOL.md`. Its approval does not authorize
 production until the Bun stable/toolchain and G4 infrastructure gates are also
 accepted.

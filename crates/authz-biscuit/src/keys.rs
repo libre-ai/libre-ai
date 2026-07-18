@@ -1,7 +1,7 @@
 use crate::AuthzError;
 use biscuit_auth::PublicKey;
 use std::collections::{BTreeMap, BTreeSet};
-use std::time::{Duration, SystemTime};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const MIN_ROTATION_OVERLAP: Duration = Duration::from_secs(900);
 
@@ -38,7 +38,10 @@ pub struct VerificationKeyRing {
 
 impl VerificationKeyRing {
     pub fn new(current: VerificationKey) -> Result<Self, AuthzError> {
-        if current.status != VerificationKeyStatus::Current || current.valid_until.is_some() {
+        if current.status != VerificationKeyStatus::Current
+            || current.valid_until.is_some()
+            || current.valid_from.duration_since(UNIX_EPOCH).is_err()
+        {
             return Err(AuthzError::new("auth.key_unavailable"));
         }
         let key_id = current.key_id;
@@ -52,20 +55,25 @@ impl VerificationKeyRing {
         &mut self,
         new_key: VerificationKey,
         old_key_valid_until: SystemTime,
+        now: SystemTime,
     ) -> Result<(), AuthzError> {
-        let current_valid_from = self
+        let current = self
             .keys
             .values()
             .next()
-            .map(|key| key.valid_from)
             .ok_or_else(|| AuthzError::new("auth.key_unavailable"))?;
         let overlap_covers_max_ttl = old_key_valid_until
             .duration_since(new_key.valid_from)
             .is_ok_and(|overlap| overlap >= MIN_ROTATION_OVERLAP);
         if self.keys.len() != 1
+            || now.duration_since(UNIX_EPOCH).is_err()
+            || current.status != VerificationKeyStatus::Current
+            || current.valid_until.is_some()
+            || now < current.valid_from
             || new_key.status != VerificationKeyStatus::Current
             || new_key.valid_until.is_some()
-            || new_key.valid_from <= current_valid_from
+            || new_key.valid_from < now
+            || new_key.valid_from <= current.valid_from
             || !overlap_covers_max_ttl
             || self.used_key_ids.contains(&new_key.key_id)
             || self

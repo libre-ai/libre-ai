@@ -5,11 +5,58 @@ use std::time::{Duration, SystemTime};
 const MAX_CACHE_ENTRIES: usize = 10_000;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RevocationTarget {
+    root_block_id: String,
+    expires_at: SystemTime,
+}
+
+impl RevocationTarget {
+    pub(crate) fn new(root_block_id: String, expires_at: SystemTime) -> Self {
+        Self {
+            root_block_id,
+            expires_at,
+        }
+    }
+
+    #[must_use]
+    pub fn root_block_id(&self) -> &str {
+        &self.root_block_id
+    }
+
+    #[must_use]
+    pub fn expires_at(&self) -> SystemTime {
+        self.expires_at
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RevocationRecord {
-    pub root_block_id: String,
-    pub reason_code: String,
-    pub revoked_at: SystemTime,
-    pub expires_at: SystemTime,
+    root_block_id: String,
+    reason_code: String,
+    revoked_at: SystemTime,
+    expires_at: SystemTime,
+}
+
+impl RevocationRecord {
+    #[must_use]
+    pub fn root_block_id(&self) -> &str {
+        &self.root_block_id
+    }
+
+    #[must_use]
+    pub fn reason_code(&self) -> &str {
+        &self.reason_code
+    }
+
+    #[must_use]
+    pub fn revoked_at(&self) -> SystemTime {
+        self.revoked_at
+    }
+
+    #[must_use]
+    pub fn expires_at(&self) -> SystemTime {
+        self.expires_at
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -81,29 +128,35 @@ impl<S: RevocationStore> RevocationChecker<S> {
         }
     }
 
-    pub fn revoke(&mut self, record: RevocationRecord, now: SystemTime) -> Result<(), AuthzError> {
-        if !valid_root_block_id(&record.root_block_id)
-            || record.reason_code.is_empty()
-            || record.reason_code.len() > 128
-            || !record.reason_code.bytes().all(|byte| {
+    pub fn revoke(
+        &mut self,
+        target: &RevocationTarget,
+        reason_code: String,
+        now: SystemTime,
+    ) -> Result<(), AuthzError> {
+        let remaining = target.expires_at.duration_since(now);
+        if !valid_root_block_id(&target.root_block_id)
+            || reason_code.is_empty()
+            || reason_code.len() > 128
+            || !reason_code.bytes().all(|byte| {
                 byte.is_ascii_lowercase()
                     || byte.is_ascii_digit()
                     || matches!(byte, b'.' | b'_' | b'-')
             })
-            || record.revoked_at > now
-            || record.expires_at <= now
-            || !record
-                .expires_at
-                .duration_since(record.revoked_at)
-                .is_ok_and(|remaining| {
-                    !remaining.is_zero() && remaining <= Duration::from_secs(900)
-                })
+            || !remaining.is_ok_and(|remaining| {
+                !remaining.is_zero() && remaining <= Duration::from_secs(900)
+            })
         {
             return Err(AuthzError::new("auth.biscuit_invalid"));
         }
-        let root_block_id = record.root_block_id.clone();
+        let root_block_id = target.root_block_id.clone();
         self.store
-            .revoke(record)
+            .revoke(RevocationRecord {
+                root_block_id: root_block_id.clone(),
+                reason_code,
+                revoked_at: now,
+                expires_at: target.expires_at,
+            })
             .map_err(|_| AuthzError::for_root("auth.biscuit_invalid", &root_block_id))?;
         self.remember(
             &root_block_id,

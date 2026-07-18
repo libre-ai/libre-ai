@@ -13,6 +13,7 @@ pub use error::AuthzError;
 pub use keys::{PublicKeyMetadata, VerificationKey, VerificationKeyRing, VerificationKeyStatus};
 pub use revocation::{
     RevocationChecker, RevocationRecord, RevocationStore, RevocationStoreUnavailable,
+    RevocationTarget,
 };
 pub use token::{
     AttenuationRequest, BiscuitIssuer, BoundedBiscuit, IssuanceRequest, SensitiveToken,
