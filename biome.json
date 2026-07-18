@@ -9,7 +9,8 @@
     "includes": [
       "**",
       "!ecosystem/projections/public.v1.json",
-      "!contracts/fixtures/radar-engine-v2"
+      "!contracts/fixtures/radar-engine-v2",
+      "!docs/reviews/**/evidence"
     ]
   },
   "formatter": {

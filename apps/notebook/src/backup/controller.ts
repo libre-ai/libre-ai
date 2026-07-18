@@ -44,9 +44,9 @@ export class NotebookBackupController {
       }
       const created = await this.#host.createBackup(plaintext);
       envelope = created.envelope;
-      publishRecoveryCode(created.recoveryCode);
       await this.#persistence.recordEncryptedBackup(envelope);
       await this.#download(envelope);
+      publishRecoveryCode(created.recoveryCode);
     } catch (error) {
       throw closedBackupRefusal(error);
     } finally {
