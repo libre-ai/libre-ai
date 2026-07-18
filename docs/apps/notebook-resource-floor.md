@@ -2,80 +2,73 @@
 
 ## Décision
 
-Le **minimum produit candidat**, à prouver avant toute activation des sauvegardes, est :
+Conformément à l'ADR-0006, le **minimum produit candidat actuellement qualifié** est :
 
-- macOS arm64 sur une machine de **8 Gio de mémoire physique minimum** et de **8 CPU logiques minimum** ;
+- macOS arm64 sur une machine de **32 Gio de mémoire physique minimum** et de **12 CPU logiques minimum** ;
 - navigateur capable d'exécuter WebAssembly SIMD128, Dedicated Worker, transfert d'`ArrayBuffer`, Web Crypto et IndexedDB ;
-- quota de stockage navigateur disponible de **512 Mio minimum**, à vérifier par le futur host produit ;
-- budgets Notebook Core inchangés : profil producteur `p95 ≤ 5 s` et RSS additionnel `≤ 256 Mio`, profil maximal `p95 ≤ 10 s` et RSS additionnel `≤ 512 Mio`.
+- quota de stockage navigateur disponible de **512 Mio minimum** ;
+- budgets inchangés : profil producteur `p95 ≤ 5 s` et RSS additionnel `≤ 256 Mio`, profil maximal `p95 ≤ 10 s` et RSS additionnel `≤ 512 Mio`.
 
-Ce seuil est un **candidat de qualification**, pas encore une promesse de support. Gate B et la release restent rejetées tant qu'une machine physique 8 Gio correspondante et le host produit exact n'ont pas passé leurs matrices. macOS arm64 est la première famille mesurable avec la toolchain actuelle, pas une nécessité fonctionnelle du format : Windows, Linux et x86 restent non supportés tant que leurs propres classes ne sont pas définies et qualifiées.
+Ce plancher décrit seulement la matrice prouvée. Il ne transforme pas macOS arm64 en nécessité du format et n'autorise ni activation ni release à lui seul. Windows, Linux, x86 et les machines de moins de 32 Gio restent non qualifiés tant que leurs propres preuves ne sont pas archivées.
 
 ## Classes matérielles
 
-L'autorité exécutable de qualification est `toolchains/notebook-resource-classes.json`.
+L'autorité exécutable est `toolchains/notebook-resource-classes.json`.
 
-| Classe | Mémoire physique | CPU logiques | Rôle | État de preuve |
+| Classe | Mémoire physique | CPU logiques | Rôle actuel | État |
 |---|---:|---:|---|---|
-| `desktop-arm64-constrained-8gib` | 8 Gio à moins de 12 Gio | 8 ou plus | minimum produit candidat | en attente de matériel réel |
-| `desktop-arm64-mainstream-16gib` | 16 à 24 Gio | 8 ou plus | cible courante | en attente de matériel réel |
-| `desktop-arm64-high-memory-reference` | 32 Gio ou plus | 12 ou plus | référence de qualification | qualifiée sur `5190972` |
+| `desktop-arm64-constrained-8gib` | 8 Gio à moins de 12 Gio | 8 ou plus | observation communautaire facultative | preuve demandée |
+| `desktop-arm64-mainstream-16gib` | 16 à 24 Gio | 8 ou plus | observation communautaire facultative | preuve demandée |
+| `desktop-arm64-high-memory-reference` | 32 Gio ou plus | 12 ou plus | minimum produit candidat | qualifiée sur le candidat `96934a8` |
 
-Les intervalles empêchent une machine M4 Max 36 Gio de se déclarer artificiellement « 8 Gio ». Une simulation, une limitation logicielle de mémoire ou un throttling CPU peuvent servir au diagnostic, mais jamais remplacer la preuve de support d'une classe.
+Les classes restent disjointes afin qu'une machine 32+ Gio ne puisse jamais produire une fausse preuve 8 ou 16 Gio. Les campagnes #98 et #99 sont utiles pour élargir ultérieurement le support, mais leur absence ne bloque plus Gate B. Aucune annonce de support 8/16–24 Gio n'est permise sans leurs mesures physiques et une revue.
 
-## Pourquoi 8 Gio et 8 CPU
+## Pourquoi le plancher déclaré est 32+ Gio
 
-Notebook Core borne le plaintext one-shot à 16 Mio, mais le chemin réel cumule l'entrée ABI, la matrice Argon2id de 64 ou 128 Mio, AES-GCM, Base64/JCS, la mémoire WASM et le host navigateur. La matrice de référence mesure jusqu'à environ 150,5 Mio de mémoire linéaire et impose un budget processus de 256/512 Mio. Un plancher de 8 Gio laisse une marge au navigateur, à IndexedDB et au système sans réduire Argon2id ni le niveau cryptographique.
+Notebook Core borne le plaintext one-shot à 16 Mio, mais le chemin réel cumule entrée ABI, matrice Argon2id de 64 ou 128 Mio, AES-GCM, Base64/JCS, mémoire WASM et host navigateur. La campagne physique exacte mesure deux warm-ups puis 20 seal/open par profil dans les trois moteurs et respecte les budgets sans modifier la cryptographie.
 
-Huit CPU logiques correspondent aux Mac Apple Silicon d'entrée de gamme réellement disponibles et constituent donc un plancher testable, plutôt qu'une hypothèse à quatre cœurs sans matériel macOS arm64 représentatif. Le budget p95, et non le nombre de cœurs seul, reste l'autorité. Si une machine 8 Gio/4 CPU échoue, le minimum devra être relevé ou le moteur optimisé — jamais les budgets ou paramètres cryptographiques assouplis après mesure.
+La classe 32+ Gio est la seule classe dont la preuve physique est disponible. La choisir comme plancher est une réduction explicite de portée, pas une extrapolation vers les machines modestes. Une future preuve 8 ou 16–24 Gio pourra abaisser le plancher ou étendre la matrice sans changer les budgets ; un échec conduira à optimiser le moteur ou à conserver le minimum, jamais à affaiblir Argon2id.
 
-Le quota candidat de 512 Mio n'est pas une preuve de capacité totale du notebook. Il couvre une marge conservatrice pour le stockage local, une enveloppe maximale d'environ 22,4 Mio et les copies temporaires du futur cycle sauvegarde/restauration. Le harness vérifie que ce quota est disponible sur son origine de qualification, sans y écrire de données ; le cycle IndexedDB réel devra encore être validé dans le host produit.
+Le quota candidat de 512 Mio ne prouve pas la capacité totale du notebook. Il couvre une marge conservatrice pour stockage local, enveloppe maximale et copies temporaires. Le vrai comportement `ENOSPC` du host produit est qualifié séparément sur APFS jetable.
 
-## Protocole de qualification d'une classe
-
-Sur une machine physique appartenant réellement à la classe :
+## Qualification de la classe requise
 
 ```sh
-export NOTEBOOK_QUALIFICATION_DEVICE_CLASS=desktop-arm64-constrained-8gib
+export NOTEBOOK_QUALIFICATION_DEVICE_CLASS=desktop-arm64-high-memory-reference
 export NOTEBOOK_QUALIFICATION_NODE=/path/to/node-26.5.0/bin/node
 export NOTEBOOK_QUALIFICATION_ARCHIVE_DIR=/path/to/verified-archives
 export NOTEBOOK_QUALIFICATION_EVIDENCE_MODE=physical-evidence
 bun run qualify:notebook-core-v2:performance
 ```
 
-Pour la classe 16–24 Gio, remplacer l'identifiant par `desktop-arm64-mainstream-16gib`.
-
 Le harness :
 
-1. lit `hw.memsize`, `hw.logicalcpu`, l'architecture et l'OS depuis le host ;
-2. refuse toute classe inconnue ou toute machine hors intervalle avant le build et les mesures ;
-3. vérifie contexte sécurisé, Worker, transfert d'`ArrayBuffer`, Web Crypto, IndexedDB et au moins 512 Mio de quota disponible ; l'exécution du composant SIMD ferme ensuite la capacité WASM ;
-4. exécute deux warm-ups puis 20 seal/open par profil dans Chromium, Firefox et WebKit ;
-5. inscrit la classe, ses bornes, les capacités observées et le SHA-256 du manifeste dans chacun des trois rapports ;
-6. refuse le résumé si les rapports ne désignent pas la même classe ou le même manifeste.
+1. lit mémoire, CPU, architecture et OS du host ;
+2. refuse toute machine hors de la classe sélectionnée ;
+3. vérifie contexte sécurisé, Worker, transfert d'`ArrayBuffer`, Web Crypto, IndexedDB et 512 Mio de quota ;
+4. exécute deux warm-ups puis 20 seal/open par profil sur Chromium, Firefox et WebKit ;
+5. lie chaque rapport au commit, aux bornes de classe et au SHA-256 du manifeste ;
+6. rejette la matrice si les rapports divergent ou dépassent un budget.
 
-Une classe ne devient supportée qu'après archivage des rapports bruts sur commit immuable, passe `review-only`, host produit exact et décision Gate B. Les essais utilisent uniquement les fixtures publiques ; aucun service externe ni donnée personnelle n'est nécessaire.
+Une simulation, une VM, `ulimit`, un throttling ou une extrapolation reste diagnostic-only.
 
-## Diagnostic en machine virtuelle
+## Contributions facultatives 8 et 16–24 Gio
 
-Une VM macOS arm64 avec 8 ou 16 Gio assignés permet de détecter tôt un dépassement de budget, une panne mémoire ou un problème navigateur. Elle ne reproduit ni la pression mémoire physique, ni le partage de mémoire unifiée, ni les caractéristiques thermiques d'un appareil modeste. Elle ne peut donc pas promouvoir une classe.
-
-Le mode VM est volontairement distinct :
+Les propriétaires de machines physiques modestes peuvent exécuter le même protocole avec :
 
 ```sh
 export NOTEBOOK_QUALIFICATION_DEVICE_CLASS=desktop-arm64-constrained-8gib
-export NOTEBOOK_QUALIFICATION_NODE=/path/to/node-26.5.0/bin/node
-export NOTEBOOK_QUALIFICATION_ARCHIVE_DIR=/path/to/verified-archives
-bun run diagnose:notebook-core-v2:performance:vm
+# ou desktop-arm64-mainstream-16gib
 ```
 
-Le résumé obtenu porte `evidenceMode: "vm-diagnostic"`, `promotableEvidence: false` et, si les budgets passent, `diagnostic-budgets-pass`. Le validateur refuse les signaux de virtualisation connus en mode `physical-evidence`. L'appel public, les prérequis et le contenu attendu d'une contribution sont détaillés dans [`../../tools/qualification/notebook-core-v2/CONTRIBUTING-DEVICE-QUALIFICATION.md`](../../tools/qualification/notebook-core-v2/CONTRIBUTING-DEVICE-QUALIFICATION.md).
+Ces résultats sont importants pour découvrir des régressions et étendre le support, mais ils ne conditionnent plus le verdict Gate B courant. Une classe devient supportée seulement après archivage des rapports bruts sur commit immuable, contrôle des hashes et passe `review-only`.
 
-## Matériel encore requis
+Le protocole public et les règles de confidentialité sont détaillés dans [`../../tools/qualification/notebook-core-v2/CONTRIBUTING-DEVICE-QUALIFICATION.md`](../../tools/qualification/notebook-core-v2/CONTRIBUTING-DEVICE-QUALIFICATION.md). Fixtures publiques uniquement : aucun notebook, compte iCloud, numéro de série ou identifiant matériel unique.
 
-Pour fermer le plancher, il faut au minimum :
+## Diagnostic en machine virtuelle
 
-- une machine arm64 macOS physique 8 Gio pour `desktop-arm64-constrained-8gib` ;
-- une machine arm64 macOS physique 16 ou 24 Gio pour `desktop-arm64-mainstream-16gib`.
+Une VM macOS arm64 avec 8 ou 16 Gio assignés peut révéler tôt un dépassement, mais ne reproduit ni mémoire unifiée, ni pression physique, ni swap, ni thermique. Son résumé reste `vm-diagnostic`, `promotableEvidence: false` et ne qualifie aucune classe.
 
-Un MacBook Air Apple Silicon d'entrée de gamme convient comme cible 8 Gio. Une machine locale est préférable ; aucun hyperscaler ou banc de test propriétaire n'est requis. Si un prestataire distant devient indispensable, seules les fixtures publiques peuvent y être exécutées et cette exécution ne vaut pas preuve RGPD d'un futur host contenant des données utilisateur.
+## Conditions restantes hors matrice matérielle
+
+La qualification 32+ Gio ne ferme pas les autres axes : OOM processus navigateur attribuable, modèle produit complet, import atomique, suppression, offline et release conservent leurs gates propres. L'effacement logique/best-effort ne prouve jamais l'effacement physique RAM ou swap.
