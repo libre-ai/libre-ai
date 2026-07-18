@@ -67,7 +67,7 @@ All core journeys work offline and keyboard-only. Editor announces formatting/st
 
 ## Resource floor
 
-Le minimum produit candidat est une machine macOS arm64 avec 8 Gio de mémoire physique, 8 CPU logiques, les capacités navigateur WASM SIMD128/Worker/Web Crypto/IndexedDB et un quota local candidat de 512 Mio. Ce n'est pas encore une promesse de support : les classes physiques 8 Gio et 16–24 Gio restent à qualifier avec les budgets verrouillés. Les bornes, statuts et commandes sont définis dans [`notebook-resource-floor.md`](notebook-resource-floor.md) et `toolchains/notebook-resource-classes.json`. Les propriétaires de machines correspondantes peuvent suivre l'[appel à contribution](../../tools/qualification/notebook-core-v2/CONTRIBUTING-DEVICE-QUALIFICATION.md) ; les VM 8/16 Gio y sont admises uniquement comme diagnostics non promouvables.
+Le minimum produit candidat actuellement qualifié est macOS arm64 avec 32 Gio de mémoire physique, 12 CPU logiques, les capacités navigateur WASM SIMD128/Worker/Web Crypto/IndexedDB et un quota local candidat de 512 Mio. L'ADR-0006 réduit explicitement la matrice Gate B à cette classe sans extrapoler vers les machines modestes. Les classes physiques 8 Gio et 16–24 Gio restent des observations communautaires facultatives et ne sont pas annoncées comme supportées. Les bornes, statuts et commandes sont définis dans [`notebook-resource-floor.md`](notebook-resource-floor.md) et `toolchains/notebook-resource-classes.json`.
 
 ## Contracts
 
@@ -85,7 +85,7 @@ Unit tests cover graph closure, local-only exclusions/revisions, export-scoped I
 
 Une campagne storage macOS arm64 place maintenant chaque profil navigateur dans une image APFS sparse jetable et bornée à 6 Gio. Après un vrai marqueur OS `ENOSPC`, le host refuse le staging d'une enveloppe publique déterministe de 16 Mio avant de démarrer un worker ; la relance du même profil retrouve l'état produit antérieur, puis restauration et sauvegarde réussissent après suppression du filler. Cette preuve vaut pour le comportement local sous épuisement physique du filesystem, pas pour une classe matérielle ni pour la fiabilité de `navigator.storage.estimate()`.
 
-Les tests produit complets doivent encore couvrir le modèle blocs/révisions, l'OOM réel et attribuable du processus, l'import atomique et la suppression. Les classes physiques 8 Gio et 16–24 Gio restent sans preuve. Security review proves no content network requests and no plaintext persistence/logging. Cross-browser backup vectors must round-trip.
+Les tests produit complets doivent encore couvrir le modèle blocs/révisions, l'OOM réel et attribuable du processus, l'import atomique et la suppression. Les classes physiques 8 Gio et 16–24 Gio restent sans preuve et hors support déclaré, mais leurs contributions ne bloquent plus Gate B. Security review proves no content network requests and no plaintext persistence/logging. Cross-browser backup vectors must round-trip.
 
 ## Work packages
 
