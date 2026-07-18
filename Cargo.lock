@@ -843,7 +843,7 @@ name = "libre-ai-authz-biscuit"
 version = "0.1.0"
 dependencies = [
  "biscuit-auth",
- "biscuit-parser 0.2.0",
+ "biscuit-parser 0.1.2",
  "sha2 0.11.0",
  "zeroize",
 ]
