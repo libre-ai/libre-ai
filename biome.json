@@ -10,7 +10,8 @@
       "**",
       "!ecosystem/projections/public.v1.json",
       "!contracts/fixtures/radar-engine-v2",
-      "!docs/reviews/**/evidence"
+      "!docs/reviews/**/evidence",
+      "!docs/transformation/inputs"
     ]
   },
   "formatter": {
