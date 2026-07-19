@@ -44,6 +44,14 @@
         "@playwright/test": "catalog:testing",
       },
     },
+    "packages/auth-web": {
+      "name": "@libre-ai/auth-web",
+      "version": "0.1.0",
+      "dependencies": {
+        "@libre-ai/contracts": "workspace:*",
+        "@libre-ai/web-platform": "workspace:*",
+      },
+    },
     "packages/contracts": {
       "name": "@libre-ai/contracts",
       "version": "0.1.0",
@@ -139,6 +147,8 @@
     "@internationalized/number": ["@internationalized/number@3.6.7", "", { "dependencies": { "@swc/helpers": "^0.5.0" } }, "sha512-3ji1fcrT+FPAK86UqEhB/psHixYo6niWPJtt7+qRaYFynt/BaJG8GhAPimtWUpEiVSTq8ZM8L5psMxGquiB/Vg=="],
 
     "@internationalized/string": ["@internationalized/string@3.2.9", "", { "dependencies": { "@swc/helpers": "^0.5.0" } }, "sha512-kzP/M/mbQxODlmOt4bIQZ2SBVUWUSqMLXooXixnX7noche8WHaQcA+nwFN1K2KCF/cp+LDUhcJsCicwkvhD1pg=="],
+
+    "@libre-ai/auth-web": ["@libre-ai/auth-web@workspace:packages/auth-web"],
 
     "@libre-ai/bun-app-template": ["@libre-ai/bun-app-template@workspace:distribution/templates/bun-app"],
 
