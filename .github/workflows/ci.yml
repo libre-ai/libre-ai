@@ -35,6 +35,43 @@ jobs:
             fi
           done < <(git rev-list "$BASE_SHA..$HEAD_SHA")
           exit "$missing"
+      - name: Verify DCO sign-offs on pushed commits
+        if: github.event_name == 'push'
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.event.after }}
+        run: |
+          # Anticipatory WP-G2-Q01 change: the pull_request step above cannot
+          # see the GitHub-generated merge commit because it does not exist
+          # yet at review time. This step closes that gap on push without
+          # re-examining accepted history: only the commits introduced by
+          # this push are verified. A GitHub-generated merge commit cannot
+          # carry an author-matching trailer (its author is the forge
+          # account), so it must carry the merging maintainer's
+          # Signed-off-by trailer in the merge message instead.
+          if ! git cat-file -e "$BEFORE_SHA^{commit}" 2>/dev/null; then
+            echo "::warning::Push base $BEFORE_SHA is not reachable; skipping range verification"
+            exit 0
+          fi
+          missing=0
+          while read -r commit; do
+            committer="$(git show --no-patch --format='%cn <%ce>' "$commit")"
+            parent_words="$(git rev-list --parents -n 1 "$commit" | wc -w)"
+            trailers="$(git show --no-patch --format=%B "$commit" | git interpret-trailers --parse)"
+            if [ "$committer" = "GitHub <noreply@github.com>" ] && [ "$parent_words" -gt 2 ]; then
+              if ! printf '%s\n' "$trailers" | grep -Eq '^Signed-off-by: .+ <.+@.+>$'; then
+                echo "::error::GitHub-generated merge commit $commit lacks a Signed-off-by trailer in its merge message"
+                missing=1
+              fi
+            else
+              expected="Signed-off-by: $(git show --no-patch --format='%an <%ae>' "$commit")"
+              if ! printf '%s\n' "$trailers" | grep -Fqx "$expected"; then
+                echo "::error::Missing author-matching Signed-off-by trailer on $commit"
+                missing=1
+              fi
+            fi
+          done < <(git rev-list "$BEFORE_SHA..$AFTER_SHA")
+          exit "$missing"
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.13"
