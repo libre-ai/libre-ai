@@ -3,8 +3,8 @@
 Specialized Ed25519 Biscuit issuance, attenuation, verification, revocation and two-key rotation.
 
 Security order is fixed: verify signature and key validity, derive the root authority block ID,
-check revocation, require the canonical initial attenuation block, inject authoritative request
-facts, then execute a bounded deny-by-default policy.
+reject non-injective decoded terms, check revocation, require the canonical initial attenuation
+block, inject authoritative request facts, then execute a bounded deny-by-default policy.
 Tokens and private keys have redacted `Debug` implementations and are never returned in errors.
 
 The browser boundary must never receive this crate's serialized tokens.
