@@ -69,4 +69,4 @@ La campagne storage, macOS arm64 uniquement, place le profil de chaque moteur su
 
 ## Limites ouvertes
 
-Ce host qualifie la mécanique sauvegarde/restauration sur fixture publique ; il n'implémente pas encore le modèle complet blocs/révisions ni son import atomique chiffré. Restent également hors preuve : OOM réel et attribuable du processus navigateur, matériel physique 8/16–24 Gio, effacement physique et passes spécialisées fraîches sur candidat immuable. La preuve APFS locale ne qualifie aucune classe matérielle. Gate B et la release demeurent **REJECT**.
+Ce host qualifie la mécanique sauvegarde/restauration sur fixture publique ; il n'implémente pas encore le modèle complet blocs/révisions ni son import atomique chiffré. Gate B est approuvée sur le candidat immuable `9ee3f8d` après les passes spécialisées, la classe physique 32+ Gio et la matrice trois moteurs. Restent hors preuve ou facultatifs : OOM réel du processus navigateur, matériel physique 8/16–24 Gio et effacement physique. La preuve APFS locale ne qualifie aucune classe matérielle. L'activation, les données utilisateur, la production et la release demeurent **NON AUTORISÉES**.

@@ -59,7 +59,7 @@ No server account or session is required in local-only v1. Workspace unlock is l
 
 ## Runtime boundaries
 
-TypeScript owns block graph, UI, IndexedDB, local index, export selection and generation of fresh opaque 128-bit backup/context IDs plus fresh salt/nonce bytes. Before Context export it remaps every selected local block ID to a fresh export-scoped CSPRNG ID, rewrites roots/links, and keeps revisions and exclusions only in the local preview/receipt. Any product timestamp belongs inside the encrypted plaintext or local receipt, never in the portable payload. Notebook Core v2 is a locked Rust/WASM boundary for canonical context bytes and Argon2id/AES-256-GCM sealing/opening. Un premier host produit sous feature gate exerce cette frontière avec une fixture publique, un worker jetable, un téléchargement neutre et un staging IndexedDB chiffré ; il ne constitue ni un producteur de sauvegarde utilisateur ni une approbation Gate B. Aucun contenu réel ne peut l'utiliser avant les revues et la décision de release. No native FFI or server service is allowed in v1; sensitive bytes cross transiently, DOM and IndexedDB handles do not.
+TypeScript owns block graph, UI, IndexedDB, local index, export selection and generation of fresh opaque 128-bit backup/context IDs plus fresh salt/nonce bytes. Before Context export it remaps every selected local block ID to a fresh export-scoped CSPRNG ID, rewrites roots/links, and keeps revisions and exclusions only in the local preview/receipt. Any product timestamp belongs inside the encrypted plaintext or local receipt, never in the portable payload. Notebook Core v2 is a locked Rust/WASM boundary for canonical context bytes and Argon2id/AES-256-GCM sealing/opening. Un premier host produit sous feature gate exerce cette frontière avec une fixture publique, un worker jetable, un téléchargement neutre et un staging IndexedDB chiffré ; son introduction seule ne constituait ni un producteur de sauvegarde utilisateur ni une approbation Gate B. Gate B est désormais approuvée sur `9ee3f8d`, mais aucun contenu réel ne peut l'utiliser avant un contrôle propriétaire distinct et la décision de release. No native FFI or server service is allowed in v1; sensitive bytes cross transiently, DOM and IndexedDB handles do not.
 
 ## Accessibility and degraded mode
 
@@ -85,7 +85,7 @@ Unit tests cover graph closure, local-only exclusions/revisions, export-scoped I
 
 Une campagne storage macOS arm64 place maintenant chaque profil navigateur dans une image APFS sparse jetable et bornée à 6 Gio. Après un vrai marqueur OS `ENOSPC`, le host refuse le staging d'une enveloppe publique déterministe de 16 Mio avant de démarrer un worker ; la relance du même profil retrouve l'état produit antérieur, puis restauration et sauvegarde réussissent après suppression du filler. Cette preuve vaut pour le comportement local sous épuisement physique du filesystem, pas pour une classe matérielle ni pour la fiabilité de `navigator.storage.estimate()`.
 
-Les tests produit complets doivent encore couvrir le modèle blocs/révisions, l'OOM réel et attribuable du processus, l'import atomique et la suppression. Les classes physiques 8 Gio et 16–24 Gio restent sans preuve et hors support déclaré, mais leurs contributions ne bloquent plus Gate B. Security review proves no content network requests and no plaintext persistence/logging. Cross-browser backup vectors must round-trip.
+Les tests produit complets doivent encore couvrir le modèle blocs/révisions, l'import atomique et la suppression. Conformément à l'ADR-0007, l'OOM réel du processus reste un diagnostic facultatif : Gate B exige à la place la reprise bornée après terminaison abrupte et crash dans les trois moteurs, sans autoriser l'épuisement global de l'hôte. Les classes physiques 8 Gio et 16–24 Gio restent sans preuve et hors support déclaré, mais leurs contributions ne bloquent plus Gate B. Security review proves no content network requests and no plaintext persistence/logging. Cross-browser backup vectors must round-trip.
 
 ## Work packages
 
@@ -95,7 +95,7 @@ Les tests produit complets doivent encore couvrir le modèle blocs/révisions, l
 4. PWA offline/storage/accessibility shell — Web Platform ;
 5. restore/delete/privacy/browser qualification — Infrastructure and Release.
 
-La frontière Rust reste justifiée car Argon2id mémoire dure n’est pas fournie par Web Crypto du navigateur, et la preuve Gate A montre la cohérence cryptographique. Le moteur expérimental peut démarrer après Gate A + décision propriétaire, mais Gate B reste obligatoire avant toute sauvegarde utilisateur, toute production ou release. Les vecteurs de golden et la gestion des matières sensibles demeurent les gates de release.
+La frontière Rust reste justifiée car Argon2id mémoire dure n’est pas fournie par Web Crypto du navigateur, et la preuve Gate A montre la cohérence cryptographique. Le moteur expérimental pouvait démarrer après Gate A + décision propriétaire. Gate B est maintenant satisfaite pour la tranche fixture-only, mais toute sauvegarde utilisateur, activation, production ou release exige encore son propre contrôle propriétaire. Les vecteurs golden et la gestion des matières sensibles demeurent des gates de release.
 
 ## Release and rollback
 
