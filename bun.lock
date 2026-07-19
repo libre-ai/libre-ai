@@ -51,6 +51,9 @@
         "@libre-ai/contracts": "workspace:*",
         "@libre-ai/web-platform": "workspace:*",
       },
+      "devDependencies": {
+        "@playwright/test": "catalog:testing",
+      },
     },
     "packages/contracts": {
       "name": "@libre-ai/contracts",
