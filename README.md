@@ -9,25 +9,26 @@ Monorepo canonique de l’écosystème Libre AI reconstruit pour l’ère IA-nat
 - Rust pour les moteurs spécialisés, WASM, sécurité, preuve et tooling système ;
 - un `bun.lock`, un workspace Cargo, une source de contrats ;
 - Clever Cloud Paris/UE comme cible de déploiement ;
-- repositories spécialisés générés comme projections à sens unique.
+- cible multi-repository : socle + repositories produits réels construits sur lui (ADR-0008) ; « projection » désigne des artefacts générés, jamais des repositories.
 
 Lire dans cet ordre :
 
 1. [`vision.md`](vision.md)
-2. [`docs/decisions/DECISION-REGISTER.md`](docs/decisions/DECISION-REGISTER.md)
+2. [`docs/decisions/DECISION-REGISTER.md`](docs/decisions/DECISION-REGISTER.md) et [`docs/decisions/INVARIANTS.md`](docs/decisions/INVARIANTS.md)
 3. [`GOALS.md`](GOALS.md) et [`STATUS.md`](STATUS.md)
 4. [`LICENSING.md`](LICENSING.md), [`TRADEMARKS.md`](TRADEMARKS.md) et [`DATA-PROVENANCE.md`](DATA-PROVENANCE.md)
 5. [`docs/adr/0001-bun-fullstack-rust-specialized-big-bang.md`](docs/adr/0001-bun-fullstack-rust-specialized-big-bang.md)
 6. [`docs/adr/0002-g1-cross-cutting-product-decisions.md`](docs/adr/0002-g1-cross-cutting-product-decisions.md)
 7. [`docs/adr/0004-licensing-governance.md`](docs/adr/0004-licensing-governance.md)
 8. [`docs/adr/0005-notebook-gate-b-host-qualification.md`](docs/adr/0005-notebook-gate-b-host-qualification.md)
-9. [`docs/specifications/SPECIFICATION-STANDARD.md`](docs/specifications/SPECIFICATION-STANDARD.md)
-10. [`docs/specifications/DATA-LIFECYCLE.md`](docs/specifications/DATA-LIFECYCLE.md) et [`IDENTITY-AUTHORIZATION.md`](docs/specifications/IDENTITY-AUTHORIZATION.md)
-11. [`docs/architecture/TARGET.md`](docs/architecture/TARGET.md)
-12. [`docs/transformation/CLEANUP.md`](docs/transformation/CLEANUP.md)
-13. [`docs/transformation/BIG-BANG.md`](docs/transformation/BIG-BANG.md)
-14. [`docs/transformation/WORKSTREAMS.md`](docs/transformation/WORKSTREAMS.md)
-15. [`prompts/`](prompts/) pour l’exécution par phase
+9. [`docs/adr/0008-multi-repo-target-topology-and-brand.md`](docs/adr/0008-multi-repo-target-topology-and-brand.md)
+10. [`docs/specifications/SPECIFICATION-STANDARD.md`](docs/specifications/SPECIFICATION-STANDARD.md)
+11. [`docs/specifications/DATA-LIFECYCLE.md`](docs/specifications/DATA-LIFECYCLE.md) et [`IDENTITY-AUTHORIZATION.md`](docs/specifications/IDENTITY-AUTHORIZATION.md)
+12. [`docs/architecture/TARGET.md`](docs/architecture/TARGET.md)
+13. [`docs/transformation/CLEANUP.md`](docs/transformation/CLEANUP.md)
+14. [`docs/transformation/BIG-BANG.md`](docs/transformation/BIG-BANG.md)
+15. [`docs/transformation/WORKSTREAMS.md`](docs/transformation/WORKSTREAMS.md)
+16. [`prompts/`](prompts/) pour l’exécution par phase
 
 ## État
 
