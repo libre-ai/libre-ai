@@ -30,6 +30,8 @@ Deliver root Bun/Cargo workspaces, Knowledge Engine, web platform, specialized R
 
 Build all target applications and capabilities in their final paths, with continuous integration and no compatibility layer.
 
+**Sequencing authority:** post-G2 execution is ordered by [`docs/transformation/EXECUTION-SEQUENCING.md`](docs/transformation/EXECUTION-SEQUENCING.md) (ADR-0009): foundations and agent layers ship first, applications are wave 4 — the former nine-apps-in-parallel reading is superseded.
+
 **Acceptance:** all target workspaces compile and critical journeys have automated evidence.
 
 ## G4 — Global integration and cutover
@@ -40,6 +42,6 @@ Qualify security, data migration, accessibility, performance, operations and rel
 
 ## G5 — Distribution
 
-Publish projections, packages, documentation, context packs and reproducible evidence.
+Publish packages, documentation, context packs and reproducible evidence; activate real public product repositories on explicit owner decision (ADR-0008).
 
 **Acceptance:** an independent actor can reconstruct and verify a distributed capability.
