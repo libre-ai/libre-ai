@@ -1,6 +1,8 @@
 # WP-G2-Z01 authorization policy review
 
-Status: **fresh independent agent review required after adversarial remediation**
+Status: **APPROVE on code commit `bd7baeb`**
+Recorded verdict: [`reviews/bd7baeb/authorization-policy-review.md`](reviews/bd7baeb/authorization-policy-review.md), SHA-256 `414a0c22947d917b25a1f2504329854dc5573ec9cac7c2ebe1f99b346e745a93`
+Final candidate integration: **APPROVE on evidence-inclusive `22a3bfc`**
 Production authorization: **not granted**
 
 ## Authorities reviewed by the implementation
@@ -44,17 +46,17 @@ lifetime before executing an authorizer.
 
 Tests: `crates/authz-biscuit/tests/authz.rs`.
 
-## Reviewer questions
+## Final review disposition
 
-- Do all current Sessions and Missions allow rules represent the locked product
-  authority, including `private` contribution ownership?
-- Is exact resource binding sufficient for all G3 workers, or must a future
-  contract add explicit job/source/budget predicates before those workers ship?
-- Is the maximum 30-second previously verified revocation cache window accepted
-  for every operation, or must selected operations force a store read?
-- Are the five locked refusal codes sufficiently generic while retaining useful
-  root/policy evidence?
+The dedicated review-only pass bound code commit `bd7baeb`, its tree and all
+three authority hashes. It found no blocking, major or minor issue and approved
+the mandatory attenuation shape, print/parse injectivity guard, trusted-origin
+role isolation, tenant/resource/operation/expiry bindings, five refusal codes
+and deny-by-default policies. The positive-only revocation cache now forces a
+store read before every non-revoked acceptance; there is no accepted 30-second
+negative-cache window.
 
-The dedicated review-only pass must follow `docs/reviews/AGENT-REVIEW-PROTOCOL.md`,
-identify its pass/provider/model metadata and bind this file, the three
-authority hashes and the reviewed commit SHA.
+Exact resource binding is sufficient for this bounded capability. Any future
+worker needing job, source or budget predicates requires a separate contract
+and review before integration. The approval grants no production, application,
+secret, infrastructure or release authority.

@@ -1,7 +1,8 @@
 # WP-G2-Z01 qualification
 
-Status: **adversarial remediation in progress; fresh agent gates pending**
-Required review passes: `authorization-policy-review`, `key-rotation-review`
+Status: **complete; merged by PR #101 as `a6bee98`**
+Required review passes: `authorization-policy-review` **APPROVE**, `key-rotation-review` **APPROVE**
+Final candidate integration: **APPROVE** on evidence-inclusive `22a3bfc`
 Production/Clever authorization: **none**
 
 ## Delivered boundary
@@ -11,7 +12,7 @@ Production/Clever authorization: **none**
   required and shape-validated by the verifier;
 - verified-root SHA-256 revocation identifier and opaque verified revocation
   targets retained to root-authority expiry despite shorter child attenuation;
-- bounded external revocation cache with fail-closed store errors;
+- positive-only bounded revocation cache with fail-closed store errors and no negative-cache acceptance window;
 - embedded Sessions/Missions deny-by-default authorizers;
 - exact signed-authority shape, issuer activation/TTL enforcement and verifier
   remaining-lifetime bound;
@@ -22,9 +23,11 @@ Production/Clever authorization: **none**
 
 ## Runtime dependency requalification
 
-`WP-G2-T01` remains the sole authority for the root manifest and lockfile. This
-package requests no root version change: `origin/main` already pins
-`biscuit-auth = 5.0.0` with default features disabled. Z01 requalifies that
+`WP-G2-T01` remains the sole authority for the root manifest and lockfile. PR
+#101 preserved that separation: Z01 code changes stay under
+`crates/authz-biscuit/**`, while the exact parser alias and lockfile integration
+are isolated in T01 commit `fbbe360`. The resulting workspace pins
+`biscuit-auth = 5.0.0` with default features disabled and requalifies that
 previously test-only selection for this bounded runtime capability:
 
 - `biscuit-auth` 5.0.0, Apache-2.0, crates.io checksum
@@ -57,8 +60,20 @@ bun run check
 bun test
 ```
 
-The final command outcomes and CI URL must be attached to the PR after a clean
-run. Automated success is evidence, not a role-separated agent verdict.
+## Final evidence chain
+
+| Evidence | Target | Verdict / result |
+| --- | --- | --- |
+| authorization policy review | code `bd7baeb`, tree `5ed745d` | [`APPROVE`](evidence/reviews/bd7baeb/authorization-policy-review.md), SHA-256 `414a0c22947d917b25a1f2504329854dc5573ec9cac7c2ebe1f99b346e745a93` |
+| key rotation/revocation review | code `bd7baeb`, tree `5ed745d` | [`APPROVE`](evidence/reviews/bd7baeb/key-rotation-review.md), SHA-256 `36ab75267ec5506befc290e9e25bb84d6675c526605b39d9b0cc2f0d2141ef35`; see the [scope notice](evidence/reviews/bd7baeb/SCOPE-NOTICE.md) |
+| candidate integration | evidence-inclusive `22a3bfc`, tree `51a1c5a` | [`APPROVE`](evidence/reviews/22a3bfc/CANDIDATE-INTEGRATION.md), original report SHA-256 `3b58aa38112f81434bd2223e4473ad87bcadbace14e3a76df88c164707026785` |
+| PR required checks | final head `5b3c220` | governance, Bun and Rust `SUCCESS` in run `29637845877` |
+| post-merge checks | merge `a6bee98` | governance, Bun and Rust `SUCCESS` in run `29637997287` |
+
+The final PR head only adds the non-normative merge of contemporaneous `main`;
+the reviewed Z01/T01 scope is byte-identical to `22a3bfc`. Automated success is
+evidence, not a substitute for the two specialized verdicts above. Historical
+rejects `87a802e` and `fbbe360` remain immutable and are never reclassified.
 
 ## Deferred and blocked
 
