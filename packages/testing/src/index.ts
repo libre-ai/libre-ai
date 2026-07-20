@@ -1,1 +1,1 @@
-export { createTestDatabase, type TestDatabase } from "./test-database.ts";
+export { createTestDatabase, type TestDatabase } from "./test-database";

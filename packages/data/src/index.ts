@@ -1,4 +1,40 @@
 export {
+  type ActiveDeletionRequest,
+  CachePurgeFailedError,
+  executeActiveDeletion,
+} from "./adapters/active-deletion";
+export {
+  type BlobMetadata,
+  type BlobStorePort,
+  InMemoryBlobStore,
+} from "./adapters/blob-store-port";
+export {
+  getDeletionReceipt,
+  listCompletedSubjectDigests,
+  persistDeletionReceipt,
+} from "./adapters/deletion-receipt-store";
+export type { SqlExecutor, SqlQueryResult } from "./adapters/executor";
+export {
+  type ExpiredSelectionOptions,
+  selectExpiredRowIds,
+  UnsafeTableNameError,
+} from "./adapters/expired-selection-query";
+export {
+  InMemoryProjectionCache,
+  MissingTtlError,
+  type ProjectionCachePort,
+} from "./adapters/projection-cache-port";
+export {
+  getRetentionRule,
+  type StoredRetentionRule,
+  type UpsertRetentionRuleInput,
+  upsertRetentionRule,
+} from "./adapters/retention-rules-store";
+export {
+  clearPooledSession,
+  withTenantDbTransaction,
+} from "./adapters/tenant-transaction";
+export {
   assertWithinBackupCeiling,
   BACKUP_EXPIRY_DAYS,
   BackupCeilingExceededError,

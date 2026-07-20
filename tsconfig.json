@@ -15,7 +15,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "skipLibCheck": false,
-    "types": ["bun", "react", "react-dom"]
+    "types": ["bun", "react", "react-dom", "emscripten"]
   },
   "include": [
     "apps/**/*.ts",

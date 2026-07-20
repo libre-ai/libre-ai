@@ -1,6 +1,6 @@
-import { PGlite } from "@electric-sql/pglite";
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { PGlite } from "@electric-sql/pglite";
 
 /**
  * Ephemeral PostgreSQL for integration tests (WP-G2-D01 → WP-G2-Q01).

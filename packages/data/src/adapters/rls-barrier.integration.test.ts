@@ -1,6 +1,6 @@
-import { createTestDatabase, type TestDatabase } from "@libre-ai/testing";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { join } from "node:path";
+import { createTestDatabase, type TestDatabase } from "@libre-ai/testing";
 
 /**
  * WP-G2-D01 acceptance criterion 1, DB side: the PostgreSQL barrier itself —
@@ -57,7 +57,11 @@ describe("application role posture", () => {
   });
 
   test("RLS is enabled AND forced on both platform tables", async () => {
-    const res = await tdb.db.query<{ relname: string; relrowsecurity: boolean; relforcerowsecurity: boolean }>(
+    const res = await tdb.db.query<{
+      relname: string;
+      relrowsecurity: boolean;
+      relforcerowsecurity: boolean;
+    }>(
       `SELECT relname, relrowsecurity, relforcerowsecurity FROM pg_class
        WHERE relname IN ('retention_rules', 'deletion_receipts') ORDER BY relname`,
     );
@@ -195,9 +199,7 @@ describe("structural CHECKs hold even for RLS-bypassing roles", () => {
 describe("least-privilege grants", () => {
   test("the app role cannot TRUNCATE a platform table", async () => {
     await asTenant(TENANT_A, async () => {
-      await expect(tdb.db.exec("TRUNCATE retention_rules")).rejects.toThrow(
-        /permission denied/,
-      );
+      await expect(tdb.db.exec("TRUNCATE retention_rules")).rejects.toThrow(/permission denied/);
     });
   });
 

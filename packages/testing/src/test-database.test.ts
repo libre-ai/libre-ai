@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createTestDatabase, type TestDatabase } from "./test-database.ts";
+import { createTestDatabase, type TestDatabase } from "./test-database";
 
 // The harness is deliberately low level: it boots an ephemeral PostgreSQL
 // (PGlite), applies owner migrations from a directory, and simulates
@@ -45,9 +45,7 @@ describe("createTestDatabase", () => {
 
   test("applies migrations from a directory in lexicographic order", async () => {
     await tdb.applyMigrations(migrationsDir);
-    const res = await tdb.db.query<{ n: number }>(
-      "SELECT count(*)::int AS n FROM harness_probe",
-    );
+    const res = await tdb.db.query<{ n: number }>("SELECT count(*)::int AS n FROM harness_probe");
     expect(res.rows[0]?.n).toBe(1);
   });
 
