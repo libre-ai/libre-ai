@@ -314,3 +314,57 @@ describe("terminal and audit invariants", () => {
     expect(decision).toEqual({ ok: false, refusal: "mission.transition_forbidden" });
   });
 });
+
+describe("verdict (mission-record.v1 conformance)", () => {
+  const submittedPath: readonly Command[] = [
+    ...runningPath,
+    {
+      type: "SubmitMissionResult",
+      artifact: "urn:libre-ai:artifact:1",
+      evidence: "urn:libre-ai:evidence:1",
+    },
+  ];
+
+  test("accepted carries an accepted verdict", () => {
+    const accepted = drive([
+      ...submittedPath,
+      { type: "AcceptMissionResult", approval: "urn:libre-ai:approval:2", humanApproved: true },
+    ]);
+    expect(accepted.state).toBe("accepted");
+    expect(accepted.verdict?.status).toBe("accepted");
+    expect(accepted.verdict?.reasonCode).toMatch(/^mission\./);
+    expect(accepted.verdict?.decidedAt).toBe(NOW);
+  });
+
+  test("rejected carries a rejected verdict, cleared on remediation", () => {
+    const rejected = drive([...submittedPath, { type: "RejectMissionResult" }]);
+    expect(rejected.verdict?.status).toBe("rejected");
+    const resubmitted = decide(
+      rejected,
+      {
+        type: "SubmitMissionResult",
+        artifact: "urn:libre-ai:artifact:2",
+        evidence: "urn:libre-ai:evidence:2",
+      },
+      ctx(rejected.revision),
+    );
+    expect(resubmitted.ok && resubmitted.next.verdict).toBeUndefined();
+  });
+
+  test("abandoned carries an abandoned verdict", () => {
+    const abandoned = drive([...runningPath, { type: "AbandonMission" }]);
+    expect(abandoned.state).toBe("abandoned");
+    expect(abandoned.verdict?.status).toBe("abandoned");
+  });
+
+  test("refused and cancelled carry no verdict", () => {
+    const refused = drive([
+      PROPOSE,
+      { type: "AssessMissionRisk", level: "low", policyVersion: "1.0.0" },
+      { type: "RefuseMission" },
+    ]);
+    expect(refused.verdict).toBeUndefined();
+    const cancelled = drive([...runningPath, { type: "CancelMission" }]);
+    expect(cancelled.verdict).toBeUndefined();
+  });
+});

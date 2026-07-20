@@ -56,6 +56,15 @@ export interface ResultRef {
   readonly submittedAt: string;
 }
 
+// The final decision on a mission. mission-record.v1 requires it exactly when
+// the state is `accepted`, `rejected` or `abandoned` (the verdict-status enum);
+// `refused` and `cancelled` carry no verdict.
+export interface Verdict {
+  readonly status: "accepted" | "rejected" | "abandoned";
+  readonly reasonCode: string;
+  readonly decidedAt: string;
+}
+
 export interface Mission {
   readonly id: string;
   readonly tenantId: string;
@@ -69,6 +78,7 @@ export interface Mission {
   readonly approvals: readonly string[];
   readonly eventCursor: number;
   readonly result?: ResultRef;
+  readonly verdict?: Verdict;
   readonly openDecision: boolean;
   readonly createdAt: string;
 }
@@ -281,8 +291,11 @@ export function decide(state: Mission | null, command: Command, ctx: CommandCont
         return refuse("mission.transition_forbidden");
       if (command.artifact.length === 0 || command.evidence.length === 0)
         return refuse("mission.evidence_missing");
+      // Remediating a rejected result clears the prior rejection verdict; the
+      // resubmitted, non-terminal mission carries none.
       return advance("result-submitted", "MissionResultSubmitted", {
         result: { artifact: command.artifact, evidence: command.evidence, submittedAt: ctx.now },
+        verdict: undefined,
       });
 
     case "AcceptMissionResult":
@@ -291,14 +304,19 @@ export function decide(state: Mission | null, command: Command, ctx: CommandCont
       if (!command.humanApproved) return refuse("mission.approval_required");
       return advance("accepted", "MissionResultAccepted", {
         approvals: Object.freeze([...state.approvals, command.approval]),
+        verdict: { status: "accepted", reasonCode: "mission.result_accepted", decidedAt: ctx.now },
       });
 
     case "RejectMissionResult":
       if (state.state !== "result-submitted") return refuse("mission.transition_forbidden");
-      return advance("rejected", "MissionResultRejected");
+      return advance("rejected", "MissionResultRejected", {
+        verdict: { status: "rejected", reasonCode: "mission.result_rejected", decidedAt: ctx.now },
+      });
 
     case "AbandonMission":
-      return advance("abandoned", "MissionAbandoned");
+      return advance("abandoned", "MissionAbandoned", {
+        verdict: { status: "abandoned", reasonCode: "mission.abandoned", decidedAt: ctx.now },
+      });
 
     default:
       return refuse("mission.transition_forbidden");

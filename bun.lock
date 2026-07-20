@@ -18,6 +18,10 @@
         "typescript": "7.0.2",
       },
     },
+    "apps/missions": {
+      "name": "@libre-ai/missions",
+      "version": "0.1.0",
+    },
     "apps/notebook": {
       "name": "@libre-ai/notebook",
       "version": "0.1.0",
@@ -193,6 +197,8 @@
     "@libre-ai/envelope": ["@libre-ai/envelope@workspace:packages/envelope"],
 
     "@libre-ai/knowledge": ["@libre-ai/knowledge@workspace:packages/knowledge"],
+
+    "@libre-ai/missions": ["@libre-ai/missions@workspace:apps/missions"],
 
     "@libre-ai/notebook": ["@libre-ai/notebook@workspace:apps/notebook"],
 
