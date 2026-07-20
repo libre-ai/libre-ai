@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
-import { type DeletionReceiptLike, replayDeletionsOnRestore } from "./restore-replay";
+import {
+  type DeletionReceiptLike,
+  replayDeletionsOnRestore,
+  UnknownReceiptStatusError,
+} from "./restore-replay";
 
 const receipt = (subjectDigests: string[], status = "complete"): DeletionReceiptLike => ({
   subjectDigests,
@@ -24,10 +28,21 @@ describe("restore replays accepted deletions", () => {
     expect(twice).toEqual(["dig_a"]);
   });
 
-  test("an incomplete receipt does not delete on restore", () => {
-    // Only accepted (complete) deletions replay; an in-flight receipt must not.
-    const survivors = replayDeletionsOnRestore(["dig_a", "dig_b"], [receipt(["dig_b"], "pending")]);
+  test("a blocked (refused) receipt does not delete on restore", () => {
+    // "blocked" is a valid refusal receipt: the deletion never happened.
+    const survivors = replayDeletionsOnRestore(["dig_a", "dig_b"], [receipt(["dig_b"], "blocked")]);
     expect(survivors).toEqual(["dig_a", "dig_b"]);
+  });
+
+  test("an unknown status fails closed rather than silently skipping", () => {
+    // A corrupt or forged receipt status must abort the restore, not be
+    // silently ignored (which would let a deletion resurrect unnoticed).
+    expect(() => replayDeletionsOnRestore(["dig_a"], [receipt(["dig_a"], "pending")])).toThrow(
+      UnknownReceiptStatusError,
+    );
+    expect(() => replayDeletionsOnRestore(["dig_a"], [receipt(["dig_a"], "")])).toThrow(
+      UnknownReceiptStatusError,
+    );
   });
 
   test("multiple receipts all replay", () => {

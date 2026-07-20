@@ -4,9 +4,19 @@ Tenant-isolated data platform (WP-G2-D01). Enforces the DATA-LIFECYCLE lock: a
 transaction-local tenant context, deny-by-default row ownership, validated
 retention bounds, backup ceiling and restore replay.
 
-**Status: business-logic foundation complete, integration pending.** The
-security logic of all three acceptance criteria is implemented and tested (32
-tests, strict TDD):
+**Status: business-logic foundation complete, integration pending.** This is a
+**defense-in-depth application layer, not the mandatory enforcement.** An
+independent adversarial review confirmed the load-bearing point: these guards
+are optional to a caller, so the PostgreSQL RLS policies and CHECK constraints
+(not yet written) are the mandatory barrier — a caller that bypasses these
+helpers must still be denied by the database. Both layers are required; this
+one alone is not sufficient.
+
+Hardened after that review: subject digests must be opaque SHA-256 (a cleartext
+value is refused, closing a content-leak vector); an unknown deletion-receipt
+status fails the restore closed; the tenant-id provenance requirement (K2) is
+documented. The security logic of all three acceptance criteria is implemented
+and tested (37 tests, strict TDD):
 
 - `tenant-context` — transaction-local tenant scope; missing context denies;
   clears on return and on throw.

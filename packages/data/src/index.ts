@@ -11,11 +11,13 @@ export {
   type DeletionReceiptInput,
   type DeletionStoreOutcome,
   EmptySubjectSetError,
+  NonOpaqueDigestError,
 } from "./deletion-receipt";
 export { type RetainedRecord, selectExpiredIds } from "./expired-selection";
 export {
   type DeletionReceiptLike,
   replayDeletionsOnRestore,
+  UnknownReceiptStatusError,
 } from "./restore-replay";
 export {
   AboveMaximumRetentionError,

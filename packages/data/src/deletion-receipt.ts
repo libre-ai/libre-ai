@@ -11,10 +11,22 @@ import { backupExpiryCeiling } from "./backup-ceiling";
  */
 export const DELETION_RECEIPT_SCHEMA = "libre-ai.deletion-receipt.v1";
 
+// contracts/schemas/common.v1.schema.json#/$defs/sha256
+const SHA256_DIGEST = /^[a-f0-9]{64}$/;
+
 export class EmptySubjectSetError extends Error {
   constructor() {
     super("a completed deletion receipt must name at least one subject digest");
     this.name = "EmptySubjectSetError";
+  }
+}
+
+export class NonOpaqueDigestError extends Error {
+  constructor(value: string) {
+    // Never echo the offending value: it may itself be the cleartext content
+    // this guard exists to keep out of the receipt. Report only its length.
+    super(`a subject digest must be an opaque sha-256 (got a ${value.length}-char value)`);
+    this.name = "NonOpaqueDigestError";
   }
 }
 
@@ -51,6 +63,11 @@ export interface DeletionReceipt {
 export function buildCompletedDeletionReceipt(input: DeletionReceiptInput): DeletionReceipt {
   if (input.subjectDigests.length === 0) {
     throw new EmptySubjectSetError();
+  }
+  for (const digest of input.subjectDigests) {
+    if (!SHA256_DIGEST.test(digest)) {
+      throw new NonOpaqueDigestError(digest);
+    }
   }
   return {
     schemaVersion: DELETION_RECEIPT_SCHEMA,

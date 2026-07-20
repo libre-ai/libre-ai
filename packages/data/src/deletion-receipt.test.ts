@@ -5,13 +5,17 @@ import {
   buildCompletedDeletionReceipt,
   type DeletionReceiptInput,
   EmptySubjectSetError,
+  NonOpaqueDigestError,
 } from "./deletion-receipt";
+
+const DIGEST_A = "a".repeat(64);
+const DIGEST_B = "b".repeat(64);
 
 const input: DeletionReceiptInput = {
   id: "rcp_1",
-  tenantId: "ten_alpha",
+  tenantId: "ten_alpha000000001",
   owner: "radar",
-  subjectDigests: ["sha256:aaa", "sha256:bbb"],
+  subjectDigests: [DIGEST_A, DIGEST_B],
   requestedBy: "usr_9",
   requestedAt: "2026-07-20T00:00:00.000Z",
   completedAt: "2026-07-20T00:00:05.000Z",
@@ -56,5 +60,25 @@ describe("completed deletion receipt", () => {
     expect(() => buildCompletedDeletionReceipt({ ...input, subjectDigests: [] })).toThrow(
       EmptySubjectSetError,
     );
+  });
+
+  test("refuses a subject that is not an opaque sha-256 digest", () => {
+    // DATA-LIFECYCLE.md §5: opaque digests, never deleted content. A cleartext
+    // value (PII, identifier) must be refused so it cannot enter the receipt.
+    expect(() =>
+      buildCompletedDeletionReceipt({
+        ...input,
+        subjectDigests: ["alice@example.com"],
+      }),
+    ).toThrow(NonOpaqueDigestError);
+  });
+
+  test("refuses a malformed digest (wrong length or non-hex)", () => {
+    expect(() =>
+      buildCompletedDeletionReceipt({ ...input, subjectDigests: ["a".repeat(63)] }),
+    ).toThrow(NonOpaqueDigestError);
+    expect(() =>
+      buildCompletedDeletionReceipt({ ...input, subjectDigests: ["A".repeat(64)] }),
+    ).toThrow(NonOpaqueDigestError);
   });
 });
