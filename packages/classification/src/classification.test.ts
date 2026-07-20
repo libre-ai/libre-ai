@@ -6,6 +6,7 @@ import {
   OperationalNotAuthorityError,
   type Reliability,
   requireAuthorityFor,
+  UnsealedClassificationError,
 } from "./index";
 
 /**
@@ -88,5 +89,36 @@ describe("deriveFrom", () => {
 
   test("refuses to derive from an empty source set", () => {
     expect(() => deriveFrom({}, [])).toThrow(/at least one source/i);
+  });
+
+  test("refuses an unsealed (forged) source, fail-closed", () => {
+    const forged = { reliability: "authoritative", value: {} } as ReturnType<typeof classify>;
+    expect(() => deriveFrom({}, [forged])).toThrow(UnsealedClassificationError);
+  });
+});
+
+describe("seal integrity (review K-01, K-02)", () => {
+  test("a JSON-deserialized authoritative object is refused at the authority gate", () => {
+    // The exact shape of a sealed payload, but built outside the module.
+    const forged = JSON.parse('{"reliability":"authoritative","value":{"x":1}}') as ReturnType<
+      typeof classify
+    >;
+    expect(isAuthoritative(forged)).toBe(false);
+    expect(() => requireAuthorityFor("invariants-register", forged)).toThrow(
+      UnsealedClassificationError,
+    );
+  });
+
+  test("a genuinely classified payload is frozen (its class cannot be mutated)", () => {
+    const op = classify("operational", { x: 1 });
+    expect(Object.isFrozen(op)).toBe(true);
+    // A cast-mutation attempt is a no-op (frozen) — the class stays operational.
+    try {
+      (op as { reliability: Reliability }).reliability = "authoritative";
+    } catch {
+      // strict mode throws; either way the value must not change.
+    }
+    expect(op.reliability).toBe("operational");
+    expect(() => requireAuthorityFor("gates", op)).toThrow(OperationalNotAuthorityError);
   });
 });
