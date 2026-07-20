@@ -340,6 +340,11 @@ pub struct IssuanceRequest {
 /// The three loop-security kernel K1 identity facts an agent-fleet token carries.
 /// The agent principal is the token's `user_id`; these are its fleet membership,
 /// operating mission and explicit capability scope.
+///
+/// Each field is an issuer-side identifier — never PII or content — and must
+/// match the operation grammar (2..=64 bytes, lowercase ASCII start, then
+/// lowercase/digit/hyphen), enforced at issuance. This keeps the values
+/// injection-free once bound into the datalog authority block.
 #[derive(Clone)]
 pub struct AgentIdentity {
     pub fleet: String,

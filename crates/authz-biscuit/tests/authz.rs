@@ -1439,3 +1439,47 @@ fn agent_token_carries_k1_facts_and_agent_runs_v2_denies_cross_fleet() {
         "a cross-fleet agent token must be denied by agent-runs-v2"
     );
 }
+
+// Part b1: issue_agent rejects a malformed agent identity (grammar proof).
+#[test]
+fn issue_agent_rejects_malformed_identity() {
+    let now = at(0);
+    let (issuer, _ring) = issuer_and_ring(1, now);
+    let base = || IssuanceRequest {
+        user_id: USER.to_owned(),
+        tenant_id: TENANT.to_owned(),
+        role: "author-agent".to_owned(),
+        resource: RESOURCE.to_owned(),
+        operations: operations(&["submit-plan"]),
+        ttl: Duration::from_secs(300),
+    };
+    let agent =
+        |fleet: &str, mission: &str, capability: &str| libre_ai_authz_biscuit::AgentIdentity {
+            fleet: fleet.to_owned(),
+            mission: mission.to_owned(),
+            capability: capability.to_owned(),
+        };
+    for (fleet, mission, capability) in [
+        ("Forge", "mission-alpha", "invoke-planned-tool"), // uppercase start
+        ("forge", "x", "invoke-planned-tool"),             // too short
+        ("forge\") allow if true; //", "mission-alpha", "cap"), // datalog metachars
+        ("forge", "mission_alpha", "cap"),                 // underscore forbidden
+    ] {
+        assert_eq!(
+            issuer
+                .issue_agent(base(), agent(fleet, mission, capability), now)
+                .unwrap_err()
+                .code,
+            "auth.biscuit_invalid",
+        );
+    }
+    assert!(
+        issuer
+            .issue_agent(
+                base(),
+                agent("forge", "mission-alpha", "invoke-planned-tool"),
+                now,
+            )
+            .is_ok()
+    );
+}
