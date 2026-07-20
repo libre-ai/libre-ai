@@ -21,6 +21,16 @@ import { withTenantDbTransaction } from "./tenant-transaction";
  * 2. One tenant transaction then deletes the active rows, enqueues only
  *    content-addressed blob deletion, and persists the receipt — atomically.
  *    The receipt's store outcomes reflect what actually happened.
+ *
+ * Scope boundary (DATA-LIFECYCLE explicit-deletion steps 1-2, authorization
+ * and legal-hold refusal): those steps are an AUTHORIZATION precondition, not
+ * a data-platform responsibility. Authorizing the actor/tenant/scope/revision
+ * and refusing before any mutation on a legal hold belongs to the auth and
+ * orchestration layers (Biscuit-verified capability, K2 authoritative source
+ * of tenantId) that call this function; reaching this code means that gate
+ * already passed. This module enforces the mechanical guarantees of steps
+ * 3-5 only. Wiring the refusal path is deferred to those layers, not silently
+ * dropped (K4 migration-and-deletion-review finding M-09).
  */
 export class CachePurgeFailedError extends Error {
   constructor(attempts: number, cause: unknown) {
