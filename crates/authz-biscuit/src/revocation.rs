@@ -68,6 +68,76 @@ pub trait RevocationStore {
     fn revoke(&mut self, record: RevocationRecord) -> Result<(), RevocationStoreUnavailable>;
 }
 
+/// A per-`agent_id` revocation (loop-security kernel K1): once recorded, the
+/// issuer mints no new tokens for that agent. Distinct from per-token revocation
+/// (which targets a single `root_block_id`). Outstanding tokens of a revoked
+/// agent still expire under the short TTL ceiling; immediate invalidation of a
+/// live token is a validation-side control that lands with the agent runtime
+/// consumer.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct AgentRevocationRecord {
+    agent_id: String,
+    reason_code: String,
+    revoked_at: SystemTime,
+}
+
+impl AgentRevocationRecord {
+    pub fn new(
+        agent_id: String,
+        reason_code: String,
+        revoked_at: SystemTime,
+    ) -> Result<Self, AuthzError> {
+        if !crate::token::valid_prefixed_id(&agent_id, "usr_") || !valid_reason_code(&reason_code) {
+            return Err(AuthzError::new("auth.biscuit_invalid"));
+        }
+        Ok(Self {
+            agent_id,
+            reason_code,
+            revoked_at,
+        })
+    }
+
+    #[must_use]
+    pub fn agent_id(&self) -> &str {
+        &self.agent_id
+    }
+
+    #[must_use]
+    pub fn reason_code(&self) -> &str {
+        &self.reason_code
+    }
+
+    #[must_use]
+    pub fn revoked_at(&self) -> SystemTime {
+        self.revoked_at
+    }
+}
+
+/// Store of per-`agent_id` revocations consulted at issuance. `is_agent_revoked`
+/// is the fail-closed read: the issuer refuses to mint when it returns `true`
+/// or when the store is unavailable.
+///
+/// Revocation is **global** to the agent principal, not tenant-scoped: the key
+/// is the request's `user_id` at issuance, so revoking an agent prevents token
+/// issuance for it everywhere it holds identity (consistent with the K1 spec's
+/// "per `agent_id`" wording).
+pub trait AgentRevocationStore {
+    fn is_agent_revoked(&mut self, agent_id: &str) -> Result<bool, RevocationStoreUnavailable>;
+
+    fn revoke_agent(
+        &mut self,
+        record: AgentRevocationRecord,
+    ) -> Result<(), RevocationStoreUnavailable>;
+}
+
+fn valid_reason_code(reason_code: &str) -> bool {
+    !reason_code.is_empty()
+        && reason_code.len() <= 128
+        && reason_code.bytes().all(|byte| {
+            byte.is_ascii_lowercase() || byte.is_ascii_digit() || matches!(byte, b'.' | b'_' | b'-')
+        })
+}
+
 pub struct RevocationChecker<S> {
     store: S,
     cache_ttl: Duration,
