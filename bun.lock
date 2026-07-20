@@ -66,6 +66,9 @@
     "packages/data": {
       "name": "@libre-ai/data",
       "version": "0.1.0",
+      "devDependencies": {
+        "@libre-ai/testing": "workspace:*",
+      },
     },
     "packages/design-system": {
       "name": "@libre-ai/design-system",
