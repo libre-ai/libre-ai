@@ -63,6 +63,10 @@
         "ajv-formats": "catalog:",
       },
     },
+    "packages/data": {
+      "name": "@libre-ai/data",
+      "version": "0.1.0",
+    },
     "packages/design-system": {
       "name": "@libre-ai/design-system",
       "version": "0.1.0",
@@ -156,6 +160,8 @@
     "@libre-ai/bun-app-template": ["@libre-ai/bun-app-template@workspace:distribution/templates/bun-app"],
 
     "@libre-ai/contracts": ["@libre-ai/contracts@workspace:packages/contracts"],
+
+    "@libre-ai/data": ["@libre-ai/data@workspace:packages/data"],
 
     "@libre-ai/design-system": ["@libre-ai/design-system@workspace:packages/design-system"],
 
