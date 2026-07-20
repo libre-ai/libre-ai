@@ -133,7 +133,7 @@ Nouveau paragraphe en §5 :
 
 ---
 
-## Verdict de signature
+## Verdict de signature (81a47f8)
 
 **DIRTY** — Blocage sur **1 finding bloquant non-adressé** (N-02).
 
@@ -143,6 +143,86 @@ Levée requise : Avant de prononcer la signature propriétaire du Lexicon Lock, 
 
 - N-02 est résolu empiriquement ET documenté dans la correction, OU
 - N-02 est explicitement transporté au dossier propriétaire avec une nouvelle phrase en LEXICON.md (ex. section 5 : "libre-ai.fr : vérification empirique de propriété requise avant signature, à charge du dossier propriétaire Phase 0").
+
+---
+
+## Re-verify 6204c80 — Corrections post-81a47f8
+
+**Commits** : 81a47f8 → 6204c80 (même branche docs/phase0-lexicon-lock)
+**Modifications** : Deux changements adressant directement N-02 et la boucle de gate réelle dans D-01
+**Date de re-verification** : 2026-07-20
+
+### Finding N-02 : libre-ai.fr — **RÉSOLU**
+
+**Modification (§5)** : Nouvelle entrée complète :
+
+> "**Domaine `libre-ai.fr`** (finding N-02 de la revue K4) : vérification empirique du 2026-07-20 (whois + RDAP AFNIC) — le domaine est **enregistré et actif** (registrar Infomaniak, titulaire anonymisé, pratique AFNIC normale pour un particulier). L'anonymisation empêche de prouver le contrôle par le titulaire de ce dépôt : la **confirmation nominative du contrôle** est un point de décision propriétaire du dossier Phase 0 — cette carte ne la présume pas."
+
+**Analyse** :
+
+- ✓ Recognition du finding N-02 (citation explicite)
+- ✓ Vérification empirique documentée (whois + RDAP AFNIC du 2026-07-20)
+- ✓ Résultat factuel : enregistré et actif
+- ✓ Contexte AFNIC explicité : registrar Infomaniak, titulaire anonymisé
+- ✓ Explication : anonymisation = zéro preuve du contrôle
+- ✓ Transport au dossier propriétaire : "confirmation nominative du contrôle" est un point de décision Phase 0
+- ✓ Non-présomption claire : "cette carte ne la présume pas"
+
+**Statut de N-02 : ADDRESSED** — Le finding est résolu empiriquement (vérification WHOIS/RDAP), documenté (état du domaine), contextualisé (raison de l'anonymisation), et transporté au dossier (point de décision propriétaire sur le contrôle nominal).
+
+### Boucle de gate D-01 (réelle, pas seulement proposée) — **RÉSOLU**
+
+**Modification (§6.1)** : Changement de citation verbatim en pointeur :
+
+Ancien (81a47f8) :
+
+> "Marques et domaines déjà deny-listés par le gate doctrine : `Daidalos`, `free-ai.fr`, `libre-ia.fr`."
+
+Nouveau (6204c80) :
+
+> "S'y ajoutent les trois motifs de marque et de domaine déjà deny-listés par le gate doctrine — cette carte les référence **par pointeur** (voir la liste exacte dans `.github/workflows/doctrine-governance.yml`) et ne les recopie pas : les écrire ici déclencherait le gate lui-même, et la liste du workflow reste la source unique."
+
+**Analyse** :
+
+- ✓ Les trois motifs (`Daidalos`, `free-ai.fr`, `libre-ia.fr`) ne sont plus recopiés verbatim dans LEXICON.md
+- ✓ Cela élimine le déclenchement du gate doctrine-governance sur LEXICON.md elle-même (boucle réelle)
+- ✓ Pointeur explicite vers la source unique (`.github/workflows/doctrine-governance.yml`)
+- ✓ Explication du choix : "les écrire ici déclencherait le gate lui-même"
+- ✓ Clarification : "la liste du workflow reste la source unique" — pas d'ambiguïté sur la source d'autorité
+
+**Statut de D-01 (boucle réelle, non seulement proposée)** :
+
+- La boucle D-01 du verdict K4 décrivait le risque POST-signature quand l'extension de la deny-list serait appliquée
+- Le coordinateur signale que la boucle existe DÉJÀ contre le gate actuel (avant même l'extension proposée)
+- La solution du pointeur élimine cette boucle : LEXICON.md ne recopie plus les motifs deny-listés, elle les référence
+- Ceci est plus robuste qu'une simple exclusion de LEXICON.md du gate étendu, car c'est une solution par la source unique
+
+### Vérification des régressions (6204c80)
+
+| Aspect                                                              | Constat                                                                                                                                                                               | Status |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Pointeur §6.1 crée-t-il une ambiguïté ?                             | "Les trois motifs" reste clair (3 motifs), pointeur vers workflow = source unique. Pas d'ambiguïté.                                                                                   | ✓ OK   |
+| Perte d'information en supprimant la citation verbatim ?            | Non ; le workflow est la source unique de vérité. Suppression = amélioration (une source vs deux copies).                                                                             | ✓ OK   |
+| Transport N-02 au dossier crée-t-il une incohérence avec N-01 ?     | Non ; N-01 et N-02 utilisent le même patron (empirique + transport au dossier propriétaire). Cohérence renforcée.                                                                     | ✓ OK   |
+| Nombrage de motifs "trois" dans §6.1 vs énumération antérieure ?    | Énumération 81a47f8 : Daidalos, free-ai.fr, libre-ia.fr (3). Pointeur 6204c80 dit "trois motifs" (cohérent).                                                                          | ✓ OK   |
+| Interaction entre pointeur §6.1 et extension gate proposée (§6.3) ? | Extension proposée cible `rumble`, `bolt`, `wrench`, `gear`, `portal`, `cos-matic` (héritées). Pointeur gère les `Daidalos`, `free-ai.fr`, `libre-ia.fr` (actuels). Pas de confusion. | ✓ OK   |
+
+**Aucune régression détectée** ; la solution par pointeur est plus robuste que celle proposée en 81a47f8.
+
+---
+
+## Verdict final révisé
+
+**CLEAN** — Tous les 9 findings sont désormais traités correctement :
+
+| Classe             | 81a47f8 | 6204c80   | Total |
+| ------------------ | ------- | --------- | ----- |
+| ADDRESSED          | 7       | +1 (N-02) | **8** |
+| CARRIED-TO-DOSSIER | 1       | —         | **1** |
+| NOT-ADDRESSED      | 1       | -1 (N-02) | **0** |
+| Régressions        | 0       | 0         | **0** |
+
+**Signature peut procéder** après le merge de 6204c80 sur docs/phase0-lexicon-lock.
 
 ---
 
