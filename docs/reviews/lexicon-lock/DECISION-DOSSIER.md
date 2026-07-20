@@ -53,5 +53,5 @@ La signature propriétaire = **merge de la PR #130** après avoir tranché P1/P2
 ## 5. État du reste du run au moment de cet arrêt
 
 - **main** : vert (c43a361, D6 mergée par #129).
-- **D01** : couche applicative complète (PR #123 draft) ; preflight colima (ADR-0011 D5) en cours d'exécution au moment de la rédaction — résultat journalisé séparément ; les adapters n'ont pas démarré (conforme D5 : pas d'investissement avant preflight vert).
+- **D01** : couche applicative complète (PR #123 draft) ; **preflight D5 exécuté et VERT** — pas par la chaîne colima-linux-arm64 supposée par D5 (aucun binaire linux-aarch64 du canary Rust-line n'existe ; l'émulation linux-x64 dans colima est impraticable, `bun --version` > 11 min sans Rosetta), mais par la chaîne **darwin-aarch64 native du même canary snapshoté** : `bun install` 826 ms produisant `lockfileVersion: 2`, test RLS pglite deux-tenants **5/5 vert en 633 ms** (SET LOCAL + WITH CHECK deny + fail-closed sous rôle non-superuser). Boucle rapide locale acquise ; CI linux-x64 reste l'autorité de repro (repli D5 pour la parité Linux). Les adapters n'ont pas démarré (conforme D5) ; rapport détaillé à verser à la PR D01 à la reprise.
 - **Budget Phase 0** : dans le plafond D6 (300 k tokens de sortie), 1 cycle CI rouge consommé sur la PR #130 (gate doctrine, auto-déclenchement corrigé) — 2 cycles restants avant seuil.
