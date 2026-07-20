@@ -19,10 +19,14 @@ identity. The wave-3 orchestrator lock (pronounced) opens real agent execution;
 - `check if agent_fleet($agent, $fleet)` — an agent token must carry its
   identity, or it has no authority.
 
-Mission binding is already carried by `token_mission` in the agent-runs
-authorizer; per-agent_id revocation (fail-closed) and cross-fleet/mission deny
-are enforced by the `authz-biscuit` crate and the agent-runs policy, not the
-block — the datalog notes point there.
+Enforcement, stated with its timing (do not conflate confirmed with deferred):
+per-agent_id revocation (fail-closed) **is enforced today** by the no-`token_id`
+gate; cross-fleet / cross-mission deny **will be enforced** by the `agent-runs v2`
+authorizer and the `authz-biscuit` crate wiring (**deferred**, not yet in force,
+tracked in `STATUS.md` — see "Known gap" below). Mission binding is carried by
+`token_mission` in the authorizer (per-token operating mission), distinct from the
+`mission_agent` identity fact. None of these are enforced by the authority block
+itself; the datalog notes carry the same confirmed/deferred split.
 
 ## Review lenses
 
