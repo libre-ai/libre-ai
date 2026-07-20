@@ -2,22 +2,37 @@
 
 Tenant-isolated data platform (WP-G2-D01). Enforces the DATA-LIFECYCLE lock: a
 transaction-local tenant context, deny-by-default row ownership, validated
-retention bounds and the encrypted-backup expiry ceiling.
+retention bounds, backup ceiling and restore replay.
 
-**Status: foundation in progress.** The security invariants of the three
-acceptance criteria are implemented and tested (deny-by-default RLS context,
-cross-tenant guard, retention minima/maxima, 35-day backup ceiling). Remaining
-before WP-G2-D01 acceptance: real PostgreSQL adapters with `SET LOCAL` tenant
-context and pool clearing, isolated owner migrations, Redis/Cellar ports, the
-executable retention job, the full deletion-receipt emission with restore
-replay, the sibling `@libre-ai/retention` package, and the independent
-`rls-adversarial-review` and `migration-and-deletion-review` gates.
+**Status: business-logic foundation complete, integration pending.** The
+security logic of all three acceptance criteria is implemented and tested (32
+tests, strict TDD):
 
-Modules:
-
-- `tenant-context` — transaction-local tenant scope; missing context denies.
+- `tenant-context` — transaction-local tenant scope; missing context denies;
+  clears on return and on throw.
 - `tenant-row-guard` — a row is reachable only under its owning tenant; the
   `public` service tenant is rejected on private rows.
 - `retention-bounds` — tenant-configured retention validated against the
   accepted minimum/maximum.
+- `expired-selection` — the retention job's core: opaque IDs whose age reached
+  the window; a shorter retention schedules already-expired records immediately.
 - `backup-ceiling` — a deletion receipt's backup expiry never exceeds 35 days.
+- `restore-replay` — a completed deletion does not resurrect on restore.
+
+## Remaining before acceptance, and its architectural prerequisite
+
+The real PostgreSQL adapters (`SET LOCAL` tenant context + pool clearing),
+isolated owner migrations and true RLS policies must be tested against a
+PostgreSQL instance "without provisioning infrastructure". Per
+`docs/architecture/DETAILED-TARGET.md` §9.8, the test PostgreSQL/Redis launch
+belongs to **`packages/testing`** — a separate, not-yet-built package. Its test
+mechanism (an embedded ephemeral PostgreSQL versus a WASM build such as PGlite)
+is a sovereignty and supply-chain decision on a deliberately minimal dependency
+catalog, and belongs to an owner arbitration, not to this package.
+
+So the acceptance path is: **decide the `packages/testing` PostgreSQL test
+mechanism → build `packages/testing` → add the real RLS adapters, migrations,
+Redis/Cellar ports, full deletion-receipt emission and the `@libre-ai/retention`
+package here → run `rls-adversarial-review` and `migration-and-deletion-review`
+as an independent pass** (loop-security kernel K4: the implementer does not
+approve its own guardrails).
