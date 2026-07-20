@@ -29,6 +29,8 @@
 
 ## Gaps réels (le seul travail neuf de Q01)
 
+**Faits (indépendants de D01 mergé, livrés sur cette branche) :** G-Q5 (`tools/quality/check-no-clever-production.ts`, gate exécutable acceptance 3, 7 tests) et G-Q2 (`tools/quality/check-secret-scan.ts`, gate secret-scanning tree-wide réutilisant `containsCredentialMarker`, 7 tests) — tous deux câblés dans `bun run check`, donc actifs dans le job CI `bun-quality`. **Restent gated derrière le merge D01 :** G-Q1, G-Q4 (incluent la RLS depuis `main`) ; G-Q3 partiellement (surfaces web).
+
 | Gap                                                                                                                                                                                                                                         | Nature                   | Dépend de D01 mergé ?                           | writePath                                  |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | ----------------------------------------------- | ------------------------------------------ |
 | G-Q1 — **Reference-chain harness** : un point d'entrée unique (`verification/harness/`) qui, depuis un checkout vierge, exécute toute la chaîne (contracts → web → Biscuit → RLS → Proof/Artifact → Playwright) et émet une évidence signée | Orchestration + évidence | **Oui** (doit inclure RLS de D01 depuis `main`) | `verification/harness/**`                  |
