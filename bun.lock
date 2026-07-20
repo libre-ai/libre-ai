@@ -22,7 +22,7 @@
       "name": "@libre-ai/notebook",
       "version": "0.1.0",
       "dependencies": {
-        "@libre-ai/design-system": "workspace:*",
+        "@libre-ai/ui": "workspace:*",
         "@libre-ai/web-platform": "workspace:*",
         "react": "catalog:",
         "react-dom": "catalog:",
@@ -35,7 +35,7 @@
       "name": "@libre-ai/bun-app-template",
       "version": "0.1.0",
       "dependencies": {
-        "@libre-ai/design-system": "workspace:*",
+        "@libre-ai/ui": "workspace:*",
         "@libre-ai/web-platform": "workspace:*",
         "react": "catalog:",
         "react-dom": "catalog:",
@@ -71,18 +71,6 @@
         "@libre-ai/testing": "workspace:*",
       },
     },
-    "packages/design-system": {
-      "name": "@libre-ai/design-system",
-      "version": "0.1.0",
-      "dependencies": {
-        "react": "catalog:",
-        "react-aria-components": "catalog:",
-        "tailwindcss": "catalog:",
-      },
-      "devDependencies": {
-        "react-dom": "catalog:",
-      },
-    },
     "packages/knowledge": {
       "name": "@libre-ai/knowledge",
       "version": "0.1.0",
@@ -96,6 +84,18 @@
       "version": "0.1.0",
       "dependencies": {
         "@electric-sql/pglite": "0.5.4",
+      },
+    },
+    "packages/ui": {
+      "name": "@libre-ai/ui",
+      "version": "0.1.0",
+      "dependencies": {
+        "react": "catalog:",
+        "react-aria-components": "catalog:",
+        "tailwindcss": "catalog:",
+      },
+      "devDependencies": {
+        "react-dom": "catalog:",
       },
     },
     "packages/web-platform": {
@@ -176,13 +176,13 @@
 
     "@libre-ai/data": ["@libre-ai/data@workspace:packages/data"],
 
-    "@libre-ai/design-system": ["@libre-ai/design-system@workspace:packages/design-system"],
-
     "@libre-ai/knowledge": ["@libre-ai/knowledge@workspace:packages/knowledge"],
 
     "@libre-ai/notebook": ["@libre-ai/notebook@workspace:apps/notebook"],
 
     "@libre-ai/testing": ["@libre-ai/testing@workspace:packages/testing"],
+
+    "@libre-ai/ui": ["@libre-ai/ui@workspace:packages/ui"],
 
     "@libre-ai/web-platform": ["@libre-ai/web-platform@workspace:packages/web-platform"],
 

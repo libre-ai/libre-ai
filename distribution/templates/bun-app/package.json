@@ -20,7 +20,7 @@
     "test:e2e": "bun run build && playwright test"
   },
   "dependencies": {
-    "@libre-ai/design-system": "workspace:*",
+    "@libre-ai/ui": "workspace:*",
     "@libre-ai/web-platform": "workspace:*",
     "react": "catalog:",
     "react-dom": "catalog:"

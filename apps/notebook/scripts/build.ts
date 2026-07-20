@@ -54,9 +54,7 @@ if (backupEnabled) {
   );
 }
 
-const foundationCss = await Bun.file(
-  join(repositoryRoot, "packages/design-system/src/styles.css"),
-).text();
+const foundationCss = await Bun.file(join(repositoryRoot, "packages/ui/src/styles.css")).text();
 const notebookCss = await Bun.file(join(root, "src/ui/notebook.css")).text();
 await Bun.write(join(assets, "styles.css"), `${foundationCss}\n${notebookCss}`);
 await Bun.write(join(assets, "icon.svg"), Bun.file(join(root, "public/icon.svg")));

@@ -1,4 +1,4 @@
-import { ActionButton, SkipLink, StatusMessage, Surface } from "@libre-ai/design-system";
+import { ActionButton, SkipLink, StatusMessage, Surface } from "@libre-ai/ui";
 import { useState } from "react";
 
 export function ReferenceApp() {
