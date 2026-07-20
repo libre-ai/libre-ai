@@ -1,0 +1,36 @@
+// Libre AI Biscuit authority block template v2.
+// Extends v1 with the loop-security kernel K1 agent identity taxonomy
+// (docs/specifications/LOOP-SECURITY-KERNEL.md, realized at the orchestrator
+// lock). Values are issuer-side parameters. No PII or content is permitted.
+//
+// Human and browser-session tokens continue to use the v1 authority block.
+// Agent-fleet tokens (the self-feeding loop, opened at the wave-3 lock) use
+// this v2 block, which binds the agent to exactly one fleet and to an explicit
+// capability scope.
+
+user({user});
+tenant({tenant});
+role({user}, {role});
+
+// K1 — agent identity taxonomy. An agent belongs to exactly one fleet and
+// operates within one mission (mission binding is carried by token_mission in
+// the agent-runs authorizer). capability_scope is the explicit permission
+// vector: which tools and write paths, never CI or gates by default.
+agent_fleet({agent}, {fleet});
+capability_scope({agent}, {capability});
+
+// An agent token must carry its identity: no fleet, no authority.
+check if agent_fleet($agent, $fleet);
+
+// Expiry (unchanged from v1).
+check if time($time), $time < {expires_at};
+
+// Enforcement notes (not expressible in the block, enforced by authz-biscuit):
+// - Cross-fleet and cross-mission operation is denied by the agent-runs policy
+//   authorizer (deny-by-default; allow rules require matching token_mission /
+//   resource_mission and the fleet-scoped role).
+// - Revocation is per agent_id, not per token: a revoked agent issues no new
+//   tokens, and the revocation store fails closed (unavailable => deny),
+//   consistent with the G1 Biscuit revocation doctrine.
+// - capability_scope is checked at the tool/write-path boundary, never granting
+//   CI or gate write by default.
