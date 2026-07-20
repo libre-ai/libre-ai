@@ -87,6 +87,13 @@
         "ajv-formats": "catalog:",
       },
     },
+    "packages/testing": {
+      "name": "@libre-ai/testing",
+      "version": "0.1.0",
+      "dependencies": {
+        "@electric-sql/pglite": "0.5.4",
+      },
+    },
     "packages/web-platform": {
       "name": "@libre-ai/web-platform",
       "version": "0.1.0",
@@ -143,6 +150,8 @@
 
     "@bytecodealliance/preview3-shim": ["@bytecodealliance/preview3-shim@0.2.0", "", { "dependencies": { "@bytecodealliance/preview2-shim": "^0.19.0" } }, "sha512-44zSPzlOyF/hWTNK32odet+Jt/nVXgtboSvgvZqMEJKP9GuM+Ln3L6js31WAakDEe+TYgG4iNEBk39rByINZkA=="],
 
+    "@electric-sql/pglite": ["@electric-sql/pglite@0.5.4", "", {}, "sha512-yYZUyyXrHU7tPlCjwZQJ6hIG9DscdCCn7Uk0mYKwC1FeHX286AbcmFveMiRBEak8e9iPupjsoVImN3yJZVed2g=="],
+
     "@emnapi/core": ["@emnapi/core@1.11.1", "", { "dependencies": { "@emnapi/wasi-threads": "1.2.2", "tslib": "^2.4.0" } }, "sha512-RSvbQmHzdKzNsLYa/wHrbc3KN4sYLKAdPZxqiM2HATqv/SBk2/ENSHpvXGaLOMcsAyz0poEGqkmmKYG3OWiJEQ=="],
 
     "@emnapi/runtime": ["@emnapi/runtime@1.11.1", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-vgj7R3y3Wgx24IQaGPA/R6YFXLHVMOZ0uVEyIQPaWs+rd1AzfEMXlAC22FYwO1XkKR6NPsq7mUandH8oIRdZFw=="],
@@ -168,6 +177,8 @@
     "@libre-ai/knowledge": ["@libre-ai/knowledge@workspace:packages/knowledge"],
 
     "@libre-ai/notebook": ["@libre-ai/notebook@workspace:apps/notebook"],
+
+    "@libre-ai/testing": ["@libre-ai/testing@workspace:packages/testing"],
 
     "@libre-ai/web-platform": ["@libre-ai/web-platform@workspace:packages/web-platform"],
 
