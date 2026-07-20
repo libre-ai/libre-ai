@@ -1,4 +1,4 @@
-import { SkipLink, StatusMessage, Surface } from "@libre-ai/design-system";
+import { SkipLink, StatusMessage, Surface } from "@libre-ai/ui";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { NotebookBackupController } from "../backup/controller";
 import { NOTEBOOK_BACKUP_FEATURE_ENABLED } from "../backup/feature";
