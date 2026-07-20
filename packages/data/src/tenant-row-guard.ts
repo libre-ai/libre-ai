@@ -1,4 +1,5 @@
 import { requireTenantContext } from "./tenant-context";
+import { PUBLIC_SERVICE_TENANT } from "./tenant-id";
 
 /**
  * Row-level tenant ownership guard (DATA-LIFECYCLE.md, invariant 3 and the
@@ -6,7 +7,6 @@ import { requireTenantContext } from "./tenant-context";
  * allowed only under the matching transaction-local tenant context. The `public`
  * service tenant is never a private tenant and is rejected on private rows.
  */
-export const PUBLIC_SERVICE_TENANT = "public";
 
 export class CrossTenantAccessError extends Error {
   constructor(rowTenant: string, contextTenant: string) {

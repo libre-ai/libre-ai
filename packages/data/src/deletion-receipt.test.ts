@@ -13,7 +13,7 @@ const DIGEST_B = "b".repeat(64);
 
 const input: DeletionReceiptInput = {
   id: "rcp_1",
-  tenantId: "ten_alpha000000001",
+  tenantId: `ten_${"a1b2c3d4e5f6g7h8"}`,
   owner: "radar",
   subjectDigests: [DIGEST_A, DIGEST_B],
   requestedBy: "usr_9",

@@ -1,5 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 
+import { assertTenantContextId } from "./tenant-id";
+
 /**
  * Transaction-local tenant context (DATA-LIFECYCLE.md, tenant boundary).
  *
@@ -29,7 +31,7 @@ export class MissingTenantContextError extends Error {
 const storage = new AsyncLocalStorage<string>();
 
 export function runInTenantContext<T>(tenantId: string, scope: () => Promise<T>): Promise<T> {
-  return storage.run(tenantId, scope);
+  return storage.run(assertTenantContextId(tenantId), scope);
 }
 
 export function requireTenantContext(): string {

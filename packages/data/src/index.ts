@@ -32,9 +32,14 @@ export {
   runInTenantContext,
 } from "./tenant-context";
 export {
+  assertTenantContextId,
+  isPrivateTenantId,
+  MalformedTenantIdError,
+  PUBLIC_SERVICE_TENANT,
+} from "./tenant-id";
+export {
   CrossTenantAccessError,
   guardTenantRow,
-  PUBLIC_SERVICE_TENANT,
   PublicTenantRejectedError,
   type TenantOwned,
 } from "./tenant-row-guard";

@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import { MissingTenantContextError, runInTenantContext } from "./tenant-context";
 import {
   CrossTenantAccessError,
@@ -6,23 +7,26 @@ import {
   PublicTenantRejectedError,
 } from "./tenant-row-guard";
 
+const ALPHA = `ten_${"a1b2c3d4e5f6g7h8"}`;
+const BETA = `ten_${"z9y8x7w6v5u4t3s2"}`;
+
 describe("tenant row guard (cross-tenant deny)", () => {
   test("a row owned by the current tenant is returned unchanged", async () => {
-    const row = { tenant_id: "ten_alpha", id: "rec_1" };
-    const guarded = await runInTenantContext("ten_alpha", async () => guardTenantRow(row));
+    const row = { tenant_id: ALPHA, id: "rec_1" };
+    const guarded = await runInTenantContext(ALPHA, async () => guardTenantRow(row));
     expect(guarded).toBe(row);
   });
 
   test("a row owned by another tenant is denied", async () => {
-    await runInTenantContext("ten_alpha", async () => {
-      expect(() => guardTenantRow({ tenant_id: "ten_beta", id: "rec_2" })).toThrow(
+    await runInTenantContext(ALPHA, async () => {
+      expect(() => guardTenantRow({ tenant_id: BETA, id: "rec_2" })).toThrow(
         CrossTenantAccessError,
       );
     });
   });
 
   test("guarding a row without any tenant context is denied", () => {
-    expect(() => guardTenantRow({ tenant_id: "ten_alpha", id: "rec_3" })).toThrow(
+    expect(() => guardTenantRow({ tenant_id: ALPHA, id: "rec_3" })).toThrow(
       MissingTenantContextError,
     );
   });
@@ -38,7 +42,7 @@ describe("tenant row guard (cross-tenant deny)", () => {
   });
 
   test("a row with a missing tenant_id is denied", async () => {
-    await runInTenantContext("ten_alpha", async () => {
+    await runInTenantContext(ALPHA, async () => {
       expect(() => guardTenantRow({ tenant_id: "", id: "rec_5" })).toThrow(CrossTenantAccessError);
     });
   });
