@@ -72,6 +72,22 @@ describe("buildLineage", () => {
     const { signing } = devKeys("provkey_01");
     expect(() => buildLineage({ ...INPUT, observations: [] }, signing)).toThrow(/observation/i);
   });
+
+  test("rejects duplicate contributors (schema uniqueItems, review P-01)", () => {
+    const { signing } = devKeys("provkey_01");
+    const dup = INPUT.contributors[0]!;
+    expect(() => buildLineage({ ...INPUT, contributors: [dup, { ...dup }] }, signing)).toThrow(
+      /duplicate contributor/i,
+    );
+  });
+
+  test("rejects duplicate observations (schema uniqueItems)", () => {
+    const { signing } = devKeys("provkey_01");
+    const obs = INPUT.observations[0]!;
+    expect(() => buildLineage({ ...INPUT, observations: [obs, { ...obs }] }, signing)).toThrow(
+      /duplicate observation/i,
+    );
+  });
 });
 
 describe("verifyLineage", () => {

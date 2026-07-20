@@ -88,6 +88,12 @@ function assertDigest(value: string, what: string): void {
   }
 }
 
+function assertUnique(keys: readonly string[], what: string): void {
+  if (new Set(keys).size !== keys.length) {
+    throw new RangeError(`duplicate ${what} in a lineage record`);
+  }
+}
+
 function sortedRoles(roles: readonly ContributorRole[]): ContributorRole[] {
   // Roles are a set: sort by the fixed role order so ordering does not change
   // the digest, and reject unknown roles.
@@ -168,6 +174,17 @@ export function buildLineage(input: LineageInput, key: SigningKey): AgentContrib
       contributionDigest: c.contributionDigest,
     };
   });
+  // The schema forbids duplicate contributors and observations (uniqueItems).
+  // Reject them fail-closed rather than silently dedup — a duplicate signals a
+  // caller error, not a normalization case (review P-01).
+  assertUnique(
+    contributors.map((c) => `${c.agentId}${c.roles.join(",")}${c.contributionDigest}`),
+    "contributor",
+  );
+  assertUnique(
+    input.observations.map((o) => `${o.id}${o.digest}${o.mediaType}`),
+    "observation",
+  );
   const scaffold = {
     id: input.id,
     tenantId: input.tenantId,
