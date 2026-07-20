@@ -56,6 +56,10 @@
         "@playwright/test": "catalog:testing",
       },
     },
+    "packages/classification": {
+      "name": "@libre-ai/classification",
+      "version": "0.1.0",
+    },
     "packages/contracts": {
       "name": "@libre-ai/contracts",
       "version": "0.1.0",
@@ -175,6 +179,8 @@
     "@libre-ai/auth-web": ["@libre-ai/auth-web@workspace:packages/auth-web"],
 
     "@libre-ai/bun-app-template": ["@libre-ai/bun-app-template@workspace:distribution/templates/bun-app"],
+
+    "@libre-ai/classification": ["@libre-ai/classification@workspace:packages/classification"],
 
     "@libre-ai/contracts": ["@libre-ai/contracts@workspace:packages/contracts"],
 
