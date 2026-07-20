@@ -116,18 +116,24 @@ export const FOUNDATION_CHAIN: readonly ChainStep[] = [
   {
     id: "secret-scan",
     label: "Secret scan (no committed credentials)",
-    command: ["bun", "run", "check:secret-scan"],
+    command: ["bun", "tools/quality/check-secret-scan.ts"],
   },
   {
     id: "no-clever",
     label: "No Clever resource / production claim",
-    command: ["bun", "run", "check:no-clever-production"],
+    command: ["bun", "tools/quality/check-no-clever-production.ts"],
   },
   {
     id: "rls",
     label: "Tenant RLS barrier two-tenant deny (D01)",
     command: ["bun", "test", "packages/data/src/adapters"],
     requiresPath: "packages/data",
+  },
+  {
+    id: "playwright",
+    label: "Playwright three-engine foundation e2e (W01 bun-app)",
+    command: ["bun", "run", "--cwd", "distribution/templates/bun-app", "test:e2e"],
+    requiresPath: "distribution/templates/bun-app/playwright.config.ts",
   },
 ];
 
