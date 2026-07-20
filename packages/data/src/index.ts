@@ -4,6 +4,11 @@ export {
   BackupCeilingExceededError,
   backupExpiryCeiling,
 } from "./backup-ceiling";
+export { type RetainedRecord, selectExpiredIds } from "./expired-selection";
+export {
+  type DeletionReceiptLike,
+  replayDeletionsOnRestore,
+} from "./restore-replay";
 export {
   AboveMaximumRetentionError,
   BelowMinimumRetentionError,
