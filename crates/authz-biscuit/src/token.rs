@@ -8,6 +8,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use zeroize::Zeroize;
 
 const AUTHORITY_TEMPLATE: &str = include_str!("../../../contracts/authz/authority-v1.datalog");
+const AUTHORITY_TEMPLATE_V2: &str = include_str!("../../../contracts/authz/authority-v2.datalog");
 const MAX_TOKEN_SIZE: usize = 16_384;
 
 pub struct SensitiveToken(String);
@@ -231,9 +232,31 @@ impl BiscuitIssuer {
         self.key_id
     }
 
+    /// Mint a v1 human / browser-session token (no agent identity facts).
     pub fn issue(
         &self,
         request: IssuanceRequest,
+        now: SystemTime,
+    ) -> Result<BoundedBiscuit, AuthzError> {
+        self.issue_inner(request, None, now)
+    }
+
+    /// Mint a v2 agent-fleet token carrying the loop-security kernel K1 identity
+    /// facts (`agent_fleet`, `mission_agent`, `capability_scope`). The agent
+    /// principal is the request's `user_id`.
+    pub fn issue_agent(
+        &self,
+        request: IssuanceRequest,
+        agent: AgentIdentity,
+        now: SystemTime,
+    ) -> Result<BoundedBiscuit, AuthzError> {
+        self.issue_inner(request, Some(agent), now)
+    }
+
+    fn issue_inner(
+        &self,
+        request: IssuanceRequest,
+        agent: Option<AgentIdentity>,
         now: SystemTime,
     ) -> Result<BoundedBiscuit, AuthzError> {
         validate_time(now)?;
@@ -249,15 +272,40 @@ impl BiscuitIssuer {
             .checked_add(request.ttl)
             .ok_or_else(|| AuthzError::new("auth.biscuit_invalid"))?;
         let mut parameters = HashMap::<String, Term>::new();
-        parameters.insert("user".to_owned(), request.user_id.into());
+        parameters.insert("user".to_owned(), request.user_id.clone().into());
         parameters.insert("tenant".to_owned(), request.tenant_id.clone().into());
         parameters.insert("role".to_owned(), request.role.into());
         parameters.insert("expires_at".to_owned(), expires_at.into());
+        // Human and browser-session tokens use the v1 authority block; agent-fleet
+        // tokens use v2, which carries the loop-security kernel K1 identity facts
+        // (agent_fleet, mission_agent, capability_scope). The agent principal id is
+        // the token's own user id.
+        let template = if let Some(agent) = &agent {
+            validate_agent_identity(agent)?;
+            parameters.insert("agent".to_owned(), request.user_id.clone().into());
+            parameters.insert("fleet".to_owned(), agent.fleet.clone().into());
+            parameters.insert("mission".to_owned(), agent.mission.clone().into());
+            parameters.insert("capability".to_owned(), agent.capability.clone().into());
+            AUTHORITY_TEMPLATE_V2
+        } else {
+            AUTHORITY_TEMPLATE
+        };
         let mut builder = Biscuit::builder();
         builder.set_root_key_id(self.key_id);
         builder
-            .add_code_with_params(AUTHORITY_TEMPLATE, parameters, HashMap::new())
+            .add_code_with_params(template, parameters, HashMap::new())
             .map_err(|_| AuthzError::new("auth.biscuit_invalid"))?;
+        // The agent-runs authorizer requires a token_mission fact (the per-token
+        // operating mission) distinct from the mission_agent identity fact. For a
+        // single-mission agent token it equals the agent's mission membership; the
+        // authorizer binds token_mission ∈ mission_agent by unifying the two.
+        if let Some(agent) = &agent {
+            let mut mission_params = HashMap::<String, Term>::new();
+            mission_params.insert("mission".to_owned(), agent.mission.clone().into());
+            builder
+                .add_code_with_params("token_mission({mission});", mission_params, HashMap::new())
+                .map_err(|_| AuthzError::new("auth.biscuit_invalid"))?;
+        }
         let authority = builder
             .build(&self.key_pair)
             .map_err(|_| AuthzError::new("auth.biscuit_invalid"))?;
@@ -287,6 +335,16 @@ pub struct IssuanceRequest {
     pub resource: String,
     pub operations: BTreeSet<String>,
     pub ttl: Duration,
+}
+
+/// The three loop-security kernel K1 identity facts an agent-fleet token carries.
+/// The agent principal is the token's `user_id`; these are its fleet membership,
+/// operating mission and explicit capability scope.
+#[derive(Clone)]
+pub struct AgentIdentity {
+    pub fleet: String,
+    pub mission: String,
+    pub capability: String,
 }
 
 #[derive(Clone)]
@@ -320,6 +378,19 @@ check if time($time), $time < {expires_at};
         )
         .map_err(|_| AuthzError::new("auth.biscuit_invalid"))?;
     Ok(builder)
+}
+
+fn validate_agent_identity(agent: &AgentIdentity) -> Result<(), AuthzError> {
+    // Fleet, mission and capability are issuer-side identifiers, never PII or
+    // content; the operation grammar (lowercase, digits, hyphen; 2..=64) is a
+    // conservative fit and keeps the datalog values injection-free.
+    if !valid_operation(&agent.fleet)
+        || !valid_operation(&agent.mission)
+        || !valid_operation(&agent.capability)
+    {
+        return Err(AuthzError::new("auth.biscuit_invalid"));
+    }
+    Ok(())
 }
 
 fn validate_identity(user_id: &str, tenant_id: &str, role: &str) -> Result<(), AuthzError> {

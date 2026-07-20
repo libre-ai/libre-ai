@@ -1369,3 +1369,73 @@ fn finish_rotation_preserves_ring_on_error() {
         VerificationKeyStatus::Retiring
     );
 }
+
+// Part b1: the issuer mints agent-fleet tokens carrying the K1 identity facts,
+// and the agent-runs-v2 authorizer enforces the fleet boundary end-to-end.
+#[test]
+fn agent_token_carries_k1_facts_and_agent_runs_v2_denies_cross_fleet() {
+    use biscuit_auth::builder::{date, fact, string};
+    use biscuit_auth::datalog::RunLimits;
+
+    let now = at(0);
+    let (issuer, _ring) = issuer_and_ring(1, now);
+    let public_key = issuer.public_key();
+    let serialized = issuer
+        .issue_agent(
+            IssuanceRequest {
+                user_id: USER.to_owned(),
+                tenant_id: TENANT.to_owned(),
+                role: "author-agent".to_owned(),
+                resource: RESOURCE.to_owned(),
+                operations: operations(&["submit-plan"]),
+                ttl: Duration::from_secs(300),
+            },
+            libre_ai_authz_biscuit::AgentIdentity {
+                fleet: "forge".to_owned(),
+                mission: "mission-alpha".to_owned(),
+                capability: "invoke-planned-tool".to_owned(),
+            },
+            now,
+        )
+        .unwrap()
+        .serialize()
+        .unwrap();
+    let policy = std::fs::read_to_string(
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../contracts/authz/agent-runs-v2.datalog"),
+    )
+    .unwrap();
+
+    let authorizes = |resource_fleet: &str| -> bool {
+        let biscuit = Biscuit::from_base64(serialized.token.expose(), public_key).unwrap();
+        let mut authorizer = biscuit.authorizer().unwrap();
+        for injected in [
+            fact("time", &[date(&(now + Duration::from_secs(1)))]),
+            fact("resource", &[string(RESOURCE)]),
+            fact("operation", &[string("submit-plan")]),
+            fact("resource_tenant", &[string(TENANT)]),
+            fact("resource_fleet", &[string(resource_fleet)]),
+            fact("resource_mission", &[string("mission-alpha")]),
+            fact("subject_type", &[string("execution-plan")]),
+        ] {
+            authorizer.add_fact(injected).unwrap();
+        }
+        authorizer.add_code(policy.as_str()).unwrap();
+        authorizer
+            .authorize_with_limits(RunLimits {
+                max_facts: 256,
+                max_iterations: 32,
+                max_time: Duration::from_millis(50),
+            })
+            .is_ok()
+    };
+
+    assert!(
+        authorizes("forge"),
+        "an agent token whose fleet matches the resource must authorize"
+    );
+    assert!(
+        !authorizes("product-ops"),
+        "a cross-fleet agent token must be denied by agent-runs-v2"
+    );
+}
