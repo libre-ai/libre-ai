@@ -1,19 +1,39 @@
 # Loop-security kernel lock (K1–K5)
 
-- **Status:** socle lock — realizes invariant **I-18** (ADR-0009 §6). Consumes the
-  control-plane input `constantin-jais/constantin-jais:ecosystem/specs/shared/loop-security-kernel.md`.
-- **Authority:** this document is the socle specification of the five loop-security
-  controls. It is the **entry gate of wave 3**: the orchestrator Specification
-  Lock cannot open real agent execution until K1–K5 are locked here.
+- **Status:** socle specification of the loop-security kernel — realizes
+  invariant **I-18** (ADR-0009 §6). Consumes the control-plane input
+  `constantin-jais/constantin-jais:ecosystem/specs/shared/loop-security-kernel.md`.
+- **Authority:** this document **specifies** the five loop-security controls at
+  the socle and is the **entry gate of wave 3**. Per EXECUTION-SEQUENCING §8, the
+  kernel is "specified and ready to lock the orchestrator lock": the
+  specification is complete and faithful here, and two controls **complete at
+  the orchestrator lock**, not before it — see the status table and the
+  enforcement boundary. The orchestrator Specification Lock cannot open real
+  agent execution until this kernel is specified here **and** the owner
+  pronounces that lock.
 - **Nature:** these are guardrails (I-17 human-touch surface). Establishing and
-  mutating them is an owner-touch act; this lock is pronounced by the owner at
-  the wave-3 gate, not auto-merged.
+  mutating them is an owner-touch act; this specification is pronounced by the
+  owner at the wave-3 gate, not auto-merged.
 
 The self-feeding agent loop is the product zero. A loop that feeds on its own
 operational output can poison itself: operational data is untrusted content, and
 the agents that improve the tools are the agents those tools govern. K1–K5 close
 that hole. Each control names its **requirement**, its **socle realization**, and
 its **enforcement**.
+
+### State vocabulary (normative)
+
+- **in service** — realized and enforced today by a merged brick or gate.
+- **reviewed** — implemented, independently reviewed clean; a bounded follow-up
+  (a contract promotion) completes it, named explicitly.
+- **specified** — fully and faithfully specified here; its **integration** is an
+  explicit step of the orchestrator lock (not a gap in this specification).
+
+A control being `reviewed` or `specified` rather than `in service` is **not** an
+omission: EXECUTION-SEQUENCING §8 distinguishes "specified and ready to lock"
+(this document) from the orchestrator lock pronouncement (the porte-V3 owner
+act). The two controls that complete at the orchestrator lock are named in the
+status table.
 
 ## K1 — Agent identity (the absent lock)
 
@@ -113,18 +133,35 @@ resolved citations, retired-brand deny-list).
 ## Enforcement boundary (wave-3 entry gate)
 
 K1–K5 are the entry gate of wave 3 (`docs/transformation/EXECUTION-SEQUENCING.md`):
-the orchestrator lock cannot open real agent execution until they are locked
-here and the owner pronounces the orchestrator Specification Lock (ADR-0011 D3,
-a permanent nominative hard stop). Dogfooding-first applies: the forge itself is
-the first system these controls govern, and its evidence of doing so is
-published (I-20).
+the orchestrator lock cannot open real agent execution until this kernel is
+specified here and the owner pronounces the orchestrator Specification Lock
+(ADR-0011 D3, a permanent nominative hard stop). Dogfooding-first applies: the
+forge itself is the first system these controls govern, and its evidence of
+doing so is published (I-20).
+
+**Two controls complete at the orchestrator lock, by design, not as a gap here:**
+
+- **K1** — the agent identity **facts** (`agent_fleet`, `mission_agent`,
+  `capability_scope`) and per-agent revocation are specified above; their
+  **integration** into the Biscuit authority template
+  (`contracts/authz/authority-v1.datalog`) and authorizer `check if` clauses is
+  an explicit chapter of the orchestrator Specification Lock — that lock is what
+  opens real agent execution, so the facts land with it.
+- **K3** — the `envelope.v1` contract is reviewed and merged as a candidate; its
+  promotion to `locked` is gated on the first forge/harness dogfooding consumer
+  (E22: reference-only until a consumer exists), which arrives with the
+  orchestrator lock's memory recall.
+
+K2, K4 and K5 are `in service` today. The kernel is therefore **specified and
+ready to lock** (§8): the orchestrator-lock owner act consumes this document,
+integrates K1's facts and promotes K3, then opens wave 3.
 
 ## Status of the five controls at this lock
 
-| Control                | Socle brick / mechanism                                                 | State                                                  |
-| ---------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------ |
-| K1 agent identity      | Biscuit (Z01) + the three agent facts (to add at the orchestrator lock) | partial — machinery locked, agent facts specified here |
-| K2 classification      | `@libre-ai/classification`                                              | locked, reviewed                                       |
-| K3 envelope            | `@libre-ai/envelope` (`envelope.v1` candidate)                          | reviewed; contract promotes on first consumer          |
-| K4 guardrail mutations | CODEOWNERS + doctrine gate + independent review                         | in service                                             |
-| K5 immutable register  | `INVARIANTS.md` + main protection + doctrine gate                       | in service                                             |
+| Control                | Socle brick / mechanism                                      | State                                                                       |
+| ---------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| K1 agent identity      | Biscuit (Z01) + the three agent facts + per-agent revocation | **specified** — facts integrate into the datalog at the orchestrator lock   |
+| K2 classification      | `@libre-ai/classification`                                   | **in service** — sealed authority gate, reviewed CLEAN                      |
+| K3 envelope            | `@libre-ai/envelope` (`envelope.v1` candidate)               | **reviewed** — contract promotes to locked on the first dogfooding consumer |
+| K4 guardrail mutations | CODEOWNERS + doctrine gate + independent review              | **in service**                                                              |
+| K5 immutable register  | `INVARIANTS.md` + main protection + doctrine gate            | **in service**                                                              |
