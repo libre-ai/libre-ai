@@ -42,13 +42,14 @@ jobs:
           AFTER_SHA: ${{ github.event.after }}
         run: |
           # Anticipatory WP-G2-Q01 change: the pull_request step above cannot
-          # see the GitHub-generated merge commit because it does not exist
-          # yet at review time. This step closes that gap on push without
-          # re-examining accepted history: only the commits introduced by
-          # this push are verified. A GitHub-generated merge commit cannot
-          # carry an author-matching trailer (its author is the forge
-          # account), so it must carry the merging maintainer's
-          # Signed-off-by trailer in the merge message instead.
+          # see the forge-generated integration commit because it does not
+          # exist yet at review time. This step closes that gap on push
+          # without re-examining accepted history: only the commits introduced
+          # by this push are verified. A forge-generated integration commit —
+          # a merge commit, or a squashed pull request — cannot carry an
+          # author-matching trailer (its author is the forge account), so it
+          # must carry a valid maintainer Signed-off-by trailer in its message
+          # instead.
           if ! git cat-file -e "$BEFORE_SHA^{commit}" 2>/dev/null; then
             echo "::warning::Push base $BEFORE_SHA is not reachable; skipping range verification"
             exit 0
@@ -57,10 +58,20 @@ jobs:
           while read -r commit; do
             committer="$(git show --no-patch --format='%cn <%ce>' "$commit")"
             parent_words="$(git rev-list --parents -n 1 "$commit" | wc -w)"
+            author_email="$(git show --no-patch --format='%ae' "$commit")"
             trailers="$(git show --no-patch --format=%B "$commit" | git interpret-trailers --parse)"
-            if [ "$committer" = "GitHub <noreply@github.com>" ] && [ "$parent_words" -gt 2 ]; then
+            # A forge-generated integration commit is committed by GitHub and
+            # authored by the forge account (a @users.noreply.github.com
+            # address) — true of both merge commits (2+ parents) and squashed
+            # pull requests (1 parent). Neither can carry an author-matching
+            # contributor trailer, so accept any valid maintainer Signed-off-by
+            # for them; ordinary contributor commits still require an exact
+            # author match.
+            if [ "$committer" = "GitHub <noreply@github.com>" ] && \
+               { [ "$parent_words" -gt 2 ] || \
+                 printf '%s' "$author_email" | grep -Eq '@users\.noreply\.github\.com$'; }; then
               if ! printf '%s\n' "$trailers" | grep -Eq '^Signed-off-by: .+ <.+@.+>$'; then
-                echo "::error::GitHub-generated merge commit $commit lacks a Signed-off-by trailer in its merge message"
+                echo "::error::Forge-generated commit $commit lacks a valid Signed-off-by trailer in its message"
                 missing=1
               fi
             else

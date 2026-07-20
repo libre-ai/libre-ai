@@ -17,7 +17,7 @@
 - Design System repository archived after Website consumer reconciliation ;
 - all 18 historical repositories aligned and archived at recorded SHAs ;
 - 33 unmerged local branch tips preserved as remote `archive/local-branch/*` tags ;
-- missing Gear remote recreated solely as a verified archive ;
+- the one missing legacy remote (recorded in `ecosystem/LEGACY-MANIFEST.yaml`) recreated solely as a verified archive ;
 - canonical public GitHub repository created and initial history pushed ;
 - differentiated EUPL/Apache/CC BY governance accepted through ADR-0004, with historical grants preserved, REUSE/SPDX scopes, DCO, data provenance and trademark policy ;
 - Bun canary binaries, exact source, notices and checksums published in a durable prerelease ;
@@ -51,11 +51,19 @@
 - no Radar, Policy or Boussole product engine, generic Context crate, Agent Orchestrator runtime/harness or Practices scorer is implemented; the accepted agent control crate is simulation-only and contract review/promotion milestones do not authorize further implementation ;
 - real Missions execution, production, another canary and Clever Cloud remain blocked.
 
+## Wave-execution decisions (ADR-0011, 2026-07-20)
+
+- **WP-G2-I01 (auth-web) closed** (PR #111); **WP-G2-D01 (data) application layer complete** — 8 modules, 51 tests, two independent adversarial reviews reconciled (draft PR #123); D01 DB integration remains, developed in a local Linux container (colima) with CI as reproducibility authority.
+- **First engine: Notebook (pilot)**, then the remaining engines in parallel orchestrated by the layer-2 method **Polaris** (wave 4 split into 4a/4b).
+- **Orchestrator Specification Lock (wave 3):** hard stop (ADR-0011 D3, hardened) — never pronounced in an autonomous run. An agent locks the loop-security kernel K1-K5, runs its independent adversarial review, produces the decision dossier, then stops; pronouncing the lock is an exclusive owner act.
+- **Security gates in autonomous runs (ADR-0011 D4, graduated trust):** the first security-critical merge of a layer (first D01 RLS barrier, first security review of each product layer) is a hard stop for owner pronouncement — bootstrapping the trust chain; subsequent merges of the same pattern auto-proceed on a clean independent review by agents distinct from the implementer (K4 independence preserved throughout).
+- **Autonomy ceilings (ADR-0011 D6):** numeric liveness and cost thresholds bound an autonomous run — per-PR ≤ 3 green attempts, 3 consecutive no-progress PRs per wave, per-PR > 400k output tokens, and per-wave token caps (Phase 0 300k, G2 1.5M, wave 1 1M, wave 2 2M, wave 4a 1M; α run total 6M). A breach stops with a progress dossier for an owner decision, never a silent kill.
+
 ## Next controlled milestone
 
 - **Completed control:** Notebook Core v2 Gate B is approved for the exact disabled fixture-only host and the required physical macOS arm64 32+ GiB class ;
-- **No automatic continuation:** no first Radar, Policy, Boussole or Notebook product implementation milestone is selected by Gate B closure ;
-- **Owner decision required:** any next product engine, Notebook user-data path, activation, production, release, infrastructure or deployment needs its own explicit milestone ;
+- **Selected next product (ADR-0011):** Notebook is the pilot engine; no other engine implementation starts until the Notebook app pattern is validated end-to-end, after which Polaris orchestrates the rest in parallel ;
+- **Owner decision required:** Notebook user-data path activation, production, release, infrastructure or deployment still needs its own explicit milestone ;
 - **Optional evidence:** physical 8/16–24 GiB observations and real browser-process OOM diagnostics may extend confidence or support without reopening the approved current scope unless they reveal a source defect.
 
 ## Explicitly deferred

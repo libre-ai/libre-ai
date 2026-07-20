@@ -31,21 +31,22 @@ Autorité de séquencement post-G2. Institué par l'ADR-0009 : la sortie du Big 
 - **Livrables :** `envelope` (doctrine anti-injection implémentée), `provenance`, `proof`, `artifacts` productisés ; classification `authoritative / derived / operational` opérationnelle sur les flux de la forge ; signatures d'évidence de bout en bout. `memory` en brique autonome arrive avec le lock orchestrateur (vague 3).
 - **Gate de sortie :** la forge consomme ces briques en production réelle ; le noyau de sécurité des boucles (ADR-0009 §6) est spécifié et prêt à verrouiller ; évidence publiée.
 
-## Vague 3 — Couche 2 : la méthode incarnée (l'étoile polaire)
+## Vague 3 — Couche 2 : la méthode incarnée (Polaris)
 
-**Objectif :** l'orchestration gouvernable devient produit — la boucle auto-alimentée officielle démarre, la flotte étant son premier client.
+**Objectif :** l'orchestration gouvernable devient produit — la boucle auto-alimentée officielle démarre, la flotte étant son premier client. La couche 2 porte le nom **Polaris** (ADR-0011 D2).
 
-- **Gate d'entrée :** noyau de sécurité verrouillé (identité des agents — flotte/mission/capacités/révocation — spécifiée et lockée ; registre immuable ; mutations de couche 3 sous revue) **et** Specification Lock orchestrateur prononcé (les inputs méta sont prêts côté control plane).
+- **Gate d'entrée :** noyau de sécurité verrouillé (identité des agents — flotte/mission/capacités/révocation — spécifiée et lockée ; registre immuable ; mutations de couche 3 sous revue) **et** Specification Lock orchestrateur prononcé. **En run autonome (ADR-0011 D3, durci) :** ARRÊT DUR — un agent verrouille K1-K5, lance sa revue indépendante, produit le dossier, puis s'arrête ; le prononcé du lock est un acte propriétaire nominatif exclusif, jamais automatisé.
 - **Livrables :** `orchestrator`, `harness` sous leur lock ; `missions` (l'app humaine de la couche) ; boucles opérant la flotte sous gates avec métriques ; `memory` livré avec le lock.
 - **Gate de sortie :** la constellation est gérée par la méthode en conditions réelles ; les métriques de couverture pilotent la loi de croissance ; traceur v2 — démonstration publique complète de la méthode sur son propre cas.
 
 ## Vague 4 — Couche 1 : les apps-preuves
 
-**Objectif :** les produits visibles du grand public, construits par et avec la méthode — la preuve par l'exemple au sens plein.
+**Objectif :** les produits visibles du grand public, construits par et avec la méthode — la preuve par l'exemple au sens plein. Scindée en pilote puis parallèle (ADR-0011 D1).
 
-- **Gate d'entrée :** sélection propriétaire nominative du premier moteur (Radar, Policy, Boussole ou Notebook user-data) ; pour `model-policy` : re-audit secrets/PII puis passage en public.
-- **Livrables :** la première app livrée sur son URL réservée ; les autres ouvertes une à une, chacune sur décision propriétaire ; les work-packages `WP-G3-*` s'exécutent ici, app par app ; `WP-G4-*` (infrastructure, cutover) et `WP-G5-*` (distribution) s'appliquent par produit au fil des activations.
-- **Gate de sortie :** app utilisable et vérifiable selon son échelle d'exposition ; parcours critiques sous évidence automatisée ; publication liée à son rapport d'évidence.
+- **Vague 4a — Notebook (pilote).** Gate d'entrée : G2 clos + contrat Notebook Core v2 (Gate B déjà approuvée). Rôle : valider le pattern app de bout en bout (contrat → moteur → app → revue) une fois. Sortie : Notebook utilisable et vérifiable, publié avec son évidence.
+- **Vague 4b — le reste en parallèle, orchestré par Polaris.** Gate d'entrée : pattern validé en 4a + Polaris opérationnel (vague 3). Radar, Boussole, Model Policy, Practices, Sessions, Spec Studio construits en parallèle sous l'orchestration de la couche 2 — cette phase parallèle est la démonstration du produit zéro. `model-policy` : re-audit secrets/PII puis passage en public avant activation. Les `WP-G3-*` s'exécutent ici ; `WP-G4-*`/`WP-G5-*` par produit au fil des activations.
+- **Politique de gate sécurité en run autonome (ADR-0011 D4, confiance graduée) :** chaque composant sécurité-critique est relu par des agents adversariaux distincts de l'implémenteur (K4). **Premier merge sécurité-critique d'une couche = arrêt dur** (dossier produit, prononcé propriétaire, amorçage de la chaîne de confiance) ; **répétitions du même pattern = merge automatique** sur dossier de revue propre. L'indépendance de la revue est préservée dans les deux cas. Distinct de D3, dont l'arrêt dur est permanent (jamais auto).
+- **Plafonds d'autonomie chiffrés (ADR-0011 D6) :** liveness — ≤ 3 cycles CI/revue par PR, 3 PR consécutives sans progrès mesurable par vague, anti-thrash 5 rééditions ; coût — > 400 k tokens par PR, plafonds par vague (Phase 0 300 k, G2 1,5 M, V1 1 M, V2 2 M, V4a 1 M ; total run α 6 M). Un dépassement = STOP + dossier, jamais de kill silencieux.
 
 ## Correspondance vagues ↔ phases et work-packages
 
