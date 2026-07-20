@@ -116,6 +116,11 @@ impl AgentRevocationRecord {
 /// Store of per-`agent_id` revocations consulted at issuance. `is_agent_revoked`
 /// is the fail-closed read: the issuer refuses to mint when it returns `true`
 /// or when the store is unavailable.
+///
+/// Revocation is **global** to the agent principal, not tenant-scoped: the key
+/// is the request's `user_id` at issuance, so revoking an agent prevents token
+/// issuance for it everywhere it holds identity (consistent with the K1 spec's
+/// "per `agent_id`" wording).
 pub trait AgentRevocationStore {
     fn is_agent_revoked(&mut self, agent_id: &str) -> Result<bool, RevocationStoreUnavailable>;
 

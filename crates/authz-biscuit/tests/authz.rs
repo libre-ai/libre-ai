@@ -1595,3 +1595,31 @@ fn issue_agent_is_fail_closed_on_agent_revocation() {
             .is_ok()
     );
 }
+
+// Part b1/revocation: an agent revocation record preserves its audit reason.
+#[test]
+fn agent_revocation_record_preserves_reason_for_audit() {
+    let now = at(0);
+    let record = libre_ai_authz_biscuit::AgentRevocationRecord::new(
+        USER.to_owned(),
+        "policy.rotation".to_owned(),
+        now,
+    )
+    .unwrap();
+    assert_eq!(record.agent_id(), USER);
+    assert_eq!(record.reason_code(), "policy.rotation");
+    assert_eq!(record.revoked_at(), now);
+    // A malformed agent_id or empty reason is rejected.
+    assert!(
+        libre_ai_authz_biscuit::AgentRevocationRecord::new(
+            "not-a-user".to_owned(),
+            "policy.rotation".to_owned(),
+            now,
+        )
+        .is_err()
+    );
+    assert!(
+        libre_ai_authz_biscuit::AgentRevocationRecord::new(USER.to_owned(), String::new(), now,)
+            .is_err()
+    );
+}

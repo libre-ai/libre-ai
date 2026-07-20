@@ -255,6 +255,9 @@ impl BiscuitIssuer {
         // Fail-closed per-agent revocation (loop-security kernel K1): a revoked
         // agent — or an unavailable revocation store — mints no new token. Live
         // tokens of a revoked agent still lapse under the short TTL ceiling.
+        // Store unavailability denies with the generic `auth.biscuit_invalid`
+        // (the canonical code set has no distinct "revocation store down" code);
+        // distinguishing it from a malformed request needs structured logging.
         match revocations.is_agent_revoked(&request.user_id) {
             Ok(false) => {}
             Ok(true) => return Err(AuthzError::new("auth.agent_revoked")),
