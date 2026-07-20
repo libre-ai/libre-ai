@@ -37,6 +37,7 @@ fn canonical_code(code: &str) -> bool {
         "auth.tenant_mismatch"
             | "auth.biscuit_invalid"
             | "auth.biscuit_revoked"
+            | "auth.agent_revoked"
             | "auth.operation_denied"
             | "auth.key_unavailable"
     )

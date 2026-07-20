@@ -12,8 +12,8 @@ pub use authorize::{
 pub use error::AuthzError;
 pub use keys::{PublicKeyMetadata, VerificationKey, VerificationKeyRing, VerificationKeyStatus};
 pub use revocation::{
-    RevocationChecker, RevocationRecord, RevocationStore, RevocationStoreUnavailable,
-    RevocationTarget,
+    AgentRevocationRecord, AgentRevocationStore, RevocationChecker, RevocationRecord,
+    RevocationStore, RevocationStoreUnavailable, RevocationTarget,
 };
 pub use token::{
     AgentIdentity, AttenuationRequest, BiscuitIssuer, BoundedBiscuit, IssuanceRequest,
