@@ -48,6 +48,16 @@ who merges must include their own `Signed-off-by:` line in the merge commit
 message; the push gate fails otherwise. Merge commits accepted before this
 gate existed remain unchanged history and are never re-examined.
 
+Squash merges have a sharper constraint: a squash commit has a single parent,
+so the push gate treats it as an ordinary commit and requires a sign-off
+matching **its author**. `gh pr merge --squash` preserves the original commit
+author only when its message is left untouched — passing a custom `--subject`
+or `--body` reattributes authorship to the forge account, whose noreply address
+no contributor sign-off can match, and the gate fails. Squash-merge with the
+default message (the pull request's `git commit -s` sign-off already matches its
+author), or, if a custom message is unavoidable, sign off with the exact author
+GitHub will stamp on the squash commit.
+
 The sign-off name, email address, commit and contribution become public and are
 retained in distributed Git history. Use an address suitable for publication
 and do not include unnecessary personal data in commits, issues or evidence.
