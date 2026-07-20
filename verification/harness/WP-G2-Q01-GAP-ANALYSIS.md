@@ -29,7 +29,13 @@
 
 ## Gaps réels (le seul travail neuf de Q01)
 
-**Faits (indépendants de D01 mergé, livrés sur cette branche) :** G-Q5 (`tools/quality/check-no-clever-production.ts`, gate exécutable acceptance 3, 7 tests) et G-Q2 (`tools/quality/check-secret-scan.ts`, gate secret-scanning tree-wide réutilisant `containsCredentialMarker`, 7 tests) — tous deux câblés dans `bun run check`, donc actifs dans le job CI `bun-quality`. **Restent gated derrière le merge D01 :** G-Q1, G-Q4 (incluent la RLS depuis `main`) ; G-Q3 partiellement (surfaces web).
+**Faits (indépendants de D01 mergé, livrés sur cette branche) :**
+
+- **G-Q5** (`tools/quality/check-no-clever-production.ts`, gate exécutable acceptance 3, 7 tests) — câblé dans `bun run check`.
+- **G-Q2** (`tools/quality/check-secret-scan.ts`, gate secret-scanning tree-wide réutilisant `containsCredentialMarker`, 7 tests) — câblé dans `bun run check`.
+- **G-Q1** (`verification/harness/reference-chain.ts`, harness acceptance 1, 7 tests) — cadre modulaire orchestrant la chaîne foundation ; l'étape `rls` est **gated par présence de `packages/data`** : `skipped` sur un checkout main pré-merge, active au merge D01 sans remaniement. Non câblé dans `bun run check` (étapes cargo/Playwright trop lourdes par-check) — c'est le harness de la gate `g2-foundation-acceptance`. **G-Q4 y est absorbé** : l'étape `rls` de la chaîne EST la RLS en évidence reference-chain.
+
+**Restent gated derrière le merge D01 :** l'**exécution réelle** de la chaîne complète (l'étape `rls` passe de `skipped` à `passed` une fois `packages/data` sur `main`) → g2-foundation-acceptance. **G-Q3** (accessibilité foundation) : W01 porte déjà `accessibility-foundation-review` accepté ; l'extension en gate partagée est le dernier reste, browser-dépendant.
 
 | Gap                                                                                                                                                                                                                                         | Nature                   | Dépend de D01 mergé ?                           | writePath                                  |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | ----------------------------------------------- | ------------------------------------------ |
