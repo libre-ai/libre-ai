@@ -16,6 +16,6 @@ pub use revocation::{
     RevocationTarget,
 };
 pub use token::{
-    AttenuationRequest, BiscuitIssuer, BoundedBiscuit, IssuanceRequest, SensitiveToken,
-    SerializedBiscuit, TokenBounds,
+    AgentIdentity, AttenuationRequest, BiscuitIssuer, BoundedBiscuit, IssuanceRequest,
+    SensitiveToken, SerializedBiscuit, TokenBounds,
 };
