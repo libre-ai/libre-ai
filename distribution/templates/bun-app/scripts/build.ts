@@ -1,6 +1,6 @@
 import { mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
-import { buildTailwindUtilities } from "@libre-ai/design-system/tailwind";
+import { buildTailwindUtilities } from "@libre-ai/ui/tailwind";
 import { renderStaticDocument } from "@libre-ai/web-platform";
 import { referenceDocument } from "../src/shared/document";
 
@@ -25,9 +25,7 @@ if (!clientBuild.success) {
   throw new Error("web.client_build_failed");
 }
 
-const foundationCss = await Bun.file(
-  join(root, "../../../packages/design-system/src/styles.css"),
-).text();
+const foundationCss = await Bun.file(join(root, "../../../packages/ui/src/styles.css")).text();
 const utilityCss = await buildTailwindUtilities(["text-sm"]);
 await Bun.write(join(assets, "styles.css"), `${foundationCss}\n${utilityCss}`);
 await Bun.write(join(assets, "icon.svg"), Bun.file(join(root, "public/icon.svg")));
