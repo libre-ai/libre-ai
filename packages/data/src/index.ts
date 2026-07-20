@@ -4,6 +4,14 @@ export {
   BackupCeilingExceededError,
   backupExpiryCeiling,
 } from "./backup-ceiling";
+export {
+  buildCompletedDeletionReceipt,
+  DELETION_RECEIPT_SCHEMA,
+  type DeletionReceipt,
+  type DeletionReceiptInput,
+  type DeletionStoreOutcome,
+  EmptySubjectSetError,
+} from "./deletion-receipt";
 export { type RetainedRecord, selectExpiredIds } from "./expired-selection";
 export {
   type DeletionReceiptLike,

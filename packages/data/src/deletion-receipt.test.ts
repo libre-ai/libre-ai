@@ -1,0 +1,60 @@
+import { describe, expect, test } from "bun:test";
+
+import { backupExpiryCeiling } from "./backup-ceiling";
+import {
+  buildCompletedDeletionReceipt,
+  type DeletionReceiptInput,
+  EmptySubjectSetError,
+} from "./deletion-receipt";
+
+const input: DeletionReceiptInput = {
+  id: "rcp_1",
+  tenantId: "ten_alpha",
+  owner: "radar",
+  subjectDigests: ["sha256:aaa", "sha256:bbb"],
+  requestedBy: "usr_9",
+  requestedAt: "2026-07-20T00:00:00.000Z",
+  completedAt: "2026-07-20T00:00:05.000Z",
+  stores: [{ store: "postgresql", outcome: "deleted" }],
+};
+
+describe("completed deletion receipt", () => {
+  test("carries the contract version and the complete status", () => {
+    const receipt = buildCompletedDeletionReceipt(input);
+    expect(receipt.schemaVersion).toBe("libre-ai.deletion-receipt.v1");
+    expect(receipt.status).toBe("complete");
+    expect(receipt.completedAt).toBe("2026-07-20T00:00:05.000Z");
+  });
+
+  test("sets the backup expiry to the 35-day ceiling", () => {
+    const receipt = buildCompletedDeletionReceipt(input);
+    expect(receipt.backupExpiresAt).toBe(backupExpiryCeiling(input.completedAt));
+  });
+
+  test("carries only opaque digests, never deleted content", () => {
+    // DATA-LIFECYCLE.md §5: a receipt contains "opaque digests ... never
+    // deleted content". The emitted object exposes only contract fields.
+    const receipt = buildCompletedDeletionReceipt(input);
+    expect(Object.keys(receipt).sort()).toEqual(
+      [
+        "backupExpiresAt",
+        "completedAt",
+        "id",
+        "owner",
+        "requestedAt",
+        "requestedBy",
+        "schemaVersion",
+        "status",
+        "stores",
+        "subjectDigests",
+        "tenantId",
+      ].sort(),
+    );
+  });
+
+  test("refuses to emit a receipt that names no subject", () => {
+    expect(() => buildCompletedDeletionReceipt({ ...input, subjectDigests: [] })).toThrow(
+      EmptySubjectSetError,
+    );
+  });
+});
