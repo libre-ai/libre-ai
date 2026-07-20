@@ -111,6 +111,55 @@
       "tenant": "ten_alpha000000000",
       "resourceTenant": "ten_alpha000000000",
       "expected": "allow"
+    },
+    {
+      "id": "mission-service-fleet-match-allow",
+      "role": "mission-service",
+      "operation": "compute-quorum",
+      "tenant": "ten_alpha000000000",
+      "resourceTenant": "ten_alpha000000000",
+      "agentFleet": "forge",
+      "resourceFleet": "forge",
+      "missionAgent": "mission_alpha",
+      "tokenMission": "mission_alpha",
+      "resourceMission": "mission_alpha",
+      "expected": "allow"
+    },
+    {
+      "id": "orchestrator-fleet-match-allow",
+      "role": "orchestrator",
+      "operation": "start",
+      "tenant": "ten_alpha000000000",
+      "resourceTenant": "ten_alpha000000000",
+      "agentFleet": "forge",
+      "resourceFleet": "forge",
+      "missionAgent": "mission_alpha",
+      "tokenMission": "mission_alpha",
+      "resourceMission": "mission_alpha",
+      "tokenPlanDigest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "resourcePlanDigest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "tokenAuthorizationDigest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "resourceAuthorizationDigest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "expected": "allow"
+    },
+    {
+      "id": "harness-fleet-match-allow",
+      "role": "harness",
+      "operation": "invoke-planned-tool",
+      "tenant": "ten_alpha000000000",
+      "resourceTenant": "ten_alpha000000000",
+      "agentFleet": "forge",
+      "resourceFleet": "forge",
+      "missionAgent": "mission_alpha",
+      "tokenMission": "mission_alpha",
+      "resourceMission": "mission_alpha",
+      "tokenRun": "run_alpha0000000000",
+      "resourceRun": "run_alpha0000000000",
+      "tokenPlanDigest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "resourcePlanDigest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "tokenAuthorizationDigest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "resourceAuthorizationDigest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "expected": "allow"
     }
   ]
 }

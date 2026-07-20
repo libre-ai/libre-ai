@@ -33,8 +33,22 @@ Human roles (`operator`, `protected-controller`) use `authority-v1` and are
 ## Design property: v2 is strictly stronger than v1
 
 `authorizeV2 = authorize (v1) ∧ (for agent roles: fleet match ∧ mission
-membership)`. v2 can only ever **deny** what v1 allowed, never allow more. The
-11 v1 rules and their 15 vectors are untouched and still pass.
+membership)`. v2 can only ever **deny** what v1 allowed, never allow more.
+
+The 11 v1 **datalog rules** are unchanged. The 15 v1 **test vectors** are tested
+separately with `authorize()` (v1 logic) — they are **not** run against
+`authorizeV2()`, because they predate the K1 fields and are v1 simulator
+artifacts, not production agent-token scenarios.
+
+**Not backward-compatible with K1-less agent tokens (by design).** v2 is not a
+drop-in for agent tokens that lack the K1 facts: an agent-role token without
+`agent_fleet` / `mission_agent` is **denied** (fail-closed), which is the whole
+point. Any in-flight v1-issued agent token must be reissued under `authority-v2`
+carrying the three K1 facts before the consumer switches to `agent-runs-v2` —
+this is part of the part-b wiring/migration, not a regression. Legitimate
+agent operations continue to be **allowed** when fleet and mission match, proven
+by one positive vector per agent role (author, reviewer, mission-service,
+orchestrator, harness).
 
 ## TDD evidence (RED → GREEN)
 
