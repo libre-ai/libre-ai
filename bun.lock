@@ -71,6 +71,10 @@
         "@libre-ai/testing": "workspace:*",
       },
     },
+    "packages/envelope": {
+      "name": "@libre-ai/envelope",
+      "version": "0.1.0",
+    },
     "packages/knowledge": {
       "name": "@libre-ai/knowledge",
       "version": "0.1.0",
@@ -175,6 +179,8 @@
     "@libre-ai/contracts": ["@libre-ai/contracts@workspace:packages/contracts"],
 
     "@libre-ai/data": ["@libre-ai/data@workspace:packages/data"],
+
+    "@libre-ai/envelope": ["@libre-ai/envelope@workspace:packages/envelope"],
 
     "@libre-ai/knowledge": ["@libre-ai/knowledge@workspace:packages/knowledge"],
 
