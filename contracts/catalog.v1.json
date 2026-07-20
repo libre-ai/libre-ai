@@ -880,7 +880,7 @@
       "kind": "json-schema",
       "path": "contracts/schemas/envelope.v1.schema.json",
       "owners": ["envelope", "security"],
-      "consumers": ["forge", "all-model-facing-surfaces"],
+      "consumers": ["forge", "harness"],
       "compatibility": "additive-v1",
       "classification": "internal",
       "status": "candidate",

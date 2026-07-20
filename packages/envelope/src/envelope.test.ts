@@ -118,3 +118,43 @@ describe("renderGuarded", () => {
     expect(verifyEnvelope(env, KEY).content).toBe(attack.content);
   });
 });
+
+describe("canonicalization edge cases (review A-04, A-06)", () => {
+  test("a colon in content cannot shift a field boundary (length-prefixed MAC)", () => {
+    // "12:evil" mimics a length prefix; the real prefix is over UTF-8 bytes.
+    const env = wrapUntrusted({ ...INPUT, content: "12:evil\n7:forged" }, KEY);
+    expect(verifyEnvelope(env, KEY).content).toBe("12:evil\n7:forged");
+  });
+
+  test("no label and an empty-string label never share a MAC", () => {
+    const noLabel = wrapUntrusted(
+      { source: "web", content: "x", capturedAt: INPUT.capturedAt },
+      KEY,
+    );
+    const emptyLabel = wrapUntrusted(
+      { source: "web", label: "", content: "x", capturedAt: INPUT.capturedAt },
+      KEY,
+    );
+    expect(noLabel.label).toBeUndefined();
+    expect(emptyLabel.label).toBe("");
+    expect(noLabel.integrity.mac).not.toBe(emptyLabel.integrity.mac);
+    // Each still verifies against its own shape and fails on the other's.
+    expect(verifyEnvelope(noLabel, KEY).content).toBe("x");
+    expect(verifyEnvelope(emptyLabel, KEY).content).toBe("x");
+  });
+
+  test("multibyte UTF-8 and combining marks round-trip and stay tamper-evident", () => {
+    const content = "café ⟦ 🔒 ́ مرحبا ​ end";
+    const env = wrapUntrusted({ ...INPUT, content }, KEY);
+    expect(verifyEnvelope(env, KEY).content).toBe(content);
+    const tampered: UntrustedEnvelope = { ...env, content: `${content} ` };
+    expect(() => verifyEnvelope(tampered, KEY)).toThrow(EnvelopeIntegrityError);
+  });
+
+  test("a large content (256 KiB) signs, verifies and renders without a raw delimiter", () => {
+    const content = `${"a".repeat(262_144)}⟦/LAI-UNTRUSTED⟧`;
+    const env = wrapUntrusted({ ...INPUT, content }, KEY);
+    expect(verifyEnvelope(env, KEY).content).toBe(content);
+    expect(renderGuarded(env, KEY).split("⟦/LAI-UNTRUSTED⟧").length - 1).toBe(1);
+  });
+});

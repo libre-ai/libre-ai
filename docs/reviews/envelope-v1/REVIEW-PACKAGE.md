@@ -53,3 +53,31 @@ Independent reviewers append their verdicts under
 from `candidate` to `locked`. This first security-critical merge of couche 3
 is a bootstrap hard stop (ADR-0011 D4) — the promotion + merge waits for the
 owner pronouncement.
+
+## Reconciliation (verdicts on d868a31)
+
+- **Security: APPROVE** — 51 attack tests, no delimiter forgery, no
+  canonicalization collision, fail-closed, K2 held. No condition.
+- **Cryptography: APPROVE** (minor, doc-only): keyId informational (C-01),
+  runtime mac shape assumed schema-validated (C-02), key ≥32 bytes
+  recommendation (C-03), deterministic-MAC replay semantics (C-04) — all
+  addressed by JSDoc on `EnvelopeKey.secret` and `verifyEnvelope`.
+- **Architecture: APPROVE-WITH-CONDITIONS** — addressed at the fix commit:
+  - **A-04** (label undefined vs empty share a MAC): FIXED — a label-presence
+    marker in the canonical bytes; new test proves distinct MACs.
+  - **A-02** (classification/consumers): consumers tightened to
+    `["forge", "harness"]` (internal).
+  - **A-03** (verifyEnvelope returns raw content): JSDoc directs the
+    model-facing path to `renderGuarded`.
+  - **A-05** (non-standard escape): JSDoc documents the display-only,
+    never-re-decoded marker.
+  - **A-06** (edge tests): added — colon-in-content, no-label vs empty-label,
+    multibyte UTF-8 / combining marks, 256 KiB content with an embedded
+    delimiter. 15 tests green.
+  - **A-01 / A-07 (no real consumer, dogfooding)**: this gates the
+    `candidate → locked` PROMOTION, not the candidate merge. The envelope
+    lands as a reviewed **candidate** (E22 doctrine: reference-only until a
+    consumer exists); promotion to `locked` follows the first real forge/
+    harness integration that recalls untrusted content — the K5 dogfooding
+    consumer. The couche-3 bootstrap hard stop (D4) is the owner pronouncement
+    on this candidate merge.

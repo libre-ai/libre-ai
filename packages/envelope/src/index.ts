@@ -39,6 +39,13 @@ const GUARD_CLOSE = "⟦/LAI-UNTRUSTED⟧";
 
 export interface EnvelopeKey {
   readonly id: string;
+  /**
+   * HMAC key. Recommended ≥ 32 bytes (NIST SP 800-107); a K3 ephemeral/session
+   * key of ≥ 16 bytes is accepted but weaker (crypto review C-03). The key is
+   * shared between the producer and the verifier — HMAC proves integrity, not
+   * origin authentication; the asymmetric Ed25519 upgrade is deferred
+   * (WP-G2-Z01, crypto review C-01/C-04).
+   */
   readonly secret: Uint8Array;
 }
 
@@ -111,15 +118,19 @@ function canonicalBytes(fields: readonly string[]): Uint8Array {
 function computeMac(
   key: EnvelopeKey,
   source: string,
-  label: string,
+  label: string | undefined,
   content: string,
   capturedAt: string,
 ): string {
+  // A label-presence marker keeps `undefined` (no label) distinct from an
+  // empty-string label in the signed bytes, so the two never share a MAC
+  // (architecture review A-04).
   const canonical = canonicalBytes([
     ENVELOPE_SCHEMA_VERSION,
     "false",
     source,
-    label,
+    label === undefined ? "0" : "1",
+    label ?? "",
     content,
     capturedAt,
   ]);
@@ -130,8 +141,7 @@ export function wrapUntrusted(input: UntrustedInput, key: EnvelopeKey): Untruste
   if (!isUntrustedSource(input.source)) {
     throw new UntrustedSourceError(input.source);
   }
-  const label = input.label ?? "";
-  const mac = computeMac(key, input.source, label, input.content, input.capturedAt);
+  const mac = computeMac(key, input.source, input.label, input.content, input.capturedAt);
   const envelope: UntrustedEnvelope = {
     schemaVersion: ENVELOPE_SCHEMA_VERSION,
     trusted: false,
@@ -151,14 +161,32 @@ export interface VerifiedEnvelope {
   readonly capturedAt: string;
 }
 
+/**
+ * Verify the envelope's integrity and return its fields. Fails closed on any
+ * alteration or wrong key.
+ *
+ * The returned `content` is the RAW untrusted text — it is data, not safe to
+ * concatenate into a model prompt directly. Use {@link renderGuarded} for the
+ * model-facing path, which escapes the guard delimiters (architecture review
+ * A-03). `envelope.integrity.keyId` is informational: the caller selects the
+ * key, so keyId is not re-verified here (it becomes binding under the Ed25519
+ * upgrade — crypto review C-01). The `mac` shape is assumed schema-validated
+ * upstream (`envelope.v1.schema.json`); a malformed mac still fails closed
+ * (crypto review C-02).
+ */
 export function verifyEnvelope(envelope: UntrustedEnvelope, key: EnvelopeKey): VerifiedEnvelope {
   // A forged trusted flag or schema version can never verify: the MAC is
   // computed over the constants, so any deviation changes the expected MAC.
   if (envelope.trusted !== false || envelope.schemaVersion !== ENVELOPE_SCHEMA_VERSION) {
     throw new EnvelopeIntegrityError();
   }
-  const label = envelope.label ?? "";
-  const expected = computeMac(key, envelope.source, label, envelope.content, envelope.capturedAt);
+  const expected = computeMac(
+    key,
+    envelope.source,
+    envelope.label,
+    envelope.content,
+    envelope.capturedAt,
+  );
   const expectedBytes = Buffer.from(expected, "base64url");
   const actualBytes = Buffer.from(envelope.integrity.mac, "base64url");
   if (expectedBytes.length !== actualBytes.length || !timingSafeEqual(expectedBytes, actualBytes)) {
@@ -175,7 +203,10 @@ export function verifyEnvelope(envelope: UntrustedEnvelope, key: EnvelopeKey): V
 /**
  * Escape the guard delimiter code points so the escaped content provably
  * contains no raw delimiter and therefore cannot forge the closing marker.
- * `%` is escaped first to keep the transform unambiguous.
+ * `%` is escaped first to keep the transform unambiguous. The escape sequence
+ * (`%u27E6`/`%u27E7`) is a deliberate NON-standard, display-only marker: the
+ * rendered guard block is never re-decoded, so an escaped payload cannot be
+ * turned back into a raw delimiter downstream (architecture review A-05).
  */
 function escapeDelimiters(content: string): string {
   return content.replaceAll("%", "%25").replaceAll("⟦", "%u27E6").replaceAll("⟧", "%u27E7");
