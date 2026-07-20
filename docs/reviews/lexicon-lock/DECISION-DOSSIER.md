@@ -1,5 +1,7 @@
 # Dossier de décision — Phase 0 Lexicon Lock (arrêt dur, signature propriétaire)
 
+> **Prononcé propriétaire (2026-07-20, en session)** : **P1 = option A** — Polaris confirmé en connaissance de la donnée nouvelle (Atos Polaris AI Platform) ; **P2 = confirmé** — le propriétaire contrôle `libre-ai.fr`, aucun déploiement pour le moment (traité en dernier, cohérent avec G4/I-07) ; **P3 = option A** — différé lineage accepté jusqu'à la brique `provenance` (vague 2), trailers `Agent-Role:` + sign-off en attendant. **La signature est actée par le merge de la PR #130.** Journal : `distribution/evidence/gate-acceptance-log.md`.
+
 - **Date :** 2026-07-20 · **Run :** jalon α · **PR :** #130 (`docs/phase0-lexicon-lock`)
 - **Nature :** arrêt dur de Phase 0 — la carte de noms est produite, revue et corrigée ; **rien n'est signé, rien n'est renommé**. Ce dossier demande le prononcé propriétaire.
 
