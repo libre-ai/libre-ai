@@ -30,9 +30,23 @@ export class NonOpaqueDigestError extends Error {
   }
 }
 
+// contracts/schemas/deletion-receipt.v1.schema.json store/outcome enums; a
+// completed receipt allows only deleted | not-applicable (schema conditional).
+const CONTRACT_STORES = new Set(["postgresql", "cellar", "redis", "search", "key-store"]);
+const COMPLETE_OUTCOMES = new Set(["deleted", "not-applicable"]);
+const REASON_CODE = /^deletion\.[a-z0-9_.-]+$/;
+
+export class InvalidStoreOutcomeError extends Error {
+  constructor(detail: string) {
+    super(`invalid store outcome: ${detail}`);
+    this.name = "InvalidStoreOutcomeError";
+  }
+}
+
 export interface DeletionStoreOutcome {
   readonly store: string;
   readonly outcome: string;
+  readonly reasonCode?: string;
 }
 
 export interface DeletionReceiptInput {
@@ -67,6 +81,21 @@ export function buildCompletedDeletionReceipt(input: DeletionReceiptInput): Dele
   for (const digest of input.subjectDigests) {
     if (!SHA256_DIGEST.test(digest)) {
       throw new NonOpaqueDigestError(digest);
+    }
+  }
+  for (const entry of input.stores) {
+    if (!CONTRACT_STORES.has(entry.store)) {
+      throw new InvalidStoreOutcomeError(`unknown store ${JSON.stringify(entry.store)}`);
+    }
+    if (!COMPLETE_OUTCOMES.has(entry.outcome)) {
+      throw new InvalidStoreOutcomeError(
+        `outcome ${JSON.stringify(entry.outcome)} not allowed on a complete receipt`,
+      );
+    }
+    if (entry.reasonCode !== undefined && !REASON_CODE.test(entry.reasonCode)) {
+      throw new InvalidStoreOutcomeError(
+        `malformed reason code ${JSON.stringify(entry.reasonCode)}`,
+      );
     }
   }
   return {

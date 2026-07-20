@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   AboveMaximumRetentionError,
   BelowMinimumRetentionError,
+  NonPositiveRetentionError,
   NotConfigurableError,
   resolveConfiguredRetention,
 } from "./retention-bounds";
@@ -64,5 +65,16 @@ describe("configured retention bounds", () => {
 
   test("a fixed rule cannot be configured", () => {
     expect(() => resolveConfiguredRetention(fixed, "P2D")).toThrow(NotConfigurableError);
+  });
+
+  test("a composite year+day duration is refused (contract uses one component)", () => {
+    // The machine policy uses P<n>D or P<n>Y, never both. P1Y365D must not
+    // silently parse as 730 days.
+    expect(() => resolveConfiguredRetention(configurable, "P1Y365D")).toThrow();
+  });
+
+  test("a zero or empty duration is refused", () => {
+    expect(() => resolveConfiguredRetention(maximumOnly, "P0D")).toThrow(NonPositiveRetentionError);
+    expect(() => resolveConfiguredRetention(maximumOnly, "P")).toThrow();
   });
 });

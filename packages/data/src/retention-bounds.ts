@@ -28,6 +28,13 @@ export class AboveMaximumRetentionError extends Error {
   }
 }
 
+export class NonPositiveRetentionError extends Error {
+  constructor(requested: string) {
+    super(`configured retention ${requested} must be a positive duration`);
+    this.name = "NonPositiveRetentionError";
+  }
+}
+
 export interface RetentionRule {
   readonly id: string;
   readonly mode: string;
@@ -35,11 +42,12 @@ export interface RetentionRule {
   readonly configurable?: { readonly minimum?: string; readonly maximum?: string };
 }
 
-const ISO_DAY_YEAR = /^P(?:(\d+)Y)?(?:(\d+)D)?$/;
+// The machine policy uses a single component, P<n>D or P<n>Y, never both.
+const ISO_DAY_OR_YEAR = /^P(?:(\d+)Y|(\d+)D)$/;
 
 function toDays(iso: string): number {
-  const match = ISO_DAY_YEAR.exec(iso);
-  if (match === null || (match[1] === undefined && match[2] === undefined)) {
+  const match = ISO_DAY_OR_YEAR.exec(iso);
+  if (match === null) {
     throw new RangeError(`unsupported retention duration ${JSON.stringify(iso)}`);
   }
   const years = match[1] === undefined ? 0 : Number.parseInt(match[1], 10);
@@ -52,6 +60,9 @@ export function resolveConfiguredRetention(rule: RetentionRule, requested: strin
     throw new NotConfigurableError(rule.id);
   }
   const requestedDays = toDays(requested);
+  if (requestedDays <= 0) {
+    throw new NonPositiveRetentionError(requested);
+  }
   const { minimum, maximum } = rule.configurable;
   if (minimum !== undefined && requestedDays < toDays(minimum)) {
     throw new BelowMinimumRetentionError(requested, minimum);

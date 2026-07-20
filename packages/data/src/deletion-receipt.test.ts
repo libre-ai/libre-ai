@@ -5,6 +5,7 @@ import {
   buildCompletedDeletionReceipt,
   type DeletionReceiptInput,
   EmptySubjectSetError,
+  InvalidStoreOutcomeError,
   NonOpaqueDigestError,
 } from "./deletion-receipt";
 
@@ -80,5 +81,41 @@ describe("completed deletion receipt", () => {
     expect(() =>
       buildCompletedDeletionReceipt({ ...input, subjectDigests: ["A".repeat(64)] }),
     ).toThrow(NonOpaqueDigestError);
+  });
+
+  test("refuses a store outside the contract enum", () => {
+    expect(() =>
+      buildCompletedDeletionReceipt({
+        ...input,
+        stores: [{ store: "elasticsearch", outcome: "deleted" }],
+      }),
+    ).toThrow(InvalidStoreOutcomeError);
+  });
+
+  test("refuses an outcome not allowed for a completed deletion", () => {
+    // A complete receipt allows only deleted | not-applicable (schema conditional).
+    expect(() =>
+      buildCompletedDeletionReceipt({
+        ...input,
+        stores: [{ store: "postgresql", outcome: "blocked" }],
+      }),
+    ).toThrow(InvalidStoreOutcomeError);
+  });
+
+  test("refuses a malformed store reason code", () => {
+    expect(() =>
+      buildCompletedDeletionReceipt({
+        ...input,
+        stores: [{ store: "redis", outcome: "not-applicable", reasonCode: "Bad Code!" }],
+      }),
+    ).toThrow(InvalidStoreOutcomeError);
+  });
+
+  test("accepts a valid store with a well-formed reason code", () => {
+    const receipt = buildCompletedDeletionReceipt({
+      ...input,
+      stores: [{ store: "redis", outcome: "not-applicable", reasonCode: "deletion.cache-miss" }],
+    });
+    expect(receipt.stores[0]?.reasonCode).toBe("deletion.cache-miss");
   });
 });

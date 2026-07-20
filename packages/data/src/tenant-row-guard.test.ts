@@ -46,4 +46,14 @@ describe("tenant row guard (cross-tenant deny)", () => {
       expect(() => guardTenantRow({ tenant_id: "", id: "rec_5" })).toThrow(CrossTenantAccessError);
     });
   });
+
+  test("a row whose tenant_id is undefined fails closed", async () => {
+    // The type says string, but a JS caller could pass undefined; the guard
+    // must still deny (fail closed), never let it through.
+    await runInTenantContext(ALPHA, async () => {
+      expect(() =>
+        guardTenantRow({ tenant_id: undefined as unknown as string, id: "rec_6" }),
+      ).toThrow(CrossTenantAccessError);
+    });
+  });
 });

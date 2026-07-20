@@ -11,6 +11,7 @@ export {
   type DeletionReceiptInput,
   type DeletionStoreOutcome,
   EmptySubjectSetError,
+  InvalidStoreOutcomeError,
   NonOpaqueDigestError,
 } from "./deletion-receipt";
 export { type RetainedRecord, selectExpiredIds } from "./expired-selection";
@@ -22,6 +23,7 @@ export {
 export {
   AboveMaximumRetentionError,
   BelowMinimumRetentionError,
+  NonPositiveRetentionError,
   NotConfigurableError,
   type RetentionRule,
   resolveConfiguredRetention,
