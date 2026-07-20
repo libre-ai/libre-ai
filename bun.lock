@@ -87,6 +87,10 @@
         "ajv-formats": "catalog:",
       },
     },
+    "packages/provenance": {
+      "name": "@libre-ai/provenance",
+      "version": "0.1.0",
+    },
     "packages/testing": {
       "name": "@libre-ai/testing",
       "version": "0.1.0",
@@ -191,6 +195,8 @@
     "@libre-ai/knowledge": ["@libre-ai/knowledge@workspace:packages/knowledge"],
 
     "@libre-ai/notebook": ["@libre-ai/notebook@workspace:apps/notebook"],
+
+    "@libre-ai/provenance": ["@libre-ai/provenance@workspace:packages/provenance"],
 
     "@libre-ai/testing": ["@libre-ai/testing@workspace:packages/testing"],
 
