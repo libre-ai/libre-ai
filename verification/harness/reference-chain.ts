@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { stat } from "node:fs/promises";
 
 /**
  * WP-G2-Q01 reference-chain harness (acceptance criterion 1). A single entry
@@ -131,8 +132,11 @@ export const FOUNDATION_CHAIN: readonly ChainStep[] = [
 ];
 
 async function pathExists(path: string): Promise<boolean> {
+  // node:fs stat, not Bun.file().exists(): the latter reports false for a
+  // directory, and gated paths (e.g. packages/data) are directories.
   try {
-    return await Bun.file(path).exists();
+    await stat(path);
+    return true;
   } catch {
     return false;
   }
