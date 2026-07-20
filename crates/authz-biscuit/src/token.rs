@@ -1,4 +1,5 @@
-use crate::{AuthzError, revocation::RevocationTarget};
+use crate::AuthzError;
+use crate::revocation::{AgentRevocationStore, RevocationStoreUnavailable, RevocationTarget};
 use biscuit_auth::builder::{BlockBuilder, Term};
 use biscuit_auth::{Biscuit, KeyPair, PublicKey};
 use sha2::{Digest, Sha256};
@@ -249,7 +250,18 @@ impl BiscuitIssuer {
         request: IssuanceRequest,
         agent: AgentIdentity,
         now: SystemTime,
+        revocations: &mut impl AgentRevocationStore,
     ) -> Result<BoundedBiscuit, AuthzError> {
+        // Fail-closed per-agent revocation (loop-security kernel K1): a revoked
+        // agent — or an unavailable revocation store — mints no new token. Live
+        // tokens of a revoked agent still lapse under the short TTL ceiling.
+        match revocations.is_agent_revoked(&request.user_id) {
+            Ok(false) => {}
+            Ok(true) => return Err(AuthzError::new("auth.agent_revoked")),
+            Err(RevocationStoreUnavailable) => {
+                return Err(AuthzError::new("auth.biscuit_invalid"));
+            }
+        }
         self.issue_inner(request, Some(agent), now)
     }
 

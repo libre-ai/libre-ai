@@ -1,9 +1,10 @@
 use biscuit_auth::builder::{BlockBuilder, Term, date, fact, string};
 use biscuit_auth::{Biscuit, KeyPair};
 use libre_ai_authz_biscuit::{
-    AttenuationRequest, AuthorizationContext, BiscuitIssuer, CanonicalPolicy, IssuanceRequest,
-    RevocationChecker, RevocationRecord, RevocationStore, RevocationStoreUnavailable,
-    SensitiveToken, VerificationKey, VerificationKeyRing, VerificationKeyStatus, authorize,
+    AgentRevocationStore, AttenuationRequest, AuthorizationContext, BiscuitIssuer, CanonicalPolicy,
+    IssuanceRequest, RevocationChecker, RevocationRecord, RevocationStore,
+    RevocationStoreUnavailable, SensitiveToken, VerificationKey, VerificationKeyRing,
+    VerificationKeyStatus, authorize,
 };
 use std::collections::{BTreeSet, HashMap};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -41,6 +42,32 @@ impl RevocationStore for MemoryRevocations {
             return Err(RevocationStoreUnavailable);
         }
         self.revoked.insert(record.root_block_id().to_owned());
+        Ok(())
+    }
+}
+
+#[derive(Default)]
+struct MemoryAgentRevocations {
+    revoked: BTreeSet<String>,
+    unavailable: bool,
+}
+
+impl libre_ai_authz_biscuit::AgentRevocationStore for MemoryAgentRevocations {
+    fn is_agent_revoked(&mut self, agent_id: &str) -> Result<bool, RevocationStoreUnavailable> {
+        if self.unavailable {
+            return Err(RevocationStoreUnavailable);
+        }
+        Ok(self.revoked.contains(agent_id))
+    }
+
+    fn revoke_agent(
+        &mut self,
+        record: libre_ai_authz_biscuit::AgentRevocationRecord,
+    ) -> Result<(), RevocationStoreUnavailable> {
+        if self.unavailable {
+            return Err(RevocationStoreUnavailable);
+        }
+        self.revoked.insert(record.agent_id().to_owned());
         Ok(())
     }
 }
@@ -1396,6 +1423,7 @@ fn agent_token_carries_k1_facts_and_agent_runs_v2_denies_cross_fleet() {
                 capability: "invoke-planned-tool".to_owned(),
             },
             now,
+            &mut MemoryAgentRevocations::default(),
         )
         .unwrap()
         .serialize()
@@ -1467,7 +1495,12 @@ fn issue_agent_rejects_malformed_identity() {
     ] {
         assert_eq!(
             issuer
-                .issue_agent(base(), agent(fleet, mission, capability), now)
+                .issue_agent(
+                    base(),
+                    agent(fleet, mission, capability),
+                    now,
+                    &mut MemoryAgentRevocations::default(),
+                )
                 .unwrap_err()
                 .code,
             "auth.biscuit_invalid",
@@ -1479,7 +1512,86 @@ fn issue_agent_rejects_malformed_identity() {
                 base(),
                 agent("forge", "mission-alpha", "invoke-planned-tool"),
                 now,
+                &mut MemoryAgentRevocations::default(),
             )
+            .is_ok()
+    );
+}
+
+// Part b1/revocation: issue_agent is fail-closed on per-agent revocation.
+#[test]
+fn issue_agent_is_fail_closed_on_agent_revocation() {
+    let now = at(0);
+    let (issuer, _ring) = issuer_and_ring(1, now);
+    let request = || IssuanceRequest {
+        user_id: USER.to_owned(),
+        tenant_id: TENANT.to_owned(),
+        role: "author-agent".to_owned(),
+        resource: RESOURCE.to_owned(),
+        operations: operations(&["submit-plan"]),
+        ttl: Duration::from_secs(300),
+    };
+    let identity = || libre_ai_authz_biscuit::AgentIdentity {
+        fleet: "forge".to_owned(),
+        mission: "mission-alpha".to_owned(),
+        capability: "invoke-planned-tool".to_owned(),
+    };
+
+    // A healthy store with no revocation mints normally.
+    let mut store = MemoryAgentRevocations::default();
+    assert!(
+        issuer
+            .issue_agent(request(), identity(), now, &mut store)
+            .is_ok()
+    );
+
+    // Once the agent is revoked, no new token is minted.
+    store
+        .revoke_agent(
+            libre_ai_authz_biscuit::AgentRevocationRecord::new(
+                USER.to_owned(),
+                "compromise.suspected".to_owned(),
+                now,
+            )
+            .unwrap(),
+        )
+        .unwrap();
+    assert_eq!(
+        issuer
+            .issue_agent(request(), identity(), now, &mut store)
+            .unwrap_err()
+            .code,
+        "auth.agent_revoked",
+    );
+
+    // An unavailable revocation store fails closed (refuses issuance).
+    let mut unavailable = MemoryAgentRevocations {
+        unavailable: true,
+        ..MemoryAgentRevocations::default()
+    };
+    assert_eq!(
+        issuer
+            .issue_agent(request(), identity(), now, &mut unavailable)
+            .unwrap_err()
+            .code,
+        "auth.biscuit_invalid",
+    );
+
+    // A different, non-revoked agent still mints under the same store.
+    let mut store2 = MemoryAgentRevocations::default();
+    store2
+        .revoke_agent(
+            libre_ai_authz_biscuit::AgentRevocationRecord::new(
+                OTHER_USER.to_owned(),
+                "policy.rotation".to_owned(),
+                now,
+            )
+            .unwrap(),
+        )
+        .unwrap();
+    assert!(
+        issuer
+            .issue_agent(request(), identity(), now, &mut store2)
             .is_ok()
     );
 }
