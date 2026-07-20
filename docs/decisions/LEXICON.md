@@ -5,6 +5,7 @@
 - **Arbitrage :** requis — la signature propriétaire de cette carte est l'acte de clôture de la Phase 0 (Lexicon Lock). Procédure : production solo → revue K4 (relecteurs indépendants : cohérence, collisions, doctrine) → arrêt dur → signature propriétaire → seulement alors renommage et écriture des noms cibles comme acquis.
 - **Portée :** tous les noms cibles de la constellation — repositories, produits, briques, packages npm, crates, familles — et le glossaire produit. Le glossaire de **méthode** (socle, control plane, satellite, vague, gate, WP, traceur…) est déjà fixé et ne relève pas de cette carte.
 - **Règle d'anti-hallucination :** tant que cette carte n'est pas signée, aucun agent n'écrit un nom cible comme acquis dans un artefact ; après signature, tout nom hors carte est un défaut bloquant (garde-fou classe 4).
+- **Place documentaire :** après signature, cette carte devient l'autorité unique du sujet « noms cibles et glossaire produit » et s'inscrit à ce titre dans la carte d'autorité (`docs/README.md`) — la même pull request porte cette inscription. Elle ne concurrence ni le registre des invariants ni l'inventaire : elle fixe des noms, pas la doctrine ni la topologie.
 
 ## 1. Repositories GitHub — carte legacy → cible
 
@@ -23,6 +24,8 @@ Doctrine applicable : les URLs des produits historiques sont **réservées** com
 | `policy`             | `policy` (inchangé, réservé)       | Model Policy            | 1      | vague 4b (public après re-audit secrets/PII) |
 | `agent-board`        | `agent-board` (inchangé, réservé)  | Missions (app couche 2) | 2      | vague 3                                      |
 
+Sept produits (Radar, Notebook, AI Practices, Sessions, Boussole Politique, Spec Studio, Model Policy) ; `agent-board`/Missions est l'**application** de la couche 2, pas un huitième produit (ADR-0009 §2, inventaire).
+
 ### 1.2 Outillage retiré — noms morts, jamais réutilisés
 
 `gear`, `context-kit`, `client-kit`, `proof-kit`, `artifact-supply`, `design-system`, `agent-factory`, `website`, `benchmarks`, `dioxus-app-template`. Leurs responsabilités vivent au socle ; aucun repository, package ou crate futur ne reprend ces noms (I-04).
@@ -37,7 +40,7 @@ Convention transverse (fixée par cette carte) :
 
 ### 2.1 Couche 4 — atelier applicatif (vague 1)
 
-| Brique    | Repo satellite cible | Package npm cible                          | Source socle actuelle                                | Note                                                                                                                                                                                                                                     |
+| Brique    | Repo satellite cible | Package/crate cible                        | Source socle actuelle                                | Note                                                                                                                                                                                                                                     |
 | --------- | -------------------- | ------------------------------------------ | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ui`      | `libre-ai/ui`        | `@libre-ai/ui`                             | `packages/design-system` (`@libre-ai/design-system`) | **Renommage requis à la vague 1** : `design-system` est un nom d'outillage retiré (§1.2) ; le package socle actuel le réutilise — dérive latente vis-à-vis d'I-04, corrigée par le renommage `@libre-ai/design-system` → `@libre-ai/ui`. |
 | `auth`    | `libre-ai/auth`      | `@libre-ai/auth-web` (conservé)            | `packages/auth-web`                                  | Le package nomme sa surface exacte (auth **web**, WP-G2-I01) ; le repo satellite porte la famille `auth`, les surfaces futures s'y ajoutent en `@libre-ai/auth-*`.                                                                       |
@@ -67,7 +70,7 @@ Le nom de la couche 2 productisée est **Polaris** (ADR-0011 D2, collision de no
 
 ### 2.4 Transverse — distribution
 
-| Brique       | Repo satellite cible  | Package cible          | Note            |
+| Brique       | Repo satellite cible  | Package/crate cible    | Note            |
 | ------------ | --------------------- | ---------------------- | --------------- |
 | `mcp-server` | `libre-ai/mcp-server` | `@libre-ai/mcp-server` | À l'activation. |
 | `corpus`     | `libre-ai/corpus`     | —                      | À l'activation. |
@@ -75,7 +78,7 @@ Le nom de la couche 2 productisée est **Polaris** (ADR-0011 D2, collision de no
 
 ### 2.5 Packages socle sans exposition satellite prévue
 
-`@libre-ai/root` (workspace), `@libre-ai/knowledge`, `@libre-ai/web-platform`, `@libre-ai/notebook` (app), `libre-ai-notebook-core`, `libre-ai-ecosystem-engine`, `libre-ai-authz-biscuit` : noms conformes à la convention, inchangés. `libre-ai-authz-biscuit` et `libre-ai-ecosystem-engine` restent internes au socle jusqu'à ce que la loi de couverture (I-16) les promeuve ; leur nom satellite éventuel reprendra le nom du crate sans le préfixe `libre-ai-`.
+`@libre-ai/root` (workspace), `@libre-ai/knowledge`, `@libre-ai/web-platform`, `@libre-ai/notebook` (app), `libre-ai-notebook-core`, `libre-ai-ecosystem-engine`, `libre-ai-authz-biscuit` : noms conformes à la convention, inchangés. `libre-ai-authz-biscuit` et `libre-ai-ecosystem-engine` restent internes au socle jusqu'à ce que la loi de couverture (I-16) les promeuve ; leur nom satellite éventuel reprend le nom du crate sans le préfixe `libre-ai-` — règle déterministe qui prime sur tout autre patron : `libre-ai-authz-biscuit` → repo `authz-biscuit`, npm `@libre-ai/authz-biscuit` ; `libre-ai-ecosystem-engine` → repo `ecosystem-engine`.
 
 ## 3. Produits — marque publique
 
@@ -125,7 +128,7 @@ Le décompte des produits n'est pas gravé ici (I-14) : l'inventaire `ecosystem/
 ## 5. Justification des noms
 
 - **Posture générale (tous les noms nus)** : chaque nom de produit ou de brique est un **générique descriptif** (français ou anglais) volontairement non appropriable seul ; la protection est portée par l'ombrelle « Libre AI » (marque figurative EUIPO à déposer, action propriétaire actée ADR-0008 §6) et l'ancrage `libre-ai.fr`. Aucun compte social homonyme n'est revendiqué. Vérification de coexistence déjà actée : homonyme de Dublin (`libreai.com`, aucune marque EUIPO déposée — vérifié 2026-07-10, re-confirmé par ADR-0008).
-- **Polaris** : collision de nom élevée, connue et **acceptée** par arbitrage (ADR-0011 D2) ; traitement identique à la coexistence de marque documentée (figuratif + `.fr`), non re-litigé ici.
+- **Polaris** : collision de nom élevée, connue et **acceptée** par arbitrage (ADR-0011 D2) ; traitement identique à la coexistence de marque documentée (figuratif + `.fr`). **Donnée nouvelle post-arbitrage** identifiée par la revue K4 (lentille collisions) : un produit actif du même segment (« Atos Polaris AI Platform », orchestration d'agents, lancé juillet 2025) et un enregistrement UE du signe « POLARIS » par un tiers hors segment. La confirmation ou le remplacement du nom est un **point de décision propriétaire** du dossier Phase 0 — cette carte ne le tranche pas.
 - **Noms de produits (Radar, Notebook, …)** : déjà portés publiquement par les repositories gelés sous ces URLs depuis leur création et re-publiés le 2026-07-19 avec bannière de gel, sans contestation connue ; l'exposition cible n'ajoute aucun risque nouveau de collision par rapport à l'existant. La revue K4 (lentille collisions) vérifie ce constat nom par nom avant signature.
 - **Boussole Politique** : ancrage francophone fort (`.fr`), nom composé spécifique — le risque de collision est structurellement plus faible que pour les génériques anglais.
 - **Familles plateforme/preuve/distribution (`ui`, `proof`, `artifacts`, `starter`, `sdk-ts`, `sdk-rs`, `mcp-server`, `corpus`, `docs`)** : reprises **à l'identique** de l'annexe non normative d'ADR-0008 — cette carte est l'acte qui les fige (l'annexe prévoyait « fixés à l'activation, par décision propriétaire ») ; zéro nom nouveau inventé.
@@ -144,12 +147,13 @@ Aucune occurrence de marque morte dans le code vivant (crates, packages, apps, c
 
 ### 6.3 Extension du gate (à implémenter après signature)
 
-Étendre la deny-list du job `doctrine-governance` aux motifs `rumble`, `bolt`, `wrench`, `gear`, `portal`, `cos-matic|cosmatic` sur les documents vivants, avec exclusions explicites des registres historiques ci-dessus. Le `README.md` de `crates/artifact` est nettoyé de ses références `Gear Cable`/`Gear Depot` (documentation vivante d'un crate vivant) dans la même passe.
+Étendre la deny-list du job `doctrine-governance` aux motifs `rumble`, `bolt`, `wrench`, `gear`, `portal`, `cos-matic|cosmatic` sur les documents vivants, avec exclusions explicites : les registres historiques du §6.2, `docs/reviews/` (déjà exclu par le gate), **et cette carte elle-même** (`docs/decisions/LEXICON.md`), qui doit pouvoir énumérer les marques mortes sans les réintroduire. Le `README.md` de `crates/artifact` est nettoyé de ses références `Gear Cable`/`Gear Depot` (documentation vivante d'un crate vivant) dans la même passe.
 
 ## 7. Actions post-signature (récapitulatif exécutable)
 
-1. Renommage `@libre-ai/design-system` → `@libre-ai/ui` (`packages/design-system` → `packages/ui`), imports et lockfile à la main (v2), vague 1.
+1. Renommage `@libre-ai/design-system` → `@libre-ai/ui` (`packages/design-system` → `packages/ui`), imports et lockfile à la main (v2) — **première action de la vague 1, précondition de tout autre merge de cette vague** (clôture de la dérive I-04 constatée §2.1 ; délai ferme : avant toute publication satellite).
 2. Nettoyage `crates/artifact/README.md` (références Gear).
 3. Extension de la deny-list `doctrine-governance` (§6.3).
-4. Mise à jour d'`ecosystem/repositories.v1.yaml` : aucune entrée nouvelle requise (les homes réservés y figurent déjà) ; les satellites y entrent à leur activation avec les noms de cette carte.
-5. Gate truth-drift re-vérifié vert ; aucun nom hors carte dans les artefacts nouveaux (garde-fou classe 4).
+4. Réservation du scope npm `@libre-ai` (création de l'organisation npm) avant toute publication satellite de la vague 1 — le scope est libre au 2026-07-20 (revue K4 collisions) ; action externe soumise au checkpoint propriétaire (garde-fou classe 9, premier de son type).
+5. Mise à jour d'`ecosystem/repositories.v1.yaml` : aucune entrée nouvelle requise (les homes réservés y figurent déjà) ; les satellites y entrent à leur activation avec les noms de cette carte.
+6. Gate truth-drift re-vérifié vert ; aucun nom hors carte dans les artefacts nouveaux (garde-fou classe 4).
