@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-  BackupCeilingExceededError,
-  BACKUP_EXPIRY_DAYS,
   assertWithinBackupCeiling,
+  BACKUP_EXPIRY_DAYS,
+  BackupCeilingExceededError,
   backupExpiryCeiling,
 } from "./backup-ceiling";
 
@@ -14,36 +14,25 @@ describe("encrypted backup expiry ceiling", () => {
   });
 
   test("the ceiling is the deletion instant plus 35 days", () => {
-    expect(backupExpiryCeiling("2026-07-20T00:00:00.000Z")).toBe(
-      "2026-08-24T00:00:00.000Z",
-    );
+    expect(backupExpiryCeiling("2026-07-20T00:00:00.000Z")).toBe("2026-08-24T00:00:00.000Z");
   });
 
   test("a backup expiry at the ceiling is accepted", () => {
     expect(() =>
-      assertWithinBackupCeiling(
-        "2026-07-20T00:00:00.000Z",
-        "2026-08-24T00:00:00.000Z",
-      ),
+      assertWithinBackupCeiling("2026-07-20T00:00:00.000Z", "2026-08-24T00:00:00.000Z"),
     ).not.toThrow();
   });
 
   test("a backup expiry before the ceiling is accepted", () => {
     expect(() =>
-      assertWithinBackupCeiling(
-        "2026-07-20T00:00:00.000Z",
-        "2026-08-01T00:00:00.000Z",
-      ),
+      assertWithinBackupCeiling("2026-07-20T00:00:00.000Z", "2026-08-01T00:00:00.000Z"),
     ).not.toThrow();
   });
 
   test("a backup expiry beyond the ceiling is refused", () => {
     // DATA-LIFECYCLE.md: "Encrypted backups expire within 35 days".
     expect(() =>
-      assertWithinBackupCeiling(
-        "2026-07-20T00:00:00.000Z",
-        "2026-08-25T00:00:00.000Z",
-      ),
+      assertWithinBackupCeiling("2026-07-20T00:00:00.000Z", "2026-08-25T00:00:00.000Z"),
     ).toThrow(BackupCeilingExceededError);
   });
 });

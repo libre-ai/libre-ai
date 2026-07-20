@@ -1,18 +1,15 @@
 import { describe, expect, test } from "bun:test";
-
+import { MissingTenantContextError, runInTenantContext } from "./tenant-context";
 import {
   CrossTenantAccessError,
   guardTenantRow,
   PublicTenantRejectedError,
 } from "./tenant-row-guard";
-import { MissingTenantContextError, runInTenantContext } from "./tenant-context";
 
 describe("tenant row guard (cross-tenant deny)", () => {
   test("a row owned by the current tenant is returned unchanged", async () => {
     const row = { tenant_id: "ten_alpha", id: "rec_1" };
-    const guarded = await runInTenantContext("ten_alpha", async () =>
-      guardTenantRow(row),
-    );
+    const guarded = await runInTenantContext("ten_alpha", async () => guardTenantRow(row));
     expect(guarded).toBe(row);
   });
 
@@ -42,9 +39,7 @@ describe("tenant row guard (cross-tenant deny)", () => {
 
   test("a row with a missing tenant_id is denied", async () => {
     await runInTenantContext("ten_alpha", async () => {
-      expect(() =>
-        guardTenantRow({ tenant_id: "", id: "rec_5" }),
-      ).toThrow(CrossTenantAccessError);
+      expect(() => guardTenantRow({ tenant_id: "", id: "rec_5" })).toThrow(CrossTenantAccessError);
     });
   });
 });

@@ -63,8 +63,6 @@ describe("configured retention bounds", () => {
   });
 
   test("a fixed rule cannot be configured", () => {
-    expect(() => resolveConfiguredRetention(fixed, "P2D")).toThrow(
-      NotConfigurableError,
-    );
+    expect(() => resolveConfiguredRetention(fixed, "P2D")).toThrow(NotConfigurableError);
   });
 });

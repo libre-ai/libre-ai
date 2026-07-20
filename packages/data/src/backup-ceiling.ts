@@ -33,15 +33,9 @@ export function backupExpiryCeiling(deletedAt: string): string {
   return new Date(ceilingMs).toISOString();
 }
 
-export function assertWithinBackupCeiling(
-  deletedAt: string,
-  backupExpiresAt: string,
-): void {
+export function assertWithinBackupCeiling(deletedAt: string, backupExpiresAt: string): void {
   const ceilingMs = parseInstant(deletedAt) + BACKUP_EXPIRY_DAYS * DAY_MS;
   if (parseInstant(backupExpiresAt) > ceilingMs) {
-    throw new BackupCeilingExceededError(
-      backupExpiresAt,
-      new Date(ceilingMs).toISOString(),
-    );
+    throw new BackupCeilingExceededError(backupExpiresAt, new Date(ceilingMs).toISOString());
   }
 }

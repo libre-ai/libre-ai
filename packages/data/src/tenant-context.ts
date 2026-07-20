@@ -17,10 +17,7 @@ export class MissingTenantContextError extends Error {
 
 const storage = new AsyncLocalStorage<string>();
 
-export function runInTenantContext<T>(
-  tenantId: string,
-  scope: () => Promise<T>,
-): Promise<T> {
+export function runInTenantContext<T>(tenantId: string, scope: () => Promise<T>): Promise<T> {
   return storage.run(tenantId, scope);
 }
 

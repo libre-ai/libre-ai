@@ -1,4 +1,17 @@
 export {
+  assertWithinBackupCeiling,
+  BACKUP_EXPIRY_DAYS,
+  BackupCeilingExceededError,
+  backupExpiryCeiling,
+} from "./backup-ceiling";
+export {
+  AboveMaximumRetentionError,
+  BelowMinimumRetentionError,
+  NotConfigurableError,
+  type RetentionRule,
+  resolveConfiguredRetention,
+} from "./retention-bounds";
+export {
   MissingTenantContextError,
   requireTenantContext,
   runInTenantContext,
@@ -10,16 +23,3 @@ export {
   PublicTenantRejectedError,
   type TenantOwned,
 } from "./tenant-row-guard";
-export {
-  AboveMaximumRetentionError,
-  BelowMinimumRetentionError,
-  NotConfigurableError,
-  resolveConfiguredRetention,
-  type RetentionRule,
-} from "./retention-bounds";
-export {
-  assertWithinBackupCeiling,
-  BACKUP_EXPIRY_DAYS,
-  BackupCeilingExceededError,
-  backupExpiryCeiling,
-} from "./backup-ceiling";

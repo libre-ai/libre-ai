@@ -47,10 +47,7 @@ function toDays(iso: string): number {
   return years * 365 + days;
 }
 
-export function resolveConfiguredRetention(
-  rule: RetentionRule,
-  requested: string,
-): string {
+export function resolveConfiguredRetention(rule: RetentionRule, requested: string): string {
   if (rule.configurable === undefined) {
     throw new NotConfigurableError(rule.id);
   }
