@@ -21,6 +21,12 @@
     "apps/missions": {
       "name": "@libre-ai/missions",
       "version": "0.1.0",
+      "dependencies": {
+        "@libre-ai/data": "workspace:*",
+      },
+      "devDependencies": {
+        "@libre-ai/testing": "workspace:*",
+      },
     },
     "apps/notebook": {
       "name": "@libre-ai/notebook",

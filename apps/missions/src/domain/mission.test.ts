@@ -208,7 +208,7 @@ describe("execution lifecycle", () => {
       ctx(running.revision),
     );
     expect(blocked.ok && blocked.next.state).toBe("blocked");
-    expect(blocked.ok && blocked.next.openDecision).toBe(true);
+    expect(blocked.ok && blocked.events.map((e) => e.type)).toEqual(["HumanDecisionRequested"]);
     if (!blocked.ok) return;
     const answered = decide(
       blocked.next,
@@ -216,7 +216,6 @@ describe("execution lifecycle", () => {
       ctx(blocked.next.revision),
     );
     expect(answered.ok && answered.next.state).toBe("running");
-    expect(answered.ok && answered.next.openDecision).toBe(false);
   });
 
   test("cancel from running is terminal", () => {
