@@ -60,6 +60,10 @@
       "name": "@libre-ai/sessions",
       "version": "0.1.0",
     },
+    "apps/specifications": {
+      "name": "@libre-ai/specifications",
+      "version": "0.1.0",
+    },
     "distribution/templates/bun-app": {
       "name": "@libre-ai/bun-app-template",
       "version": "0.1.0",
@@ -236,6 +240,8 @@
     "@libre-ai/radar": ["@libre-ai/radar@workspace:apps/radar"],
 
     "@libre-ai/sessions": ["@libre-ai/sessions@workspace:apps/sessions"],
+
+    "@libre-ai/specifications": ["@libre-ai/specifications@workspace:apps/specifications"],
 
     "@libre-ai/testing": ["@libre-ai/testing@workspace:packages/testing"],
 
