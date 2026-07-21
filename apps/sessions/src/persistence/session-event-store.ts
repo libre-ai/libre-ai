@@ -132,7 +132,9 @@ export async function loadEvents(
  * Rebuild a session's state by folding its persisted stream through the domain
  * reducer. Returns `null` for an unknown/empty session. A persisted stream that
  * does not reduce is a corruption — surfaced as `SessionStreamCorruptError`, not
- * silently ignored.
+ * silently ignored. The reducer checks the STRUCTURAL invariants (sequence,
+ * tenant/session identity, revision, ordering); field-level integrity of the
+ * `data` payload is the write-time `validateEvent` guarantee, not re-checked here.
  */
 export async function loadSessionState(
   executor: SqlExecutor,

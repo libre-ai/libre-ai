@@ -8,6 +8,7 @@ import {
   loadEvents,
   loadSessionState,
   SessionSequenceConflictError,
+  SessionStreamCorruptError,
   SessionTenantMismatchError,
 } from "./session-event-store";
 
@@ -114,6 +115,27 @@ describe("session event store — round-trip and reduction", () => {
       loadSessionState(tx, "urn:libre-ai:session:none"),
     );
     expect(state).toBeNull();
+  });
+
+  test("a persisted stream that does not reduce surfaces SessionStreamCorruptError", async () => {
+    // appendEvent enforces no sequence contiguity (that is the reducer's job), so
+    // a seq-1 then seq-3 stream persists but cannot be folded back into a state.
+    const session = "urn:libre-ai:session:corrupt1";
+    const created = event({ sessionId: session });
+    const gap = event({
+      sessionId: session,
+      id: "urn:libre-ai:event:e-3",
+      sequence: 3,
+      revision: 1,
+      type: "participant-joined",
+    });
+    await expect(
+      withTenantDbTransaction(tdb.db, TENANT_A, async (tx) => {
+        await appendEvent(tx, created, NOW);
+        await appendEvent(tx, gap, NOW);
+        return loadSessionState(tx, session);
+      }),
+    ).rejects.toBeInstanceOf(SessionStreamCorruptError);
   });
 });
 
