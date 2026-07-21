@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { renderStaticDocument } from "@libre-ai/web-platform";
+import { validatePolicyDefinition } from "../domain/policy-definition";
 import { modelPolicyCockpitDocument } from "../shared/document";
 import { COCKPIT_FIXTURE } from "./fixture";
 
@@ -12,6 +13,15 @@ function renderCockpit(): string {
 }
 
 describe("model-policy cockpit accessible read view", () => {
+  test("every fixture policy is domain-valid (an honest approved-policy fixture)", () => {
+    // The cockpit only renders, but a fixture labelled "approved policies" must
+    // actually be one — it must pass the domain validator, or the read view would
+    // display data that could never have been accepted.
+    for (const policy of COCKPIT_FIXTURE) {
+      expect(validatePolicyDefinition(policy).status).toBe("valid");
+    }
+  });
+
   test("renders a well-formed HTML document", async () => {
     const html = renderCockpit();
     expect(html).toStartWith("<!doctype html>");

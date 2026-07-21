@@ -2,14 +2,16 @@
 // read-only cockpit in tests and local development. Per the spec's runtime
 // boundaries the cockpit uses contract fixtures; it authors nothing and evaluates
 // nothing (the deterministic rule evaluator is the deferred Rust/WASM boundary).
+// These fixtures are domain-VALID (they pass validatePolicyDefinition), so they
+// honestly represent approved policies — a co-located test asserts it.
 
 import type { PolicyDefinition, PolicySource, Rule } from "../domain/policy-definition";
 
 const TENANT = "ten_aaaaaaaaaaaaaaaa";
 
-function source(uri: string): PolicySource {
+function source(): PolicySource {
   return {
-    uri,
+    uri: "https://example.org/policy",
     retrievedAt: "2030-01-01T00:00:00Z",
     digest: "a".repeat(64),
     licence: "CC-BY-4.0",
@@ -23,7 +25,7 @@ function rule(id: string, fact: string, value: Rule["value"]): Rule {
     operator: "equals",
     value,
     unknown: "ineligible",
-    source: source("urn:libre-ai:policy-source:s1"),
+    source: source(),
   };
 }
 
@@ -34,7 +36,7 @@ export const COCKPIT_FIXTURE: readonly PolicyDefinition[] = [
     tenantId: TENANT,
     version: 1,
     status: "approved",
-    proposedBy: "author-a",
+    proposedBy: "usr_aaaaaaaaaaaaaaaa",
     rules: [
       rule("rule-a", "model.provider", "anthropic"),
       rule("rule-b", "model.hosted-in-eu", true),
@@ -44,7 +46,7 @@ export const COCKPIT_FIXTURE: readonly PolicyDefinition[] = [
     approval: {
       role: "policy-approver",
       actorKind: "human",
-      approverId: "approver-a",
+      approverId: "usr_bbbbbbbbbbbbbbbb",
       approvedAt: "2030-01-02T00:00:00Z",
       reference: "urn:libre-ai:approval:0001",
       subjectDigest: "c".repeat(64),
@@ -56,7 +58,7 @@ export const COCKPIT_FIXTURE: readonly PolicyDefinition[] = [
     tenantId: TENANT,
     version: 3,
     status: "approved",
-    proposedBy: "author-b",
+    proposedBy: "usr_cccccccccccccccc",
     rules: [
       rule("rule-a", "model.provider", "anthropic"),
       rule("rule-b", "model.hosted-in-eu", true),
@@ -67,7 +69,7 @@ export const COCKPIT_FIXTURE: readonly PolicyDefinition[] = [
     approval: {
       role: "policy-approver",
       actorKind: "human",
-      approverId: "approver-b",
+      approverId: "usr_dddddddddddddddd",
       approvedAt: "2030-01-03T00:00:00Z",
       reference: "urn:libre-ai:approval:0002",
       subjectDigest: "e".repeat(64),
@@ -79,14 +81,14 @@ export const COCKPIT_FIXTURE: readonly PolicyDefinition[] = [
     tenantId: TENANT,
     version: 2,
     status: "approved",
-    proposedBy: "author-c",
+    proposedBy: "usr_eeeeeeeeeeeeeeee",
     rules: [rule("rule-a", "model.provider", "anthropic")],
     digest: "f".repeat(64),
     approvedAt: "2030-01-04T00:00:00Z",
     approval: {
       role: "policy-approver",
       actorKind: "human",
-      approverId: "approver-c",
+      approverId: "usr_ffffffffffffffff",
       approvedAt: "2030-01-04T00:00:00Z",
       reference: "urn:libre-ai:approval:0003",
       subjectDigest: "0".repeat(64),
