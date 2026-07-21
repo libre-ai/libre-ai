@@ -9,10 +9,12 @@
  * verticals grow a UI, this scanner keeps the guarantee a hard CI gate rather than
  * a convention.
  *
- * It flags network primitives in apps/boussole and apps/practices source. Serving
- * the PWA shell / static assets locally is NOT transmission and is not flagged
- * (there is no signal for Bun.serve / createRequestHandler); a string URL is data,
- * not a call, and is not flagged either.
+ * It flags network primitives in apps/boussole and apps/practices source. A
+ * string URL is data, not a call, and is not flagged; `Bun.serve({ fetch: h })`
+ * (property syntax) is not flagged. A literal `fetch(` IS flagged — including the
+ * rare `Bun.serve({ fetch(req) { } })` method-shorthand handler; those apps serve
+ * their shell via `@libre-ai/web-platform` `createRequestHandler`, so a literal
+ * `fetch(` should not appear, and flagging it is the safe (fail-closed) direction.
  *
  * The invariant is "no outbound USER DATA". Inbound reads of PUBLIC reference data
  * (boussole loading a published method/dataset) are legitimate — but `fetch` alone
@@ -22,6 +24,15 @@
  * it reads public data — a build-time bundled asset, or a narrowly-reviewed
  * allowlisted loader module — becomes a DELIBERATE decision, not a silent default.
  * Fail-closed: over-blocking now, loosened only on purpose.
+ *
+ * Coarse by design. It catches the direct primitives and the common global-alias
+ * source (`window.fetch`), but a determined exfiltration can still evade a
+ * line-regex — e.g. an `Image().src` beacon, a `form.submit()` to an external
+ * action, or an alias obtained by destructuring (`const { fetch } = globalThis`),
+ * which need flow analysis. Those are deliberately deferred: the complementary,
+ * stronger controls are architectural (the domains import nothing; user data lives
+ * only in IndexedDB) plus a dual-K4 privacy review on every Front-C increment. This
+ * gate stops the accidental and the obvious, not a motivated insider.
  */
 export interface ScanTarget {
   readonly path: string;
@@ -54,10 +65,18 @@ function isCommentLine(line: string): boolean {
 const NETWORK_MODULE = "(?:http|https|http2|net|tls|dgram)";
 const SIGNALS: readonly { readonly test: RegExp; readonly reason: string }[] = [
   { test: /\bfetch\s*\(/, reason: "fetch() call" },
+  // The common alias SOURCE: `const f = window.fetch` then `f(...)` would evade a
+  // bare `fetch(` match, so flag the global reference itself.
+  {
+    test: /\b(?:window|globalThis|self)\s*\.\s*fetch\b/,
+    reason: "fetch via global (alias source)",
+  },
   { test: /\bnew\s+XMLHttpRequest\b/, reason: "XMLHttpRequest" },
   { test: /\bnew\s+WebSocket\b/, reason: "WebSocket" },
   { test: /\bnew\s+EventSource\b/, reason: "EventSource" },
+  { test: /\bnew\s+RTCPeerConnection\b/, reason: "RTCPeerConnection (WebRTC)" },
   { test: /\bnavigator\s*\.\s*sendBeacon\b/, reason: "navigator.sendBeacon" },
+  { test: /\bimport\s*\(\s*["']https?:\/\//, reason: "remote dynamic import" },
   {
     test: new RegExp(`\\bfrom\\s+["']node:${NETWORK_MODULE}["']`),
     reason: "node network module import",

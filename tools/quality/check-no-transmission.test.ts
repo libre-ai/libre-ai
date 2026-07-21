@@ -32,6 +32,27 @@ describe("scanForTransmission", () => {
     ).toHaveLength(1);
   });
 
+  test("flags an RTCPeerConnection, a global-alias fetch source and a remote dynamic import", () => {
+    expect(
+      findingsFor("apps/boussole/src/client/rtc.ts", "const pc = new RTCPeerConnection();"),
+    ).toHaveLength(1);
+    expect(
+      findingsFor("apps/practices/src/client/alias.ts", "const f = globalThis.fetch;"),
+    ).toHaveLength(1);
+    expect(
+      findingsFor("apps/boussole/src/client/x.ts", 'await import("https://cdn.example/x.js");'),
+    ).toHaveLength(1);
+  });
+
+  test("flags a literal fetch( method-shorthand handler by design (use createRequestHandler)", () => {
+    // A raw `Bun.serve({ fetch(req) { } })` handler is flagged: it is the safe
+    // (fail-closed) direction, and Front-C apps serve their shell via
+    // createRequestHandler / property syntax, so a literal fetch( should not appear.
+    expect(
+      findingsFor("apps/boussole/src/server/index.ts", "Bun.serve({ fetch(req) { return r; } });"),
+    ).toHaveLength(1);
+  });
+
   test("flags a node network module import, dynamic import and require", () => {
     expect(
       findingsFor("apps/boussole/src/x.ts", 'import { request } from "node:https";'),
