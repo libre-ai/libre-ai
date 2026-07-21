@@ -56,6 +56,10 @@
       "name": "@libre-ai/radar",
       "version": "0.1.0",
     },
+    "apps/sessions": {
+      "name": "@libre-ai/sessions",
+      "version": "0.1.0",
+    },
     "apps/specifications": {
       "name": "@libre-ai/specifications",
       "version": "0.1.0",
@@ -234,6 +238,8 @@
     "@libre-ai/provenance": ["@libre-ai/provenance@workspace:packages/provenance"],
 
     "@libre-ai/radar": ["@libre-ai/radar@workspace:apps/radar"],
+
+    "@libre-ai/sessions": ["@libre-ai/sessions@workspace:apps/sessions"],
 
     "@libre-ai/specifications": ["@libre-ai/specifications@workspace:apps/specifications"],
 
