@@ -247,6 +247,10 @@ export function decide(state: Mission | null, command: Command, ctx: CommandCont
       if (state.state !== "assessed") return refuse("mission.transition_forbidden");
       return advance("refused", "MissionRefused");
 
+    // Start and Resume both transition to `running` and emit `MissionStarted`:
+    // v1 has no distinct `MissionResumed` in the locked event set, and the prior
+    // event sequence (a preceding MissionPaused) already distinguishes a resume
+    // from a first start for any projection that needs it.
     case "StartMission":
       if (state.state !== "approved" && state.state !== "paused")
         return refuse("mission.transition_forbidden");
@@ -275,7 +279,11 @@ export function decide(state: Mission | null, command: Command, ctx: CommandCont
       // owned by the decision-requests projection, not the mission record.
       if (command.budgetExceeded) return advance("blocked", "MissionBlocked");
       if (command.requiresDecision) return advance("blocked", "HumanDecisionRequested");
-      // A plain progress event advances the cursor without changing state.
+      // A plain progress event advances the cursor without changing state and
+      // without emitting a mission-domain event: the mission event log records
+      // state transitions, while raw orchestrator progress lives in the
+      // orchestrator's own causal stream (Missions is not its authority). The
+      // cursor keeps the mission's position in that stream.
       {
         const sequence = state.eventCursor + 1;
         const next: Mission = Object.freeze({ ...state, eventCursor: sequence });
