@@ -6,6 +6,37 @@ acceptance criteria and independent approvals that gates downstream execution.
 
 Work package: `WP-G3-F01`.
 
+## Increment 4 — command service (the composed write path)
+
+`src/app/execute-command.ts` composes the spec-workspace write path for one
+command inside the caller's tenant transaction. `executeSpecCommand(executor,
+tenantId, workspaceId, command, now)` runs, fail-closed:
+
+1. `loadWorkspace` — the current aggregate (creation starts from `null`; a missing
+   target is `spec.not_found`);
+2. `decide` — the pure domain fold (a refusal returns its `spec.*` code; a command
+   that does not apply to the state is `spec.request_invalid`);
+3. `saveWorkspace` — persist the next snapshot + append its events under optimistic
+   concurrency (a lost interleaved race is `spec.revision_conflict`, and the
+   transaction wrote nothing).
+
+It returns the advanced state + events, or the exact refusal code. There is **no
+authorization layer**: unlike missions/sessions, specifications has no locked
+authorizer datalog, so no role matrix is composed (inventing one would not be
+contract-faithful). `AcceptSpecPackage` is deliberately **not reachable** here —
+acceptance must additionally validate the submitted content-addressed package
+bytes (the `validateSpecPackage` seam), so routing it through the lifecycle-only
+path would be fail-open; it is refused `spec.request_invalid` until the dedicated
+acceptance path exists.
+
+Verified end-to-end against PGlite: the full authoring journey (create → requirement
+→ contract → acceptance criterion → submit → two reviews) advances the revision and
+records two approvers; and the fail-closed refusals each fire — a submission with no
+requirement (`problem_missing`), a command on an unknown workspace (`not_found`), a
+stale-revision command losing to the committed writer (`revision_stale`), a mutation
+of a review-frozen workspace (`request_invalid`), and acceptance routed here
+(`request_invalid`).
+
 ## Increment 3 — spec-workspace persistence (PostgreSQL / RLS)
 
 `migrations/0001_specifications.sql` and `src/persistence/spec-workspace-store.ts`
