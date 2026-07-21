@@ -21,6 +21,9 @@
     "apps/boussole": {
       "name": "@libre-ai/boussole",
       "version": "0.1.0",
+      "devDependencies": {
+        "fake-indexeddb": "catalog:testing",
+      },
     },
     "apps/missions": {
       "name": "@libre-ai/missions",
