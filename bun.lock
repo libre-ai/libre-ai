@@ -63,6 +63,12 @@
     "apps/sessions": {
       "name": "@libre-ai/sessions",
       "version": "0.1.0",
+      "dependencies": {
+        "@libre-ai/data": "workspace:*",
+      },
+      "devDependencies": {
+        "@libre-ai/testing": "workspace:*",
+      },
     },
     "apps/specifications": {
       "name": "@libre-ai/specifications",
