@@ -23,7 +23,8 @@
     },
     "catalogs": {
       "testing": {
-        "@playwright/test": "1.61.1"
+        "@playwright/test": "1.61.1",
+        "fake-indexeddb": "6.2.5"
       },
       "types": {
         "@types/bun": "1.3.14",
