@@ -11,6 +11,7 @@
 import {
   type DatasetBinding,
   type Outcome,
+  type RefusalCode,
   type ResponseSet,
   recordResponse,
   skipStatement,
@@ -32,12 +33,15 @@ export interface UpgradePreview {
   readonly requiresConfirmation: boolean;
 }
 
-export interface Migration {
-  /** The response set rebound to the new dataset, carried responses replayed. */
-  readonly set: ResponseSet;
-  /** Responded statement ids that were dropped by the migration. */
-  readonly dropped: readonly string[];
-}
+export type MigrationResult =
+  // The set rebound to the new dataset; `dropped` still reports any loss the
+  // caller confirmed, so even a confirmed lossy migration is never silent.
+  | { readonly status: "migrated"; readonly set: ResponseSet; readonly dropped: readonly string[] }
+  // A lossy migration was not performed because it was not confirmed; the
+  // caller must surface `dropped` and re-invoke with confirmation to proceed.
+  | { readonly status: "needs_confirmation"; readonly dropped: readonly string[] }
+  // The new binding or statement set is malformed.
+  | { readonly status: "refused"; readonly refusal: RefusalCode };
 
 interface Partition {
   readonly carried: string[];
@@ -91,19 +95,29 @@ export function previewUpgrade(
 }
 
 /**
- * Migrate the current responses onto the new dataset/method. Carried responses
- * (answers and skips) are replayed through the domain onto a fresh questionnaire
- * bound to `next`; responses for dropped statement ids are left behind and
- * reported in `dropped`, never silently absorbed. Fail-closed on a malformed
- * new binding or statement set.
+ * Migrate the current responses onto the new dataset/method. The three-state
+ * result makes the confirmation flow type-enforced: a lossy migration is NOT
+ * performed unless `confirmed` is true — instead `needs_confirmation` is
+ * returned with the ids that would be dropped, so a caller cannot silently lose
+ * a recorded position (§Release: "incompatible upgrade requires user-confirmed
+ * export/reset"). A lossless migration proceeds regardless of `confirmed`.
+ * Carried responses (answers and skips) are replayed through the domain onto a
+ * fresh questionnaire bound to `next`. Fail-closed on a malformed new binding or
+ * statement set.
  */
 export function migrateResponses(
   current: ResponseSet,
   next: DatasetBinding,
   nextStatementIds: readonly string[],
-): Outcome<Migration> {
+  confirmed: boolean,
+): MigrationResult {
   const started = startQuestionnaire(next, nextStatementIds);
-  if (!started.ok) return started;
+  if (!started.ok) return { status: "refused", refusal: started.refusal };
+
+  const { dropped } = partition(current, nextStatementIds);
+  if (dropped.length > 0 && !confirmed) {
+    return { status: "needs_confirmation", dropped: Object.freeze(dropped) };
+  }
 
   const nextIds = new Set(nextStatementIds);
   let set = started.value;
@@ -113,10 +127,9 @@ export function migrateResponses(
       response.kind === "answer"
         ? recordResponse(set, response.statementId, response.value)
         : skipStatement(set, response.statementId);
-    if (!step.ok) return step;
+    // Carried ids are known-valid; kept as a fail-closed backstop.
+    if (!step.ok) return { status: "refused", refusal: step.refusal };
     set = step.value;
   }
-
-  const { dropped } = partition(current, nextStatementIds);
-  return { ok: true, value: Object.freeze({ set, dropped: Object.freeze(dropped) }) };
+  return { status: "migrated", set, dropped: Object.freeze(dropped) };
 }

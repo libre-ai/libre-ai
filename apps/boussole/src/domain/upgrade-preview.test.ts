@@ -87,46 +87,51 @@ describe("previewUpgrade", () => {
 });
 
 describe("migrateResponses", () => {
-  test("carries surviving responses, drops the rest, and rebinds to the new dataset", () => {
-    const migration = migrateResponses(current(), NEXT_DATASET, NEXT_STATEMENTS);
-    expect(migration.ok).toBe(true);
-    if (!migration.ok) return;
-    expect(migration.value.dropped).toEqual(["s-climate"]);
-    expect(migration.value.set.binding).toEqual(NEXT_DATASET);
-    expect(migration.value.set.statementIds).toEqual([...NEXT_STATEMENTS]);
-    expect(migration.value.set.responses).toEqual([
-      { statementId: "s-redistribution", kind: "answer", value: -4 },
-    ]);
-    expect(Object.isFrozen(migration.value.set)).toBe(true);
+  test("a lossy migration is blocked until confirmed (type-enforced flow)", () => {
+    const migration = migrateResponses(current(), NEXT_DATASET, NEXT_STATEMENTS, false);
+    expect(migration).toEqual({ status: "needs_confirmation", dropped: ["s-climate"] });
   });
 
-  test("a superset upgrade preserves every response and drops nothing", () => {
+  test("a confirmed lossy migration carries survivors, drops the rest, rebinds", () => {
+    const migration = migrateResponses(current(), NEXT_DATASET, NEXT_STATEMENTS, true);
+    expect(migration.status).toBe("migrated");
+    if (migration.status !== "migrated") return;
+    expect(migration.dropped).toEqual(["s-climate"]);
+    expect(migration.set.binding).toEqual(NEXT_DATASET);
+    expect(migration.set.statementIds).toEqual([...NEXT_STATEMENTS]);
+    expect(migration.set.responses).toEqual([
+      { statementId: "s-redistribution", kind: "answer", value: -4 },
+    ]);
+    expect(Object.isFrozen(migration.set)).toBe(true);
+  });
+
+  test("a lossless superset upgrade proceeds without confirmation", () => {
     const superset: DatasetBinding = { ...BINDING, datasetDigest: "d".repeat(64) };
     const supersetIds = [...STATEMENTS, "s-housing"];
-    const migration = migrateResponses(current(), superset, supersetIds);
-    expect(migration.ok).toBe(true);
-    if (!migration.ok) return;
-    expect(migration.value.dropped).toEqual([]);
-    expect(migration.value.set.responses).toEqual([
+    const migration = migrateResponses(current(), superset, supersetIds, false);
+    expect(migration.status).toBe("migrated");
+    if (migration.status !== "migrated") return;
+    expect(migration.dropped).toEqual([]);
+    expect(migration.set.responses).toEqual([
       { statementId: "s-redistribution", kind: "answer", value: -4 },
       { statementId: "s-climate", kind: "answer", value: 5 },
     ]);
   });
 
-  test("preserves a skip across migration", () => {
+  test("preserves a skip across a lossless migration", () => {
     const start = startQuestionnaire(BINDING, STATEMENTS);
     if (!start.ok) throw new Error("start refused");
     const skipped = skipStatement(start.value, "s-borders");
     if (!skipped.ok) throw new Error("skip refused");
-    const migration = migrateResponses(skipped.value, NEXT_DATASET, NEXT_STATEMENTS);
-    expect(migration.ok).toBe(true);
-    if (!migration.ok) return;
-    expect(migration.value.set.responses).toEqual([{ statementId: "s-borders", kind: "skip" }]);
-    expect(migration.value.dropped).toEqual([]);
+    const migration = migrateResponses(skipped.value, NEXT_DATASET, NEXT_STATEMENTS, false);
+    expect(migration.status).toBe("migrated");
+    if (migration.status !== "migrated") return;
+    expect(migration.set.responses).toEqual([{ statementId: "s-borders", kind: "skip" }]);
+    expect(migration.dropped).toEqual([]);
   });
 
-  test("refuses a malformed new statement set", () => {
-    const migration = migrateResponses(current(), NEXT_DATASET, ["s-a", "s-a"]);
-    expect(migration).toEqual({ ok: false, refusal: "boussole.local_state_corrupt" });
+  test("refuses a malformed new statement set even when confirmed", () => {
+    const migration = migrateResponses(current(), NEXT_DATASET, ["s-a", "s-a"], true);
+    expect(migration).toEqual({ status: "refused", refusal: "boussole.local_state_corrupt" });
   });
 });

@@ -52,10 +52,14 @@ invalid state — it is refused, not silently accepted.
 journey: when a newer immutable dataset/method version appears, it decides what
 happens to the local responses. Loss is always reported, never silent.
 
-| Function           | Guarantee                                                                                                                                                      |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `previewUpgrade`   | reports `carried` / `dropped` / `addedUnanswered`, `datasetChanged` / `methodChanged`, and `requiresConfirmation` (true iff a recorded response would be lost) |
-| `migrateResponses` | replays carried responses through the domain onto the new binding, returns the new set **and** the `dropped` ids                                               |
+| Function           | Guarantee                                                                                                                                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `previewUpgrade`   | reports `carried` / `dropped` / `addedUnanswered`, `datasetChanged` / `methodChanged`, and `requiresConfirmation` (true iff a recorded response would be lost)                                         |
+| `migrateResponses` | `(…, confirmed)` → `migrated` (set + `dropped`) / `needs_confirmation` (`dropped`, not performed) / `refused`; a lossy migration is **type-enforced** to require confirmation, a lossless one proceeds |
+
+The three-state `migrateResponses` result makes the preview→confirm→migrate flow
+enforced by the types: a lossy migration cannot silently drop a recorded position
+— it returns `needs_confirmation` until the caller re-invokes with `confirmed`.
 
 A dropped **skip** counts as a loss too — abstention is never silently discarded.
 A method-only change keeps every response (same positions, new scoring lens) and
