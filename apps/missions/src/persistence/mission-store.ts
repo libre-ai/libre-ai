@@ -142,7 +142,13 @@ export async function saveMission(
   }
 }
 
-/** Load one mission by id. RLS scopes the read to the active tenant. */
+/**
+ * Load one mission by id. Tenant scoping is by RLS alone here: the read runs
+ * under the active tenant context, so a foreign-tenant id simply returns no row
+ * (never another tenant's mission). No explicit tenant column is compared —
+ * unlike the write path, where `saveMission` also asserts the aggregate's
+ * tenant matches the context as defense in depth before mutating.
+ */
 export async function loadMission(executor: SqlExecutor, id: string): Promise<Mission | null> {
   const { rows } = await executor.query<MissionRow>("SELECT * FROM missions WHERE id = $1", [id]);
   const row = rows[0];
