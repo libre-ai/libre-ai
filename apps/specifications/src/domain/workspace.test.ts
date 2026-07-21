@@ -350,6 +350,58 @@ describe("decide — immutability and supersession", () => {
   });
 });
 
+describe("decide — stale revision on every state transition", () => {
+  const STALE = { status: "refused", refusal: "spec.revision_stale" } as const;
+
+  test("SubmitSpecForReview", () => {
+    expect(
+      decide(submittableDraft(), { type: "SubmitSpecForReview", expectedRevision: 99 }),
+    ).toEqual(STALE);
+  });
+
+  test("ReviewSpec", () => {
+    let s = submittableDraft();
+    s = apply(s, { type: "SubmitSpecForReview", expectedRevision: s.revision });
+    expect(
+      decide(s, { type: "ReviewSpec", expectedRevision: 99, reviewerId: REV_A, approve: true }),
+    ).toEqual(STALE);
+  });
+
+  test("AcceptSpecPackage", () => {
+    let s = submittableDraft();
+    s = apply(s, { type: "SubmitSpecForReview", expectedRevision: s.revision });
+    s = apply(s, {
+      type: "ReviewSpec",
+      expectedRevision: s.revision,
+      reviewerId: REV_A,
+      approve: true,
+    });
+    s = apply(s, {
+      type: "ReviewSpec",
+      expectedRevision: s.revision,
+      reviewerId: REV_B,
+      approve: true,
+    });
+    expect(decide(s, { type: "AcceptSpecPackage", expectedRevision: 99 })).toEqual(STALE);
+  });
+
+  test("SupersedeSpecPackage", () => {
+    expect(
+      decide(acceptedPackage(), { type: "SupersedeSpecPackage", expectedRevision: 99 }),
+    ).toEqual(STALE);
+  });
+
+  test("CreatePlanningHandoff", () => {
+    expect(
+      decide(acceptedPackage(), {
+        type: "CreatePlanningHandoff",
+        expectedRevision: 99,
+        requestsExecution: false,
+      }),
+    ).toEqual(STALE);
+  });
+});
+
 describe("decide — planning handoff", () => {
   test("creates a read-only handoff from an accepted package", () => {
     const accepted = acceptedPackage();

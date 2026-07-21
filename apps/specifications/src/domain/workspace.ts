@@ -184,6 +184,9 @@ export function decide(state: WorkspaceState | null, command: Command): Decision
       if (state.status !== "draft") return INVALID;
       if (command.expectedRevision !== state.revision) return refuse("spec.revision_stale");
       if (state.openDecisionIds.length > 0) return refuse("spec.decision_open");
+      // The matrix has no requirement-specific code; a package with no requirement
+      // lacks the "outcome" half of problem/actor/outcome, so it maps to
+      // spec.problem_missing (docs/apps/specifications.md §Refusal matrix).
       if (state.requirementIds.length === 0) return refuse("spec.problem_missing");
       if (state.contractIds.length === 0) return refuse("spec.contract_missing");
       if (state.criterionIds.length === 0) return refuse("spec.acceptance_unverifiable");
@@ -221,10 +224,17 @@ export function decide(state: WorkspaceState | null, command: Command): Decision
       if (state.status !== "accepted") return INVALID;
       if (command.expectedRevision !== state.revision) return refuse("spec.revision_stale");
       // A planning handoff is read-only by construction; requesting an executable
-      // capability is a separation-of-powers violation.
+      // capability is a separation-of-powers violation. A handoff is a projection,
+      // not a state mutation — status stays "accepted"; the revision advances only
+      // to distinguish successive handoff events on the immutable package.
       if (command.requestsExecution) return refuse("spec.handoff_execution_right");
       return accept([{ type: "PlanningHandoffCreated" }], advanced(state, {}));
     }
+    default:
+      // Exhaustiveness guard: a new Command variant without a case above fails to
+      // compile here; at runtime an unknown command is refused fail-closed.
+      command satisfies never;
+      return INVALID;
   }
 }
 
