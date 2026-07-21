@@ -35,6 +35,10 @@
         "@libre-ai/testing": "workspace:*",
       },
     },
+    "apps/model-policy": {
+      "name": "@libre-ai/model-policy",
+      "version": "0.1.0",
+    },
     "apps/notebook": {
       "name": "@libre-ai/notebook",
       "version": "0.1.0",
@@ -226,6 +230,8 @@
     "@libre-ai/knowledge": ["@libre-ai/knowledge@workspace:packages/knowledge"],
 
     "@libre-ai/missions": ["@libre-ai/missions@workspace:apps/missions"],
+
+    "@libre-ai/model-policy": ["@libre-ai/model-policy@workspace:apps/model-policy"],
 
     "@libre-ai/notebook": ["@libre-ai/notebook@workspace:apps/notebook"],
 
