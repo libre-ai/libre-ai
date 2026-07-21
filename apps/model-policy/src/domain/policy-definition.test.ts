@@ -133,4 +133,23 @@ describe("validatePolicyDefinition — malformed (structural / identity)", () =>
   test("a non-object input is malformed", () => {
     expect(validatePolicyDefinition(null)).toEqual({ status: "malformed" });
   });
+
+  test.each([
+    { status: 123 },
+    { status: null },
+    { status: ["approved"] },
+  ])("a non-string status is malformed, not a domain refusal: %o", (override) => {
+    expect(validatePolicyDefinition(raw(override))).toEqual({ status: "malformed" });
+  });
+});
+
+describe("validatePolicyDefinition — source uri stays contract-faithful", () => {
+  // Destination safety (private/loopback rejection) is the deferred fetch
+  // adapter's job; the authoring validator accepts any schema-valid https URI.
+  test("a private-TLD https source is accepted here (gated at fetch time, not authoring)", () => {
+    expect(
+      validatePolicyDefinition(withRule({ source: { ...SOURCE, uri: "https://internal.local/p" } }))
+        .status,
+    ).toBe("valid");
+  });
 });

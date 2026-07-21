@@ -37,6 +37,11 @@ Semantic refusals:
   `engine_version_unknown`, `origin_jurisdiction_conflated`), the cross-input
   `tenant_mismatch`, export (`dataset_redistribution_forbidden`), persistence, the
   source adapter and the UI.
+- **Source-URI destination safety** (rejecting private/loopback/metadata hosts,
+  DNS-rebinding): this validator checks the contract's `https` **shape** only.
+  Destination policy is a fetch-time concern owned by the deferred source adapter
+  (cf. radar's destination policy), so the validator stays faithful to the locked
+  contract rather than stricter than it. A `valid` result is not fetch-authorized.
 
 ## License
 

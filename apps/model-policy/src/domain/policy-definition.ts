@@ -22,11 +22,18 @@ const PRINCIPAL_ID = /^(?:usr|svc)_[a-z0-9]{16,64}$/;
 const USER_ID = /^usr_[a-z0-9]{16,64}$/;
 const FACT_NAME = /^(?:model|need)\.[a-z][a-z0-9_.-]+$/;
 const FACT_STRING = /^[A-Za-z0-9][A-Za-z0-9._:/+~-]{0,255}$/;
+// The policySource.uri pattern from policy-definition.v2, reused verbatim. This
+// is authoring-time SHAPE validation only; destination safety (rejecting private,
+// loopback or metadata hosts, DNS-rebinding) is a FETCH-TIME concern owned by the
+// deferred source adapter — cf. radar's destination policy — not this validator,
+// which stays faithful to the locked contract rather than stricter than it.
 const HTTPS_URI =
   /^https:\/\/(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}(?::[0-9]{1,5})?(?:\/[A-Za-z0-9._~/-]*)?$/;
 // The source timestamp pattern is UTC seconds (policy-definition.v2 policySource).
 const UTC_SECONDS = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$/;
-// common.v1 timestamp (approvedAt) — RFC 3339 with a required offset.
+// approvedAt is common.v1 timestamp (`format: date-time`). RFC 3339 §5.6 requires
+// a time offset (Z or ±HH:MM), so requiring one here is contract-faithful, not
+// stricter than the schema.
 const TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 
 const OPERATORS = ["equals", "not-equals", "in", "not-in", "at-least", "at-most"] as const;
@@ -279,7 +286,9 @@ export function validatePolicyDefinition(input: unknown): PolicyValidation {
   const approval = validApproval(input.approval);
   if (approval === undefined) return MALFORMED;
 
-  // A non-approved status is a draft/unapproved policy.
+  // A non-string status is a structural failure (malformed); a well-typed status
+  // that is not "approved" is a draft/unapproved policy (a domain refusal).
+  if (typeof input.status !== "string") return MALFORMED;
   if (input.status !== "approved") return refused("policy.version_unapproved");
 
   if (!Array.isArray(input.rules) || input.rules.length < 1 || input.rules.length > 1000)
@@ -292,6 +301,8 @@ export function validatePolicyDefinition(input: unknown): PolicyValidation {
     rules.push(outcome.rule);
   }
   // rules are uniqueItems in the schema — a duplicate rule id is not a valid set.
+  // Rule ids are the stable identity; a duplicate id is an ambiguous, non-unique
+  // rule set (stricter than the schema's object-level uniqueItems, on purpose).
   if (new Set(rules.map((r) => r.id)).size !== rules.length) return MALFORMED;
 
   return {
