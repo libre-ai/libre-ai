@@ -7,8 +7,20 @@ import {
   advanceState,
   createOutcome,
   exportOutcome,
+  type Outcome,
+  type RefusalCode,
   updateResponseDigest,
 } from "./activity-outcome";
+
+// Narrowing helpers so assertions type-check against the discriminated Outcome.
+function refusalOf<T>(outcome: Outcome<T>): RefusalCode | undefined {
+  return outcome.ok ? undefined : outcome.refusal;
+}
+
+function unwrap<T>(outcome: Outcome<T>): T {
+  if (!outcome.ok) throw new Error(`unexpected refusal: ${outcome.refusal}`);
+  return outcome.value;
+}
 
 const ACTIVITY: ActivityRef = {
   activityId: "urn:libre-ai:activity:ethical-ai-2026",
@@ -57,7 +69,7 @@ describe("createOutcome", () => {
       VALID_TIMESTAMP,
     );
     expect(outcome.ok).toBe(false);
-    expect(outcome.refusal).toBe("practices.response_schema_invalid");
+    expect(refusalOf(outcome)).toBe("practices.response_schema_invalid");
   });
 
   test("refuses id with invalid urn format", () => {
@@ -71,7 +83,7 @@ describe("createOutcome", () => {
       VALID_TIMESTAMP,
     );
     expect(outcome.ok).toBe(false);
-    expect(outcome.refusal).toBe("practices.response_schema_invalid");
+    expect(refusalOf(outcome)).toBe("practices.response_schema_invalid");
   });
 
   test("refuses activity id invalid", () => {
@@ -85,7 +97,7 @@ describe("createOutcome", () => {
       VALID_TIMESTAMP,
     );
     expect(outcome.ok).toBe(false);
-    expect(outcome.refusal).toBe("practices.response_schema_invalid");
+    expect(refusalOf(outcome)).toBe("practices.response_schema_invalid");
   });
 
   test("refuses activity version invalid", () => {
@@ -99,7 +111,7 @@ describe("createOutcome", () => {
       VALID_TIMESTAMP,
     );
     expect(outcome.ok).toBe(false);
-    expect(outcome.refusal).toBe("practices.response_schema_invalid");
+    expect(refusalOf(outcome)).toBe("practices.response_schema_invalid");
   });
 
   test("refuses session id uppercase", () => {
@@ -113,7 +125,7 @@ describe("createOutcome", () => {
       VALID_TIMESTAMP,
     );
     expect(outcome.ok).toBe(false);
-    expect(outcome.refusal).toBe("practices.response_schema_invalid");
+    expect(refusalOf(outcome)).toBe("practices.response_schema_invalid");
   });
 
   test("refuses session id too short", () => {
@@ -127,7 +139,7 @@ describe("createOutcome", () => {
       VALID_TIMESTAMP,
     );
     expect(outcome.ok).toBe(false);
-    expect(outcome.refusal).toBe("practices.response_schema_invalid");
+    expect(refusalOf(outcome)).toBe("practices.response_schema_invalid");
   });
 
   test("refuses digest not sha256", () => {
@@ -141,7 +153,7 @@ describe("createOutcome", () => {
       VALID_TIMESTAMP,
     );
     expect(outcome.ok).toBe(false);
-    expect(outcome.refusal).toBe("practices.response_schema_invalid");
+    expect(refusalOf(outcome)).toBe("practices.response_schema_invalid");
   });
 
   test("refuses digest has uppercase", () => {
@@ -155,7 +167,7 @@ describe("createOutcome", () => {
       VALID_TIMESTAMP,
     );
     expect(outcome.ok).toBe(false);
-    expect(outcome.refusal).toBe("practices.response_schema_invalid");
+    expect(refusalOf(outcome)).toBe("practices.response_schema_invalid");
   });
 
   test("refuses timestamp invalid", () => {
@@ -169,7 +181,7 @@ describe("createOutcome", () => {
       "not-a-timestamp",
     );
     expect(outcome.ok).toBe(false);
-    expect(outcome.refusal).toBe("practices.response_schema_invalid");
+    expect(refusalOf(outcome)).toBe("practices.response_schema_invalid");
   });
 
   test("accepts timestamps in ISO 8601 formats", () => {
@@ -219,7 +231,7 @@ describe("createOutcome", () => {
       VALID_TIMESTAMP,
     );
     expect(outcome.ok).toBe(false);
-    expect(outcome.refusal).toBe("practices.response_schema_invalid");
+    expect(refusalOf(outcome)).toBe("practices.response_schema_invalid");
   });
 
   test("accepts feedback rule ids and validates them", () => {
@@ -250,7 +262,7 @@ describe("createOutcome", () => {
       VALID_TIMESTAMP,
     );
     expect(outcome.ok).toBe(false);
-    expect(outcome.refusal).toBe("practices.response_schema_invalid");
+    expect(refusalOf(outcome)).toBe("practices.response_schema_invalid");
   });
 
   test("refuses malformed feedback rule id", () => {
@@ -264,7 +276,7 @@ describe("createOutcome", () => {
       VALID_TIMESTAMP,
     );
     expect(outcome.ok).toBe(false);
-    expect(outcome.refusal).toBe("practices.response_schema_invalid");
+    expect(refusalOf(outcome)).toBe("practices.response_schema_invalid");
   });
 });
 
@@ -294,7 +306,7 @@ describe("advanceState", () => {
 
     const backward = advanceState(outcome, "in-progress");
     expect(backward.ok).toBe(false);
-    expect(backward.refusal).toBe("practices.version_stale");
+    expect(refusalOf(backward)).toBe("practices.version_stale");
   });
 
   test("idempotent: completed → completed is ok", () => {
@@ -319,7 +331,7 @@ describe("advanceState", () => {
 
     const stopped = advanceState(outcome, "stopped");
     expect(stopped.ok).toBe(false);
-    expect(stopped.refusal).toBe("practices.version_stale");
+    expect(refusalOf(stopped)).toBe("practices.version_stale");
   });
 });
 
@@ -352,7 +364,7 @@ describe("addFeedbackRules", () => {
     const outcome = created();
     const added = addFeedbackRules(outcome, ["INVALID"]);
     expect(added.ok).toBe(false);
-    expect(added.refusal).toBe("practices.feedback_unsourced");
+    expect(refusalOf(added)).toBe("practices.feedback_unsourced");
   });
 
   test("refuses exceeding maximum total feedback rule ids", () => {
@@ -377,7 +389,7 @@ describe("addFeedbackRules", () => {
       "rule-k",
     ]);
     expect(toomany.ok).toBe(false);
-    expect(toomany.refusal).toBe("practices.feedback_unsourced");
+    expect(refusalOf(toomany)).toBe("practices.feedback_unsourced");
   });
 });
 
@@ -395,14 +407,14 @@ describe("updateResponseDigest", () => {
     const outcome = created();
     const updated = updateResponseDigest(outcome, "a".repeat(63));
     expect(updated.ok).toBe(false);
-    expect(updated.refusal).toBe("practices.response_schema_invalid");
+    expect(refusalOf(updated)).toBe("practices.response_schema_invalid");
   });
 
   test("refuses uppercase in digest", () => {
     const outcome = created();
     const updated = updateResponseDigest(outcome, "A".repeat(64));
     expect(updated.ok).toBe(false);
-    expect(updated.refusal).toBe("practices.response_schema_invalid");
+    expect(refusalOf(updated)).toBe("practices.response_schema_invalid");
   });
 });
 
@@ -449,6 +461,7 @@ describe("immutability", () => {
     const outcome = created();
     const advanced = advanceState(outcome, "completed");
     expect(advanced.ok).toBe(true);
+    if (!advanced.ok) return;
     expect(outcome.state).toBe("in-progress");
     expect(advanced.value.state).toBe("completed");
   });
@@ -457,6 +470,7 @@ describe("immutability", () => {
     const outcome = created();
     const added = addFeedbackRules(outcome, ["rule-one"]);
     expect(added.ok).toBe(true);
+    if (!added.ok) return;
     expect(outcome.feedbackRuleIds).toEqual([]);
     expect(added.value.feedbackRuleIds).toContain("rule-one");
   });
@@ -466,6 +480,7 @@ describe("immutability", () => {
     const newDigest = "b".repeat(64);
     const updated = updateResponseDigest(outcome, newDigest);
     expect(updated.ok).toBe(true);
+    if (!updated.ok) return;
     expect(outcome.responseDigest).toBe(VALID_DIGEST);
     expect(updated.value.responseDigest).toBe(newDigest);
   });
@@ -474,9 +489,9 @@ describe("immutability", () => {
 describe("round-trip serialization", () => {
   test("exported outcome preserves all state", () => {
     let outcome = created();
-    outcome = advanceState(outcome, "completed").value!;
-    outcome = addFeedbackRules(outcome, ["rule-one", "rule-two"]).value!;
-    outcome = updateResponseDigest(outcome, "c".repeat(64)).value!;
+    outcome = unwrap(advanceState(outcome, "completed"));
+    outcome = unwrap(addFeedbackRules(outcome, ["rule-one", "rule-two"]));
+    outcome = unwrap(updateResponseDigest(outcome, "c".repeat(64)));
 
     const exported = exportOutcome(outcome);
     expect(exported).toEqual({

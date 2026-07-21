@@ -44,7 +44,8 @@ const URN = /^urn:libre-ai:[a-z][a-z0-9-]*:[A-Za-z0-9._~-]+$/;
 const IDENTIFIER = /^[a-z][a-z0-9_-]{2,127}$/;
 const SHA256 = /^[a-f0-9]{64}$/;
 const SEMVER = /^[0-9]+\.[0-9]+\.[0-9]+$/;
-const TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?(?:Z|[+-]\d{2}:\d{2})$/;
+// RFC 3339 time-secfrac is "." 1*DIGIT — any number of fractional digits, not exactly 3.
+const TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 
 const MAX_FEEDBACK_RULE_IDS = 100;
 
