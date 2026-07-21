@@ -21,10 +21,12 @@ an append-only audit trail beside it.
   its own enum-checked column as a queryable DB floor; the full `WorkspaceState`
   lives in the `state` jsonb.
 - **`spec_workspace_events`** is **append-only** (grant of `SELECT, INSERT` only):
-  the authoring history is never rewritten even by the application role. Its
-  composite key `(tenant_id, workspace_id, sequence)` and the invariant
-  `sequence === revision` (one event per accepted `decide`) make a replayed step
-  conflict rather than fork.
+  the authoring history is never rewritten even by the application role. It is an
+  audit trail, not a replay source — the snapshot is the source of truth. Its
+  composite key `(tenant_id, workspace_id, sequence)` with the invariant
+  `sequence === revision` (one event per accepted `decide`) makes a duplicate
+  append at an already-recorded revision conflict on the primary key rather than
+  silently double-record.
 - **`saveWorkspace`** persists the next snapshot and appends its events atomically
   in the caller's tenant transaction. `revision === 1` inserts; otherwise the
   update is guarded by the previous revision (`revision - 1`) and raises
