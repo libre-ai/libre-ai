@@ -6,6 +6,33 @@ acceptance criteria and independent approvals that gates downstream execution.
 
 Work package: `WP-G3-F01`.
 
+## Increment 2 — spec-workspace lifecycle
+
+`src/domain/workspace.ts` is the authoring counterpart to the package validator:
+the workspace is HOW a package is built and accepted; the validator (increment 1)
+checks the FINAL bytes. `decide(state, command)` is a pure, revisioned fold with
+three outcomes — `accepted` (events + advanced state), `refused` (a `spec.*`
+matrix code), or `invalid` (the command does not apply to this state, a boundary
+concern with no matrix code).
+
+Lifecycle: `draft` (revisioned, mutable) → `submitted` (review-frozen) →
+`accepted` (immutable) → `superseded` (terminal). Invariants enforced:
+
+- **optimistic concurrency** — every mutation carries `expectedRevision`; a stale
+  one is `spec.revision_stale`.
+- **immutability** — a content mutation of an accepted/superseded version is
+  `spec.package_immutable`.
+- **submission gating** — submitting requires ≥1 requirement (`problem_missing`),
+  ≥1 contract (`contract_missing`), ≥1 acceptance criterion
+  (`acceptance_unverifiable`) and no open decision (`decision_open`).
+- **separation of powers** — acceptance requires ≥2 distinct approving reviewers
+  (`approval_self_only`).
+- **handoff** — a planning handoff that requests an executable capability is
+  `spec.handoff_execution_right`.
+
+`evidence_hash_mismatch` remains the package validator's concern. State is
+deep-frozen; the module imports nothing and does not persist.
+
 ## Increment 1 — accepted spec-package validator
 
 `src/domain/spec-package.ts` is the pure, offline validator for an accepted
