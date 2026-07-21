@@ -23,6 +23,9 @@
       "version": "0.1.0",
       "dependencies": {
         "@libre-ai/data": "workspace:*",
+        "@libre-ai/web-platform": "workspace:*",
+        "react": "catalog:",
+        "react-dom": "catalog:",
       },
       "devDependencies": {
         "@libre-ai/testing": "workspace:*",
