@@ -2,11 +2,14 @@
 // (docs/apps/boussole.md §Domain protocol, contracts/schemas/
 // boussole-response-set.v2.schema.json). Pure and offline: a response set binds
 // exact dataset and method hashes and holds one answer or skip per statement.
-// Nothing here transmits — responses live in local memory only (the
-// response_transmission_forbidden guarantee is structural: this module exposes
-// no network path). The deterministic Rust/WASM scoring core
-// (ComputeLocalComparison) is a candidate boundary, deliberately unimplemented
-// in this increment.
+// Transmission guarantee: this module does not transmit — it exposes no network
+// path and imports nothing. `exportResponseSet` returns a plain serializable
+// value for a LOCAL file; a caller must not upload it. The
+// response_transmission_forbidden invariant lives structurally here (no channel
+// to violate it) and, downstream, in the absence of any API that accepts
+// responses (docs/apps/boussole.md §Non-goals). The deterministic Rust/WASM
+// scoring core (ComputeLocalComparison) is a candidate boundary, deliberately
+// unimplemented in this increment.
 
 export interface DatasetBinding {
   readonly datasetId: string;
@@ -32,8 +35,10 @@ export type Outcome<T> = { readonly ok: true; readonly value: T } | { readonly o
 const DATASET_ID = /^urn:libre-ai:dataset:[A-Za-z0-9._~-]+$/;
 const METHOD_ID = /^urn:libre-ai:method:[A-Za-z0-9._~-]+$/;
 const SHA256 = /^[a-f0-9]{64}$/;
-// The response-set schema bounds statement identifiers and the questionnaire size.
-const IDENTIFIER = /^[a-z][a-z0-9-]{1,63}$/;
+// Statement ids conform to the shared `identifier` definition the response-set
+// schema references (common.v1.schema.json#/$defs/identifier): a lowercase
+// leading letter then 2..127 chars of [a-z0-9_-], i.e. 3..128 total.
+const IDENTIFIER = /^[a-z][a-z0-9_-]{2,127}$/;
 const MAX_STATEMENTS = 1000;
 const MIN_VALUE = -5;
 const MAX_VALUE = 5;
@@ -56,7 +61,10 @@ function upsert(
   response: LocalResponse,
 ): readonly LocalResponse[] {
   const next = responses.filter((existing) => existing.statementId !== response.statementId);
-  next.push(response);
+  // Deep-freeze the response object, not only the array: a shallow freeze would
+  // let a caller mutate `responses[i].value` past the [-5, 5] validation and
+  // corrupt a later export.
+  next.push(Object.freeze(response));
   return Object.freeze(next);
 }
 
@@ -132,19 +140,22 @@ export interface ExportedResponseSet {
  */
 export function exportResponseSet(set: ResponseSet): Outcome<ExportedResponseSet> {
   if (set.responses.length === 0) return refuse();
+  const responses = set.responses.map((response) =>
+    Object.freeze(
+      response.kind === "answer"
+        ? { statementId: response.statementId, kind: "answer" as const, value: response.value }
+        : { statementId: response.statementId, kind: "skip" as const },
+    ),
+  );
   return {
     ok: true,
-    value: {
+    value: Object.freeze({
       schemaVersion: "libre-ai.boussole-response-set.v2",
       datasetId: set.binding.datasetId,
       datasetDigest: set.binding.datasetDigest,
       methodId: set.binding.methodId,
       methodDigest: set.binding.methodDigest,
-      responses: set.responses.map((response) =>
-        response.kind === "answer"
-          ? { statementId: response.statementId, kind: "answer", value: response.value }
-          : { statementId: response.statementId, kind: "skip" },
-      ),
-    },
+      responses: Object.freeze(responses),
+    }),
   };
 }

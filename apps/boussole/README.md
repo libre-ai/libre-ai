@@ -23,8 +23,11 @@ statement.
 | `exportResponseSet`  | serializes to `boussole-response-set.v2`; empty export refused                                           |
 
 Refusals share the canonical code `boussole.local_state_corrupt`. The
-`response_transmission_forbidden` guarantee is **structural**: this module
-exposes no network path, and export produces a local document only.
+`response_transmission_forbidden` invariant is **structural** in this module: it
+imports nothing and exposes no network path, so there is no channel to violate.
+`exportResponseSet` returns a plain, serializable value for a **local file** — a
+caller must not upload it. Downstream, the invariant is reinforced by the
+absence of any API that accepts responses (spec §Non-goals).
 
 ### Not in this increment (deliberately deferred)
 

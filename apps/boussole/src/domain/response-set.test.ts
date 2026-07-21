@@ -56,12 +56,24 @@ describe("startQuestionnaire", () => {
     expect(startQuestionnaire(BINDING, ["s-a", "s-a"]).ok).toBe(false);
   });
 
-  test.each(["S-upper", "0-leading-digit", "s_underscore", "s-é"])(
-    "refuses a malformed statement id: %s",
-    (id) => {
-      expect(startQuestionnaire(BINDING, [id]).ok).toBe(false);
-    },
-  );
+  test.each([
+    "S-upper", // uppercase leading letter
+    "0-leading-digit", // digit leading char
+    "s-é", // non-ascii
+    "ab", // 2 chars, below the identifier minimum of 3
+    "s-", // 2 chars
+    `s-${"x".repeat(127)}`, // 129 chars, above the identifier maximum of 128
+  ])("refuses a malformed statement id: %s", (id) => {
+    expect(startQuestionnaire(BINDING, [id]).ok).toBe(false);
+  });
+
+  test.each([
+    "s_underscore", // underscores are valid per common.v1 identifier
+    "abc", // minimum length (3)
+    `s-${"x".repeat(126)}`, // maximum length (128)
+  ])("accepts a schema-valid statement id: %s", (id) => {
+    expect(startQuestionnaire(BINDING, [id]).ok).toBe(true);
+  });
 });
 
 describe("recordResponse", () => {
@@ -185,5 +197,31 @@ describe("immutability", () => {
     expect(set.responses).toEqual([]);
     expect(Object.isFrozen(set)).toBe(true);
     expect(Object.isFrozen(set.responses)).toBe(true);
+  });
+
+  test("each response object is deep-frozen against out-of-scale tampering", () => {
+    const outcome = recordResponse(started(), "s-borders", 3);
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    const response = outcome.value.responses[0];
+    expect(Object.isFrozen(response)).toBe(true);
+    // A shallow freeze would let a caller push the value past the validated
+    // [-5, 5] range; a deep freeze keeps the mutation a no-op.
+    expect(() => {
+      (response as { value: number }).value = 6;
+    }).toThrow();
+    expect(outcome.value.responses[0]).toEqual({ statementId: "s-borders", kind: "answer", value: 3 });
+  });
+
+  test("the exported document and its responses are frozen", () => {
+    const answered = recordResponse(started(), "s-borders", 2);
+    expect(answered.ok).toBe(true);
+    if (!answered.ok) return;
+    const exported = exportResponseSet(answered.value);
+    expect(exported.ok).toBe(true);
+    if (!exported.ok) return;
+    expect(Object.isFrozen(exported.value)).toBe(true);
+    expect(Object.isFrozen(exported.value.responses)).toBe(true);
+    expect(Object.isFrozen(exported.value.responses[0])).toBe(true);
   });
 });
