@@ -48,6 +48,10 @@
         "@playwright/test": "catalog:testing",
       },
     },
+    "apps/practices": {
+      "name": "@libre-ai/practices",
+      "version": "0.1.0",
+    },
     "apps/radar": {
       "name": "@libre-ai/radar",
       "version": "0.1.0",
@@ -220,6 +224,8 @@
     "@libre-ai/missions": ["@libre-ai/missions@workspace:apps/missions"],
 
     "@libre-ai/notebook": ["@libre-ai/notebook@workspace:apps/notebook"],
+
+    "@libre-ai/practices": ["@libre-ai/practices@workspace:apps/practices"],
 
     "@libre-ai/provenance": ["@libre-ai/provenance@workspace:packages/provenance"],
 
