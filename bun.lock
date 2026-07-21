@@ -73,6 +73,12 @@
     "apps/specifications": {
       "name": "@libre-ai/specifications",
       "version": "0.1.0",
+      "dependencies": {
+        "@libre-ai/data": "workspace:*",
+      },
+      "devDependencies": {
+        "@libre-ai/testing": "workspace:*",
+      },
     },
     "distribution/templates/bun-app": {
       "name": "@libre-ai/bun-app-template",
