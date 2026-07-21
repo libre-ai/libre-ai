@@ -82,6 +82,30 @@ describe("validateEvent — accepts conformant events", () => {
     expect(outcome.ok).toBe(true);
   });
 
+  test("a validated event is deep-frozen, including the nested artifact", () => {
+    const outcome = validateEvent(
+      raw({
+        type: "outcome-approved",
+        data: {
+          artifact: {
+            id: "urn:libre-ai:artifact:a-1",
+            digest: "b".repeat(64),
+            mediaType: "text/markdown",
+          },
+        },
+      }),
+    );
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(Object.isFrozen(outcome.value)).toBe(true);
+    expect(Object.isFrozen(outcome.value.data)).toBe(true);
+    expect(Object.isFrozen(outcome.value.actor)).toBe(true);
+    expect(Object.isFrozen(outcome.value.data.artifact)).toBe(true);
+    expect(() => {
+      (outcome.value.data.artifact as { digest: string }).digest = "c".repeat(64);
+    }).toThrow();
+  });
+
   test.each([
     "ten_" + "a".repeat(16),
     "ten_" + "z9".repeat(30) + "abcd",

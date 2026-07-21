@@ -124,7 +124,9 @@ function validArtifact(value: unknown): ArtifactReference | undefined {
   if (typeof id !== "string" || !URN.test(id)) return undefined;
   if (typeof digest !== "string" || !SHA256.test(digest)) return undefined;
   if (typeof mediaType !== "string" || !MEDIA_TYPE.test(mediaType)) return undefined;
-  return { id, digest, mediaType };
+  // Deep-freeze: a shallow freeze of `data` would leave the nested artifact
+  // mutable, letting a caller forge its digest/mediaType after validation.
+  return Object.freeze({ id, digest, mediaType });
 }
 
 const DATA_KEYS = ["resourceId", "audience", "contentDigest", "reasonCode", "artifact"] as const;
