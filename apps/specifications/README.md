@@ -6,6 +6,38 @@ acceptance criteria and independent approvals that gates downstream execution.
 
 Work package: `WP-G3-F01`.
 
+## Increment 3 — spec-workspace persistence (PostgreSQL / RLS)
+
+`migrations/0001_specifications.sql` and `src/persistence/spec-workspace-store.ts`
+persist the spec-workspace behind the tenant barrier (`packages/data`). The domain
+is command-sourced — `decide` exposes no event reducer — so the aggregate is
+stored as a **revisioned snapshot**, not an event-sourced fold; the event table is
+an append-only audit trail beside it.
+
+- **`spec_workspaces`** holds one snapshot per workspace: a `tenant_id`-format
+  `CHECK`, `FORCE` row-level security keyed on the `app.tenant_id` GUC, and a grant
+  of `SELECT, INSERT, UPDATE` only — **no `DELETE`**, because a workspace is
+  advanced and superseded in place, never physically removed. `status` is lifted to
+  its own enum-checked column as a queryable DB floor; the full `WorkspaceState`
+  lives in the `state` jsonb.
+- **`spec_workspace_events`** is **append-only** (grant of `SELECT, INSERT` only):
+  the authoring history is never rewritten even by the application role. Its
+  composite key `(tenant_id, workspace_id, sequence)` and the invariant
+  `sequence === revision` (one event per accepted `decide`) make a replayed step
+  conflict rather than fork.
+- **`saveWorkspace`** persists the next snapshot and appends its events atomically
+  in the caller's tenant transaction. `revision === 1` inserts; otherwise the
+  update is guarded by the previous revision (`revision - 1`) and raises
+  `SpecWorkspaceRevisionConflictError` if it matched no row — a lost optimistic-
+  concurrency race writes **nothing** (the guarded update runs before any event
+  insert). **`loadWorkspace`** / **`loadWorkspaceEvents`** read within the active
+  tenant context; RLS alone scopes them, so a foreign-tenant id returns no row.
+
+Verified against the real PostgreSQL barrier (PGlite): round-trip, revisioned
+advance, stale-revision rejection, cross-tenant RLS isolation (a foreign UPDATE
+matches 0 rows), append-only grant (events UPDATE/DELETE denied), the workspace
+DELETE grant withheld, and the no-tenant-context barrier denying reads and writes.
+
 ## Increment 2 — spec-workspace lifecycle
 
 `src/domain/workspace.ts` is the authoring counterpart to the package validator:
