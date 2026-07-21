@@ -51,6 +51,7 @@
     "check:generated-contracts": "bun run check:bun:runtime && bun run --cwd packages/contracts generate:check",
     "check:work-packages": "bun run check:bun:runtime && bun tools/quality/check-work-packages.ts",
     "check:licenses": "bun run check:bun:runtime && bun tools/quality/check-js-licenses.ts",
+    "review:fanout": "bun run check:bun:runtime && bun tools/review/fanout.ts",
     "audit": "bun run check:bun:runtime && bun audit",
     "typecheck": "bun run check:bun:runtime && tsc --noEmit -p tsconfig.json",
     "lint": "bun run check:bun:runtime && biome ci .",
