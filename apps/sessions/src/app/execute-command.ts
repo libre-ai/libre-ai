@@ -22,6 +22,7 @@ import {
   appendEvent,
   loadSessionState,
   SessionSequenceConflictError,
+  SessionTenantMismatchError,
 } from "../persistence/session-event-store";
 
 export interface SessionPrincipal {
@@ -45,7 +46,10 @@ function refused(refusal: SessionCommandRefusal): SessionCommandResult {
  * loaded stream via `reduce` (ordering/identity/revision → cursor_invalid /
  * tenant_mismatch / revision_stale), then `appendEvent`. A concurrent writer that
  * takes the same sequence between the load and the append is surfaced as
- * `sessions.cursor_invalid` (the stream advanced past the append point).
+ * `sessions.cursor_invalid` (the stream advanced past the append point); a
+ * foreign-tenant first event — which `reduce` cannot catch with no prior state to
+ * compare against — is stopped at the append barrier and surfaced as
+ * `sessions.tenant_mismatch`.
  */
 export async function executeSessionCommand(
   executor: SqlExecutor,
@@ -68,6 +72,7 @@ export async function executeSessionCommand(
     await appendEvent(executor, event, recordedAt);
   } catch (error) {
     if (error instanceof SessionSequenceConflictError) return refused("sessions.cursor_invalid");
+    if (error instanceof SessionTenantMismatchError) return refused("sessions.tenant_mismatch");
     throw error;
   }
   return { status: "accepted", event, state: step.value };

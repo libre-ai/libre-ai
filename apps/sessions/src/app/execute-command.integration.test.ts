@@ -146,6 +146,21 @@ describe("executeSessionCommand — refused, fail-closed", () => {
     expect(result).toEqual({ status: "refused", refusal: "sessions.tenant_mismatch" });
   });
 
+  test("a foreign-tenant first event is tenant_mismatch (stopped at the append barrier)", async () => {
+    // reduce(null, ...) has no prior state to compare tenants against, so the
+    // append barrier is the sole check here — it must surface a clean refusal,
+    // not throw.
+    const result = await withTenantDbTransaction(tdb.db, TENANT_A, (tx) =>
+      executeSessionCommand(
+        tx,
+        OWNER,
+        raw({ sessionId: "urn:libre-ai:session:cs-tenant-first", tenantId: TENANT_B }),
+        NOW,
+      ),
+    );
+    expect(result).toEqual({ status: "refused", refusal: "sessions.tenant_mismatch" });
+  });
+
   test("a rewound revision is revision_stale", async () => {
     const session = "urn:libre-ai:session:cs-rev";
     const result = await withTenantDbTransaction(tdb.db, TENANT_A, async (tx) => {
