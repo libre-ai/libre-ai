@@ -193,6 +193,9 @@ describe("qualification — cross-tenant, replay, capture and terminal invariant
       expectedRevision: 1,
     });
     expect(first.ok).toBe(true);
+    // The committed command advanced the revision — the precondition that makes
+    // the replay stale.
+    expect(first.ok && first.mission.revision).toBe(2);
     // The same request replayed at revision 1 is now stale (current is 2).
     const replay = await run(TENANT_A, "approver", {
       command: SAMPLE.AssessMissionRisk,
@@ -260,5 +263,86 @@ describe("qualification — cross-tenant, replay, capture and terminal invariant
       expectedRevision: 3,
     });
     expect(cancel).toEqual({ ok: false, refusal: "mission.transition_forbidden" });
+  });
+
+  test("a cancelled mission refuses every further command", async () => {
+    const id = "urn:libre-ai:mission:q-cancelled";
+    await run(TENANT_A, "requester", { command: proposeCommand(id), expectedRevision: 0 });
+    await run(TENANT_A, "approver", {
+      command: SAMPLE.AssessMissionRisk,
+      missionId: id,
+      expectedRevision: 1,
+    });
+    await run(TENANT_A, "approver", {
+      command: SAMPLE.ApproveMission,
+      missionId: id,
+      expectedRevision: 2,
+    });
+    await run(TENANT_A, "operator", {
+      command: SAMPLE.StartMission,
+      missionId: id,
+      expectedRevision: 3,
+    });
+    const cancelled = await run(TENANT_A, "operator", {
+      command: SAMPLE.CancelMission,
+      missionId: id,
+      expectedRevision: 4,
+    });
+    expect(cancelled.ok && cancelled.mission.state).toBe("cancelled");
+    // An authorized operator's pause on the cancelled (terminal) mission is
+    // refused by the domain, never applied.
+    const pause = await run(TENANT_A, "operator", {
+      command: SAMPLE.PauseMission,
+      missionId: id,
+      expectedRevision: 5,
+    });
+    expect(pause).toEqual({ ok: false, refusal: "mission.transition_forbidden" });
+  });
+
+  test("an accepted mission refuses every further command", async () => {
+    const id = "urn:libre-ai:mission:q-accepted";
+    await run(TENANT_A, "requester", { command: proposeCommand(id), expectedRevision: 0 });
+    await run(TENANT_A, "approver", {
+      command: SAMPLE.AssessMissionRisk,
+      missionId: id,
+      expectedRevision: 1,
+    });
+    await run(TENANT_A, "approver", {
+      command: SAMPLE.ApproveMission,
+      missionId: id,
+      expectedRevision: 2,
+    });
+    await run(TENANT_A, "operator", {
+      command: SAMPLE.StartMission,
+      missionId: id,
+      expectedRevision: 3,
+    });
+    await run(TENANT_A, "orchestrator", {
+      command: SAMPLE.SubmitMissionResult,
+      missionId: id,
+      expectedRevision: 4,
+    });
+    const accepted = await run(TENANT_A, "approver", {
+      command: SAMPLE.AcceptMissionResult,
+      missionId: id,
+      expectedRevision: 5,
+    });
+    expect(accepted.ok && accepted.mission.state).toBe("accepted");
+    const abandon = await run(TENANT_A, "approver", {
+      command: SAMPLE.AbandonMission,
+      missionId: id,
+      expectedRevision: 6,
+    });
+    expect(abandon).toEqual({ ok: false, refusal: "mission.transition_forbidden" });
+  });
+
+  test("only a requester may propose a mission", async () => {
+    for (const role of ["operator", "reviewer", "orchestrator", "approver"] as const) {
+      const outcome = await run(TENANT_A, role, {
+        command: proposeCommand(`urn:libre-ai:mission:q-propose-${role}`),
+        expectedRevision: 0,
+      });
+      expect(outcome).toEqual({ ok: false, refusal: "mission.unauthorized" });
+    }
   });
 });
