@@ -6,6 +6,28 @@ acceptance criteria and independent approvals that gates downstream execution.
 
 Work package: `WP-G3-F01`.
 
+## Increment 6 — cockpit (accessible SSR read view)
+
+`src/server/handler.ts` + `src/ui/specifications-cockpit.tsx` serve the read-only
+specifications cockpit, server-rendered and usable **without JavaScript**, from a
+contract fixture (`src/ui/fixture.ts`) — no real spec-workspace or persistence
+integration until a bounded work package and conformance review are approved.
+
+- `createSpecificationsHandler` routes `/` to the SSR document and `/api/health`
+  to a JSON status; an unknown route is `404`.
+- `SpecificationsCockpit` renders an ordered, accessible table (a `<caption>`,
+  `scope` column/row headers, a skip link, a `main` landmark). `WorkspaceState` is
+  identity-free, so the cockpit pairs each state with its workspace id in a small
+  `SpecWorkspaceView`. The lifecycle is conveyed **as text, never colour**:
+  `Brouillon / Soumise / Acceptée / Remplacée`, alongside the revision, requirement
+  count and approver count.
+
+Verified: the static render is a well-formed `<!doctype html>` document in French,
+the table exposes its caption and header scopes, every fixture workspace is listed,
+each status label renders, and no inline `style=` carries meaning; the handler
+serves the cockpit, health, and a 404. Interactivity (authoring journeys, the
+acceptance flow, live regions) arrives in later increments.
+
 ## Increment 5 — acceptance seam (decide → validate package)
 
 `src/app/accept-package.ts` is the pure composition that gates accepting a
