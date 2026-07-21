@@ -6,6 +6,31 @@ acceptance criteria and independent approvals that gates downstream execution.
 
 Work package: `WP-G3-F01`.
 
+## Increment 5 — acceptance seam (decide → validate package)
+
+`src/app/accept-package.ts` is the pure composition that gates accepting a
+spec-workspace into an immutable package. `decideAcceptance(state, packageInput,
+expectedRevision)` joins the two guarantees the two-layer design keeps separate:
+
+1. the workspace **lifecycle** (`decide` on `AcceptSpecPackage`) — submitted, the
+   caller's revision current, and ≥ 2 distinct reviewers approved;
+2. the package **bytes** (`validateSpecPackage`) — a well-formed, semantically
+   complete accepted package.
+
+Acceptance is permitted only if **both** pass: a workspace can never be accepted
+into an invalid package, and invalid bytes can never slip past the lifecycle. The
+lifecycle gate runs first, so a stale revision or a self-approval is surfaced
+before the bytes are inspected. The four outcomes mirror the domain vocabulary —
+`accepted` (the validated package + accept event + advanced state), `refused`
+(a `spec.*` code from either gate), `malformed` (the bytes are not a package), and
+`invalid` (acceptance does not apply to this state).
+
+This is pure — no I/O, no persistence, no tenant context. The **persisted**
+acceptance path (load the workspace, call this, save the accepted transition,
+guard the package body's tenant, store the content-addressed package) is a later
+increment: it depends on an open decision — whether the accepted package is stored
+as its own content-addressed row and/or its digest recorded on the workspace.
+
 ## Increment 4 — command service (the composed write path)
 
 `src/app/execute-command.ts` composes the spec-workspace write path for one
