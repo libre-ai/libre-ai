@@ -18,6 +18,10 @@
         "typescript": "7.0.2",
       },
     },
+    "apps/boussole": {
+      "name": "@libre-ai/boussole",
+      "version": "0.1.0",
+    },
     "apps/missions": {
       "name": "@libre-ai/missions",
       "version": "0.1.0",
@@ -194,6 +198,8 @@
     "@internationalized/string": ["@internationalized/string@3.2.9", "", { "dependencies": { "@swc/helpers": "^0.5.0" } }, "sha512-kzP/M/mbQxODlmOt4bIQZ2SBVUWUSqMLXooXixnX7noche8WHaQcA+nwFN1K2KCF/cp+LDUhcJsCicwkvhD1pg=="],
 
     "@libre-ai/auth-web": ["@libre-ai/auth-web@workspace:packages/auth-web"],
+
+    "@libre-ai/boussole": ["@libre-ai/boussole@workspace:apps/boussole"],
 
     "@libre-ai/bun-app-template": ["@libre-ai/bun-app-template@workspace:distribution/templates/bun-app"],
 
