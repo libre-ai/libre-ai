@@ -30,7 +30,9 @@ export interface ResponseSet {
 
 export type RefusalCode = "boussole.local_state_corrupt";
 
-export type Outcome<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly refusal: RefusalCode };
+export type Outcome<T> =
+  | { readonly ok: true; readonly value: T }
+  | { readonly ok: false; readonly refusal: RefusalCode };
 
 const DATASET_ID = /^urn:libre-ai:dataset:[A-Za-z0-9._~-]+$/;
 const METHOD_ID = /^urn:libre-ai:method:[A-Za-z0-9._~-]+$/;
@@ -92,7 +94,11 @@ export function startQuestionnaire(
 }
 
 /** Record a symmetric answer (integer in [-5, 5]) to a known statement. */
-export function recordResponse(set: ResponseSet, statementId: string, value: number): Outcome<ResponseSet> {
+export function recordResponse(
+  set: ResponseSet,
+  statementId: string,
+  value: number,
+): Outcome<ResponseSet> {
   if (!set.statementIds.includes(statementId)) return refuse();
   if (!Number.isInteger(value) || value < MIN_VALUE || value > MAX_VALUE) return refuse();
   return {

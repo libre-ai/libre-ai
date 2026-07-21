@@ -1,14 +1,14 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  type DatasetBinding,
   deleteResponses,
   exportResponseSet,
+  type ResponseSet,
   recordResponse,
   skipStatement,
   startQuestionnaire,
-  type DatasetBinding,
-  type ResponseSet,
-} from "./response-set.ts";
+} from "./response-set";
 
 const BINDING: DatasetBinding = {
   datasetId: "urn:libre-ai:dataset:civic-2026",
@@ -81,7 +81,9 @@ describe("recordResponse", () => {
     const outcome = recordResponse(started(), "s-borders", 3);
     expect(outcome.ok).toBe(true);
     if (!outcome.ok) return;
-    expect(outcome.value.responses).toEqual([{ statementId: "s-borders", kind: "answer", value: 3 }]);
+    expect(outcome.value.responses).toEqual([
+      { statementId: "s-borders", kind: "answer", value: 3 },
+    ]);
   });
 
   test.each([-5, 0, 5])("accepts the boundary value %d", (value) => {
@@ -89,13 +91,16 @@ describe("recordResponse", () => {
     expect(outcome.ok).toBe(true);
   });
 
-  test.each([-6, 6, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(
-    "refuses an out-of-scale value: %p",
-    (value) => {
-      const outcome = recordResponse(started(), "s-borders", value);
-      expect(outcome).toEqual({ ok: false, refusal: "boussole.local_state_corrupt" });
-    },
-  );
+  test.each([
+    -6,
+    6,
+    1.5,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+  ])("refuses an out-of-scale value: %p", (value) => {
+    const outcome = recordResponse(started(), "s-borders", value);
+    expect(outcome).toEqual({ ok: false, refusal: "boussole.local_state_corrupt" });
+  });
 
   test("refuses an unknown statement", () => {
     expect(recordResponse(started(), "s-unknown", 1).ok).toBe(false);
@@ -108,7 +113,9 @@ describe("recordResponse", () => {
     const second = recordResponse(first.value, "s-borders", 4);
     expect(second.ok).toBe(true);
     if (!second.ok) return;
-    expect(second.value.responses).toEqual([{ statementId: "s-borders", kind: "answer", value: 4 }]);
+    expect(second.value.responses).toEqual([
+      { statementId: "s-borders", kind: "answer", value: 4 },
+    ]);
   });
 });
 
@@ -210,7 +217,11 @@ describe("immutability", () => {
     expect(() => {
       (response as { value: number }).value = 6;
     }).toThrow();
-    expect(outcome.value.responses[0]).toEqual({ statementId: "s-borders", kind: "answer", value: 3 });
+    expect(outcome.value.responses[0]).toEqual({
+      statementId: "s-borders",
+      kind: "answer",
+      value: 3,
+    });
   });
 
   test("the exported document and its responses are frozen", () => {
