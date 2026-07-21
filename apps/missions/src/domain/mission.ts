@@ -79,7 +79,6 @@ export interface Mission {
   readonly eventCursor: number;
   readonly result?: ResultRef;
   readonly verdict?: Verdict;
-  readonly openDecision: boolean;
   readonly createdAt: string;
 }
 
@@ -197,7 +196,6 @@ export function decide(state: Mission | null, command: Command, ctx: CommandCont
       acceptanceCriteria: Object.freeze([...command.acceptanceCriteria]),
       approvals: Object.freeze([] as string[]),
       eventCursor: 1,
-      openDecision: false,
       createdAt: ctx.now,
     });
     return { ok: true, events: [event(mission, "MissionProposed", 1)], next: mission };
@@ -271,10 +269,12 @@ export function decide(state: Mission | null, command: Command, ctx: CommandCont
       if (state.state !== "running") return refuse("mission.transition_forbidden");
       // Only a bound orchestrator instance may report execution events.
       if (!command.orchestratorBound) return refuse("mission.event_untrusted");
-      if (command.budgetExceeded)
-        return advance("blocked", "MissionBlocked", { openDecision: false });
-      if (command.requiresDecision)
-        return advance("blocked", "HumanDecisionRequested", { openDecision: true });
+      // A budget stop and a human-decision request both block; the two are
+      // distinguished by the emitted event (MissionBlocked vs
+      // HumanDecisionRequested), not by aggregate state — the open decision is
+      // owned by the decision-requests projection, not the mission record.
+      if (command.budgetExceeded) return advance("blocked", "MissionBlocked");
+      if (command.requiresDecision) return advance("blocked", "HumanDecisionRequested");
       // A plain progress event advances the cursor without changing state.
       {
         const sequence = state.eventCursor + 1;
@@ -284,7 +284,7 @@ export function decide(state: Mission | null, command: Command, ctx: CommandCont
 
     case "AnswerDecisionRequest":
       if (state.state !== "blocked") return refuse("mission.transition_forbidden");
-      return advance("running", "MissionStarted", { openDecision: false });
+      return advance("running", "MissionStarted");
 
     case "SubmitMissionResult":
       if (state.state !== "running" && state.state !== "rejected")
