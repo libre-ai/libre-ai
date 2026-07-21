@@ -94,6 +94,38 @@ describe("mission store round-trip and tenant isolation", () => {
     );
     expect(crossTenant).toBeNull();
   });
+
+  test("a different tenant's raw UPDATE and DELETE match no row (RLS USING)", async () => {
+    const decision = decide(null, proposeCommand("urn:libre-ai:mission:iso2"), {
+      tenantId: TENANT_A,
+      now: NOW,
+      expectedRevision: 0,
+    });
+    if (!decision.ok) throw new Error("propose refused");
+    await withTenantDbTransaction(tdb.db, TENANT_A, (tx) =>
+      saveMission(tx, decision.next, decision.events, NOW),
+    );
+
+    // Tenant B, in raw SQL under the app role, cannot mutate tenant A's row:
+    // the RLS USING clause makes it invisible, so both statements affect 0 rows.
+    const [updated, deleted] = await asRawTenant(TENANT_B, async () => {
+      const u = await tdb.db.query("UPDATE missions SET state = 'cancelled' WHERE id = $1", [
+        "urn:libre-ai:mission:iso2",
+      ]);
+      const d = await tdb.db.query("DELETE FROM missions WHERE id = $1", [
+        "urn:libre-ai:mission:iso2",
+      ]);
+      return [u.affectedRows ?? 0, d.affectedRows ?? 0];
+    });
+    expect(updated).toBe(0);
+    expect(deleted).toBe(0);
+
+    // The row is untouched for its owner.
+    const stillProposed = await withTenantDbTransaction(tdb.db, TENANT_A, (tx) =>
+      loadMission(tx, "urn:libre-ai:mission:iso2"),
+    );
+    expect(stillProposed?.state).toBe("proposed");
+  });
 });
 
 describe("optimistic revision concurrency", () => {
@@ -156,8 +188,8 @@ describe("append-only event log and fail-closed barrier", () => {
         tdb.db.query(
           `INSERT INTO missions (
              tenant_id, id, revision, state, handoff_id, handoff_digest, budgets,
-             acceptance_criteria, approvals, event_cursor, open_decision, created_at
-           ) VALUES ($1,'urn:libre-ai:mission:x',1,'proposed','h','${"a".repeat(64)}','{}','[]','[]',1,false,$2)`,
+             acceptance_criteria, approvals, event_cursor, created_at
+           ) VALUES ($1,'urn:libre-ai:mission:x',1,'proposed','h','${"a".repeat(64)}','{}','[]','[]',1,$2)`,
           [TENANT_A, NOW],
         ),
       ).rejects.toThrow();

@@ -36,7 +36,6 @@ interface MissionRow {
   readonly event_cursor: number;
   readonly result: unknown;
   readonly verdict: unknown;
-  readonly open_decision: boolean;
   readonly created_at: string | Date;
 }
 
@@ -63,7 +62,6 @@ function rowToMission(row: MissionRow): Mission {
     eventCursor: row.event_cursor,
     result: (asJson(row.result) as Mission["result"] | null) ?? undefined,
     verdict: (asJson(row.verdict) as Mission["verdict"] | null) ?? undefined,
-    openDecision: row.open_decision,
     createdAt: asIsoString(row.created_at),
   };
 }
@@ -91,8 +89,8 @@ export async function saveMission(
     await executor.query(
       `INSERT INTO missions (
          tenant_id, id, revision, state, handoff_id, handoff_digest, risk, budgets,
-         acceptance_criteria, approvals, event_cursor, result, verdict, open_decision, created_at
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+         acceptance_criteria, approvals, event_cursor, result, verdict, created_at
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
       [
         tenantId,
         mission.id,
@@ -107,16 +105,18 @@ export async function saveMission(
         mission.eventCursor,
         result,
         verdict,
-        mission.openDecision,
         mission.createdAt,
       ],
     );
   } else {
+    // tenant_id in the WHERE is defense in depth above FORCE RLS (the USING
+    // clause already scopes the row); the guarded revision is the optimistic
+    // concurrency check.
     const updated = await executor.query(
       `UPDATE missions SET
          revision = $1, state = $2, risk = $3, approvals = $4,
-         event_cursor = $5, result = $6, verdict = $7, open_decision = $8
-       WHERE id = $9 AND revision = $10`,
+         event_cursor = $5, result = $6, verdict = $7
+       WHERE tenant_id = $8 AND id = $9 AND revision = $10`,
       [
         mission.revision,
         mission.state,
@@ -125,7 +125,7 @@ export async function saveMission(
         mission.eventCursor,
         result,
         verdict,
-        mission.openDecision,
+        tenantId,
         mission.id,
         mission.revision - 1,
       ],

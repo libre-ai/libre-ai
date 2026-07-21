@@ -18,6 +18,9 @@ CREATE TABLE missions (
   handoff_id text NOT NULL,
   handoff_digest text NOT NULL
     CONSTRAINT missions_handoff_digest_format CHECK (handoff_digest ~ '^[a-f0-9]{64}$'),
+  -- risk, result and verdict are conditionally required by mission-record.v1
+  -- (allOf on state); the aggregate/domain enforces those conditions, so the
+  -- columns are nullable here.
   risk jsonb,
   budgets jsonb NOT NULL,
   acceptance_criteria jsonb NOT NULL,
@@ -25,7 +28,6 @@ CREATE TABLE missions (
   event_cursor integer NOT NULL CONSTRAINT missions_event_cursor_nonneg CHECK (event_cursor >= 0),
   result jsonb,
   verdict jsonb,
-  open_decision boolean NOT NULL,
   created_at timestamptz NOT NULL,
   PRIMARY KEY (tenant_id, id)
 );
