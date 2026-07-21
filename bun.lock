@@ -48,6 +48,10 @@
         "@playwright/test": "catalog:testing",
       },
     },
+    "apps/radar": {
+      "name": "@libre-ai/radar",
+      "version": "0.1.0",
+    },
     "distribution/templates/bun-app": {
       "name": "@libre-ai/bun-app-template",
       "version": "0.1.0",
@@ -218,6 +222,8 @@
     "@libre-ai/notebook": ["@libre-ai/notebook@workspace:apps/notebook"],
 
     "@libre-ai/provenance": ["@libre-ai/provenance@workspace:packages/provenance"],
+
+    "@libre-ai/radar": ["@libre-ai/radar@workspace:apps/radar"],
 
     "@libre-ai/testing": ["@libre-ai/testing@workspace:packages/testing"],
 
