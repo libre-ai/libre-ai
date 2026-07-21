@@ -180,6 +180,23 @@ function readApprovals(value: unknown): ApprovalReference[] | undefined {
   return out;
 }
 
+function readAcceptanceCriteria(value: unknown): AcceptanceCriterion[] | undefined {
+  if (!isArray(value, 1, 1000)) return undefined;
+  const out: AcceptanceCriterion[] = [];
+  for (const item of value) {
+    if (!isObject(item) || !hasExactKeys(item, ["id", "observable", "evidenceRule"]))
+      return undefined;
+    if (typeof item.id !== "string" || !IDENTIFIER.test(item.id)) return undefined;
+    if (!boundedString(item.observable, 5000)) return undefined;
+    if (typeof item.evidenceRule !== "string" || !IDENTIFIER.test(item.evidenceRule))
+      return undefined;
+    out.push(
+      Object.freeze({ id: item.id, observable: item.observable, evidenceRule: item.evidenceRule }),
+    );
+  }
+  return out;
+}
+
 const KEYS = [
   "schemaVersion",
   "id",
@@ -282,21 +299,4 @@ export function validateSpecPackage(input: unknown): SpecValidation {
       digest: input.digest,
     }),
   };
-}
-
-function readAcceptanceCriteria(value: unknown): AcceptanceCriterion[] | undefined {
-  if (!isArray(value, 1, 1000)) return undefined;
-  const out: AcceptanceCriterion[] = [];
-  for (const item of value) {
-    if (!isObject(item) || !hasExactKeys(item, ["id", "observable", "evidenceRule"]))
-      return undefined;
-    if (typeof item.id !== "string" || !IDENTIFIER.test(item.id)) return undefined;
-    if (!boundedString(item.observable, 5000)) return undefined;
-    if (typeof item.evidenceRule !== "string" || !IDENTIFIER.test(item.evidenceRule))
-      return undefined;
-    out.push(
-      Object.freeze({ id: item.id, observable: item.observable, evidenceRule: item.evidenceRule }),
-    );
-  }
-  return out;
 }

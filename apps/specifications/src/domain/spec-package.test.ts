@@ -82,6 +82,20 @@ describe("validateSpecPackage — malformed (structural / identity)", () => {
       "decision structurally bad",
       { decisions: [{ id: "Dec-One", status: "accepted", decision: "x" }] },
     ],
+    [
+      "requirements over 1000",
+      {
+        requirements: Array.from({ length: 1001 }, () => ({
+          id: "req-x",
+          text: "x",
+          priority: "must",
+        })),
+      },
+    ],
+    [
+      "requirement text over 5000",
+      { requirements: [{ id: "req-one", text: "x".repeat(5001), priority: "must" }] },
+    ],
   ])("is malformed: %s", (_label, override) => {
     expect(validateSpecPackage(raw(override))).toEqual({ status: "malformed" });
   });
@@ -95,7 +109,9 @@ describe("validateSpecPackage — malformed (structural / identity)", () => {
 describe("validateSpecPackage — refused (semantic completeness)", () => {
   test.each([
     ["empty problem", { problem: "" }],
+    ["problem over 5000 chars", { problem: "x".repeat(5001) }],
     ["no actors", { actors: [] }],
+    ["actors over 100", { actors: Array.from({ length: 101 }, (_v, i) => `actor-${i}`) }],
     ["actor malformed", { actors: ["Owner-Role"] }],
     ["duplicate actors", { actors: ["owner-role", "owner-role"] }],
   ])("problem_missing: %s", (_label, override) => {
@@ -108,6 +124,14 @@ describe("validateSpecPackage — refused (semantic completeness)", () => {
   test.each([
     ["no contracts", { contracts: [] }],
     ["contract not a urn", { contracts: ["c-one"] }],
+    [
+      "duplicate contracts",
+      { contracts: ["urn:libre-ai:contract:c-one", "urn:libre-ai:contract:c-one"] },
+    ],
+    [
+      "contracts over 1000",
+      { contracts: Array.from({ length: 1001 }, (_v, i) => `urn:libre-ai:contract:c-${i}`) },
+    ],
   ])("contract_missing: %s", (_label, override) => {
     expect(validateSpecPackage(raw(override))).toEqual({
       status: "refused",
@@ -118,6 +142,16 @@ describe("validateSpecPackage — refused (semantic completeness)", () => {
   test.each([
     ["no criteria", { acceptanceCriteria: [] }],
     ["criterion missing evidenceRule", { acceptanceCriteria: [{ id: "ac-one", observable: "x" }] }],
+    [
+      "criteria over 1000",
+      {
+        acceptanceCriteria: Array.from({ length: 1001 }, () => ({
+          id: "ac-x",
+          observable: "x",
+          evidenceRule: "gate-x",
+        })),
+      },
+    ],
   ])("acceptance_unverifiable: %s", (_label, override) => {
     expect(validateSpecPackage(raw(override))).toEqual({
       status: "refused",

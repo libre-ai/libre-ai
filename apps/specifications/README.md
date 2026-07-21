@@ -29,7 +29,9 @@ shape (`role`, `approvedAt`, `reference`, `subjectDigest`).
 
 - **`spec.evidence_hash_mismatch`** (content-digest verification): the spec-package
   digest preimage is not defined in a reusable tool, so verifying it here would be
-  a guess. Deferred until the canonicalization is confirmed.
+  a guess. Deferred until the canonicalization is confirmed. **A `valid` result is
+  therefore structurally conformant but NOT digest-verified** — a caller must not
+  treat it as integrity-checked.
 - The **command-level** codes (`revision_stale`, `package_immutable`,
   `handoff_execution_right`) and the draft workspace, review flow, persistence,
   API and UI.
