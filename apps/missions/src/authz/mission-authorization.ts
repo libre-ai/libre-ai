@@ -28,7 +28,10 @@ export type MissionOperation =
   | "read"
   | "export";
 
-// The Biscuit operation each state-changing command maps to.
+// The Biscuit operation each command maps to. The `Record<Command["type"], …>`
+// type makes this exhaustive at compile time: a new domain command cannot be
+// added without a mapping here, so no command is ever left un-authorized —
+// typecheck fails until it is mapped.
 export const COMMAND_OPERATION: Readonly<Record<Command["type"], MissionOperation>> = {
   ProposeMission: "propose",
   AssessMissionRisk: "assess-risk",
