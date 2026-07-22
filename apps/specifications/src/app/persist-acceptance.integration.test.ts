@@ -199,7 +199,7 @@ describe("persist-acceptance — composition of decideAcceptance + persistence",
     expect(result.status).toBe("invalid");
   });
 
-  test("idempotent re-acceptance of the same digest within a single transaction", async () => {
+  test("accepts once then loads the stored package back by its digest", async () => {
     const workspaceId = "urn:libre-ai:workspace:idempotent-1";
     const submittedState = await setupSubmittedWorkspace(workspaceId);
     const pkg = validPackage({ digest: "d".repeat(64) });

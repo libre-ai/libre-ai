@@ -14,12 +14,18 @@ import { type AcceptanceDecision, decideAcceptance } from "./accept-package";
  * and on accept: save the workspace transition and store the content-addressed package.
  * Fail-closed: a refused, malformed, or invalid decision persists nothing.
  *
- * If the workspace revision has been stale (concurrent writer won), a
- * SpecWorkspaceRevisionConflictError is thrown before persistence (the pure
- * decide gates it, but the persisted save may also throw). If the package digest
- * conflicts (workspace already has a different digest), a SpecPackageDigestConflictError
- * is thrown AFTER the workspace is persisted (i.e., on a successful decide, the
- * workspace transaction succeeds but the package transaction fails).
+ * ATOMICITY: both writes run on the provided `executor`. Call this within a
+ * transaction (the app wraps it in `withTenantDbTransaction`) so the two writes
+ * commit together — if either throws (a stale `SpecWorkspaceRevisionConflictError`
+ * or a `SpecPackageDigestConflictError`), the whole transaction rolls back and
+ * NOTHING is persisted. There is no partial-write window.
+ *
+ * DIGEST TRUST (documented residual): the package `digest` is format-validated
+ * (SHA-256 hex) and stored as the content address, but is NOT recomputed from the
+ * package bytes here — the spec-package digest preimage is not yet a defined
+ * canonical serialization (see `domain/spec-package.ts`). Content-address
+ * verification against the bytes is deferred to that preimage definition; today
+ * the caller (the post-`decideAcceptance` app path) is trusted for it.
  */
 export async function persistAcceptance(
   executor: SqlExecutor,
