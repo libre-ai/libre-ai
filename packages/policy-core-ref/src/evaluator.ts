@@ -1,5 +1,8 @@
 // Policy evaluation engine. SEMANTICS.md §2-8: validation, operators, freshness, verdict.
 
+import { digest, jcs } from "./jcs";
+import { normalize } from "./normalize";
+import { parseStrictJson } from "./strict-parser";
 import type {
   ErrorCode,
   FactValue,
@@ -12,9 +15,6 @@ import type {
   Verdict,
 } from "./types";
 import { StrictJsonError } from "./types";
-import { digest, jcs } from "./jcs";
-import { normalize } from "./normalize";
-import { parseStrictJson } from "./strict-parser";
 
 const ENGINE_VERSION = "2.0.0";
 
@@ -76,12 +76,18 @@ export async function evaluate(
       proposedBy: policy.proposedBy,
       rules: policy.rules,
     };
-    const policyDigest = digest("libre-ai.policy-definition.v2", normalize(policySubject, "policy"));
+    const policyDigest = digest(
+      "libre-ai.policy-definition.v2",
+      normalize(policySubject, "policy"),
+    );
     const snapshotDigest = digest(
       "libre-ai.model-snapshot.v2",
       normalize(without(snapshot, "digest"), "snapshot"),
     );
-    const needDigest = digest("libre-ai.policy-need.v2", normalize(without(need, "digest"), "need"));
+    const needDigest = digest(
+      "libre-ai.policy-need.v2",
+      normalize(without(need, "digest"), "need"),
+    );
 
     // SEMANTICS.md §2.6: verify digests
     if (
@@ -91,6 +97,18 @@ export async function evaluate(
       need.digest !== needDigest
     ) {
       return { ok: false, error: "digest-mismatch" };
+    }
+
+    // SEMANTICS.md §4: validate all rule values against their operators
+    const rules = policy.rules as JsonRecord[];
+    if (Array.isArray(rules)) {
+      for (const rule of rules) {
+        const operator = String(rule.operator) as Operator;
+        const value = rule.value as RuleValue;
+        if (!isValidRuleValue(operator, value)) {
+          return { ok: false, error: "input-invalid" };
+        }
+      }
     }
 
     // Evaluate all rules
@@ -186,10 +204,7 @@ function validateInputs(
   }
 
   // SEMANTICS.md §2.5: tenant mismatch
-  if (
-    policy.tenantId !== snapshot.tenantId ||
-    policy.tenantId !== need.tenantId
-  ) {
+  if (policy.tenantId !== snapshot.tenantId || policy.tenantId !== need.tenantId) {
     return "tenant-mismatch";
   }
 
@@ -218,12 +233,6 @@ function hasDuplicateFacts(container: JsonRecord): boolean {
   return false;
 }
 
-interface RuleEvaluationState {
-  ruleId: string;
-  fact: string;
-  occurrences: Array<{ value: FactValue; status: RuleStatus; reasonCode: ReasonCode }>;
-}
-
 function evaluateRules(
   policy: JsonRecord,
   snapshot: JsonRecord,
@@ -238,8 +247,8 @@ function evaluateRules(
     const fact = String(rule.fact);
     const operator = String(rule.operator) as Operator;
     const value = rule.value as RuleValue;
-    const maxSourceAgeDays = typeof rule.maxSourceAgeDays === "number" ? rule.maxSourceAgeDays : undefined;
-    const unknown = String(rule.unknown);
+    const maxSourceAgeDays =
+      typeof rule.maxSourceAgeDays === "number" ? rule.maxSourceAgeDays : undefined;
 
     // Find fact objects (not just values) so we can access source for freshness
     let factObjects: JsonRecord[] = [];
@@ -321,7 +330,9 @@ function checkFreshness(
   const source = factObject.source as JsonRecord;
   const retrievedAt = String(source.retrievedAt);
 
-  const ageSeconds = Math.floor(new Date(evaluatedAt).getTime() / 1000) - Math.floor(new Date(retrievedAt).getTime() / 1000);
+  const ageSeconds =
+    Math.floor(new Date(evaluatedAt).getTime() / 1000) -
+    Math.floor(new Date(retrievedAt).getTime() / 1000);
 
   // SEMANTICS.md §5: source from future
   if (ageSeconds < 0) {
@@ -410,9 +421,10 @@ function evaluateOperator(
   }
 }
 
-function reduceOccurrences(
-  statuses: Array<{ status: RuleStatus; reasonCode: ReasonCode }>,
-): { status: RuleStatus; reasonCode: ReasonCode } {
+function reduceOccurrences(statuses: Array<{ status: RuleStatus; reasonCode: ReasonCode }>): {
+  status: RuleStatus;
+  reasonCode: ReasonCode;
+} {
   // SEMANTICS.md §6: failed > unknown > satisfied
   for (const s of statuses) {
     if (s.status === "failed") {
@@ -466,10 +478,7 @@ function computeVerdict(
   return "eligible";
 }
 
-function findFactObjects(
-  container: JsonRecord,
-  factName: string,
-): JsonRecord[] {
+function findFactObjects(container: JsonRecord, factName: string): JsonRecord[] {
   const facts = container.facts as JsonRecord[];
   const results: JsonRecord[] = [];
 
@@ -517,4 +526,41 @@ function compareBytes(left: Uint8Array, right: Uint8Array): number {
     }
   }
   return left.length - right.length;
+}
+
+/**
+ * Validate that a rule value matches the constraints of its operator.
+ * SEMANTICS.md §4: operator-value matrix defines allowed types.
+ */
+function isValidRuleValue(operator: Operator, value: RuleValue): boolean {
+  if (operator === "equals" || operator === "not-equals") {
+    // These operators require a scalar value (not an array)
+    return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
+  }
+
+  if (operator === "in" || operator === "not-in") {
+    // These operators require a non-empty array value
+    if (!Array.isArray(value) || value.length === 0) {
+      return false;
+    }
+    // All elements must be the same type (homogeneous)
+    const firstType = typeof value[0];
+    for (const item of value) {
+      if (typeof item !== firstType) {
+        return false;
+      }
+      if (firstType !== "string" && firstType !== "number" && firstType !== "boolean") {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  if (operator === "at-least" || operator === "at-most") {
+    // These operators require a number value
+    return typeof value === "number";
+  }
+
+  // Unknown operator (shouldn't happen if Operator type is correct)
+  return false;
 }

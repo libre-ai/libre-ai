@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from "bun:test";
+import { beforeAll, describe, expect, it } from "bun:test";
 import { readFile } from "node:fs/promises";
 import { evaluate, jcs } from "../index";
 
@@ -22,9 +22,6 @@ interface GoldenFile {
 }
 
 let goldenVectors: GoldenCase[] = [];
-let passedCount = 0;
-let failedCount = 0;
-const failures: string[] = [];
 
 beforeAll(async () => {
   const goldenContent = await readFile("contracts/fixtures/policy-core-v2/golden.json", "utf8");
@@ -32,7 +29,7 @@ beforeAll(async () => {
   goldenVectors = golden.cases;
 });
 
-describe("golden vector conformance (144 cases)", () => {
+describe("golden vector conformance (20 cases)", () => {
   it("should load all golden vectors", () => {
     expect(goldenVectors.length).toBeGreaterThan(0);
   });
@@ -46,8 +43,10 @@ describe("golden vector conformance (144 cases)", () => {
         return;
       }
 
-      const testCase = goldenVectors[i]!;
-      const label = `golden:${testCase.id}`;
+      const testCase = goldenVectors[i];
+      if (!testCase) {
+        throw new Error(`Expected testCase at index ${i}, but got undefined`);
+      }
 
       // Serialize test inputs to JSON bytes
       const policyBytes = new TextEncoder().encode(JSON.stringify(testCase.policy));
@@ -81,16 +80,13 @@ describe("golden vector conformance (144 cases)", () => {
           const resultJcs = new TextDecoder().decode(jcs(decodedResult));
 
           if (resultJcs !== expectedJcs) {
-            failures.push(`${label}: JCS mismatch\nExpected: ${expectedJcs}\nActual: ${resultJcs}`);
             expect(resultJcs).toBe(expectedJcs);
           }
 
           // Also verify the JCS bytes match
           const resultBytes = result.jcs;
           const expectedBytes = jcs(testCase.expectedEvaluation);
-          if (resultBytes.byteLength !== expectedBytes.byteLength) {
-            failures.push(`${label}: byte length mismatch. Expected: ${expectedBytes.byteLength}, Actual: ${resultBytes.byteLength}`);
-          }
+          expect(resultBytes.byteLength).toBe(expectedBytes.byteLength);
         }
       }
     });
