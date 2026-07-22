@@ -127,9 +127,16 @@ export async function encryptString(
  * Fail-closed: any decryption error (wrong passphrase, corrupted envelope) throws.
  * Optionally accepts a SubtleCrypto implementation; uses globalThis.crypto if not provided.
  */
-export async function decryptString(
+/**
+ * Decrypt an envelope with an ALREADY-DERIVED key. This skips the expensive
+ * PBKDF2 derivation, so a caller that already holds the key (e.g. after deriving
+ * it once to build an EncryptionContext) does not pay the KDF cost twice.
+ * Only the nonce/ciphertext/tag are needed here — the salt is a derivation input
+ * and is irrelevant once the key exists.
+ */
+export async function decryptWithKey(
   envelope: EncryptedEnvelope,
-  passphrase: string,
+  key: CryptoKey,
   crypto?: SubtleCrypto,
 ): Promise<string> {
   if (!crypto) {
@@ -139,18 +146,11 @@ export async function decryptString(
     throw new Error("Unsupported encryption envelope version");
   }
 
-  // Decode base64 fields
-  let salt: Uint8Array;
+  // Decode base64 fields (nonce/ciphertext/tag; salt not needed with a derived key)
   let nonce: Uint8Array;
   let ciphertext: Uint8Array;
   let tag: Uint8Array;
-
   try {
-    salt = new Uint8Array(
-      atob(envelope.salt)
-        .split("")
-        .map((c) => c.charCodeAt(0)),
-    );
     nonce = new Uint8Array(
       atob(envelope.nonce)
         .split("")
@@ -170,19 +170,12 @@ export async function decryptString(
     throw new Error("Failed to decode encryption envelope (base64 corruption)");
   }
 
-  // Validate salt and nonce lengths
-  if (salt.length !== 16) {
-    throw new Error("Invalid salt length (expected 16 bytes)");
-  }
   if (nonce.length !== 12) {
     throw new Error("Invalid nonce length (expected 12 bytes)");
   }
   if (tag.length !== 16) {
     throw new Error("Invalid tag length (expected 16 bytes)");
   }
-
-  // Derive decryption key from passphrase and stored salt
-  const key = await deriveKeyFromPassphrase(passphrase, salt, crypto);
 
   // Reconstruct ciphertext || tag for GCM decryption
   const ciphertextWithTag = new Uint8Array(ciphertext.length + tag.length);
@@ -194,11 +187,43 @@ export async function decryptString(
   try {
     plaintextBytes = await crypto.decrypt({ name: "AES-GCM", iv: nonce }, key, ciphertextWithTag);
   } catch (error) {
-    // Decryption failure: wrong passphrase or corrupted ciphertext
+    // Decryption failure: wrong key or corrupted ciphertext
     throw new Error(
       `Decryption failed (wrong passphrase or corrupted ciphertext): ${error instanceof Error ? error.message : String(error)}`,
     );
   }
 
   return new TextDecoder().decode(plaintextBytes);
+}
+
+export async function decryptString(
+  envelope: EncryptedEnvelope,
+  passphrase: string,
+  crypto?: SubtleCrypto,
+): Promise<string> {
+  if (!crypto) {
+    crypto = globalThis.crypto.subtle;
+  }
+  if (envelope.version !== 1) {
+    throw new Error("Unsupported encryption envelope version");
+  }
+
+  // Decode the salt (the only field needed to derive the key)
+  let salt: Uint8Array;
+  try {
+    salt = new Uint8Array(
+      atob(envelope.salt)
+        .split("")
+        .map((c) => c.charCodeAt(0)),
+    );
+  } catch {
+    throw new Error("Failed to decode encryption envelope (base64 corruption)");
+  }
+  if (salt.length !== 16) {
+    throw new Error("Invalid salt length (expected 16 bytes)");
+  }
+
+  // Derive decryption key from passphrase and stored salt, then decrypt.
+  const key = await deriveKeyFromPassphrase(passphrase, salt, crypto);
+  return decryptWithKey(envelope, key, crypto);
 }

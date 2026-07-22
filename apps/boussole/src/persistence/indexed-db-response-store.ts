@@ -11,7 +11,7 @@
 // stored response set from device backups; decryption requires the user's PIN.
 
 import type { EncryptedEnvelope } from "../crypto/symmetric-encryption";
-import { decryptString, encryptWithKey } from "../crypto/symmetric-encryption";
+import { decryptString, decryptWithKey, encryptWithKey } from "../crypto/symmetric-encryption";
 import type { ResponseSet } from "../domain/response-set";
 import {
   deserializeResponseSet,
@@ -180,6 +180,18 @@ export function createIndexedDbResponseStore(
           : { status: "corrupt", refusal: outcome.refusal };
       } catch {
         // Decryption failed (wrong passphrase or corrupted envelope)
+        return { status: "corrupt", refusal: "boussole.local_state_corrupt" };
+      }
+    },
+    async decryptEnvelopeWithKey(envelope: EncryptedEnvelope, key: CryptoKey): Promise<LoadResult> {
+      try {
+        const decrypted = await decryptWithKey(envelope, key);
+        const outcome = deserializeResponseSet(decrypted);
+        return outcome.ok
+          ? { status: "loaded", set: outcome.value, envelope }
+          : { status: "corrupt", refusal: outcome.refusal };
+      } catch {
+        // Decryption failed (wrong key or corrupted envelope)
         return { status: "corrupt", refusal: "boussole.local_state_corrupt" };
       }
     },

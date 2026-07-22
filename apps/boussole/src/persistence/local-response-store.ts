@@ -10,7 +10,7 @@
 // in-memory adapter that exercises the exact same encode/decode path.
 
 import type { EncryptedEnvelope } from "../crypto/symmetric-encryption";
-import { decryptString } from "../crypto/symmetric-encryption";
+import { decryptString, decryptWithKey } from "../crypto/symmetric-encryption";
 import {
   type DatasetBinding,
   type LocalResponse,
@@ -149,6 +149,12 @@ export interface LocalResponseStore {
   save(set: ResponseSet, encryption?: EncryptionContext): Promise<void>;
   load(): Promise<LoadResult>;
   decryptEnvelope(envelope: EncryptedEnvelope, passphrase: string): Promise<LoadResult>;
+  /**
+   * Decrypt an envelope with an already-derived key. Callers that have derived the
+   * key once (to hold it in the session EncryptionContext) use this to avoid paying
+   * the PBKDF2 cost a second time — the passphrase-based `decryptEnvelope` re-derives.
+   */
+  decryptEnvelopeWithKey(envelope: EncryptedEnvelope, key: CryptoKey): Promise<LoadResult>;
   clear(): Promise<void>;
 }
 
@@ -216,6 +222,18 @@ export function createInMemoryResponseStore(seed?: string): LocalResponseStore {
           : { status: "corrupt", refusal: outcome.refusal };
       } catch {
         // Decryption failed (wrong passphrase or corrupted envelope)
+        return { status: "corrupt", refusal: REFUSAL };
+      }
+    },
+    async decryptEnvelopeWithKey(envelope: EncryptedEnvelope, key: CryptoKey): Promise<LoadResult> {
+      try {
+        const decrypted = await decryptWithKey(envelope, key);
+        const outcome = deserializeResponseSet(decrypted);
+        return outcome.ok
+          ? { status: "loaded", set: outcome.value, envelope }
+          : { status: "corrupt", refusal: outcome.refusal };
+      } catch {
+        // Decryption failed (wrong key or corrupted envelope)
         return { status: "corrupt", refusal: REFUSAL };
       }
     },

@@ -152,13 +152,7 @@ export function useQuestionnaire(store?: LocalResponseStore): QuestionnaireContr
     }
 
     try {
-      const result = await store?.decryptEnvelope(encryptedEnvelope, passphrase);
-      if (result?.status !== "loaded") {
-        setPassphraseError("wrong-passphrase");
-        return;
-      }
-
-      // Decryption succeeded: extract salt from envelope and store context
+      // Extract the salt from the envelope (the only field needed to derive the key).
       let salt: Uint8Array;
       try {
         salt = new Uint8Array(
@@ -171,7 +165,16 @@ export function useQuestionnaire(store?: LocalResponseStore): QuestionnaireContr
         return;
       }
 
+      // Derive the key ONCE and reuse it for both decryption and the session
+      // context. Deriving here AND inside a passphrase-based decrypt doubled the
+      // PBKDF2-600k cost on every unlock — enough to stall the gate under load.
       const key = await deriveKeyFromPassphrase(passphrase, salt, globalThis.crypto.subtle);
+
+      const result = await store?.decryptEnvelopeWithKey(encryptedEnvelope, key);
+      if (result?.status !== "loaded") {
+        setPassphraseError("wrong-passphrase");
+        return;
+      }
 
       const context: EncryptionContext = { key, salt };
       setEncryption(context);
