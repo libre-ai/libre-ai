@@ -43,7 +43,7 @@ export async function deriveKeyFromPassphrase(
   return crypto.deriveKey(
     {
       name: "PBKDF2",
-      salt,
+      salt: salt as BufferSource,
       iterations: 600_000,
       hash: "SHA-256",
     },
@@ -185,7 +185,11 @@ export async function decryptWithKey(
   // Decrypt; WebCrypto will verify the auth tag and throw if it's wrong
   let plaintextBytes: ArrayBuffer;
   try {
-    plaintextBytes = await crypto.decrypt({ name: "AES-GCM", iv: nonce }, key, ciphertextWithTag);
+    plaintextBytes = await crypto.decrypt(
+      { name: "AES-GCM", iv: nonce as BufferSource },
+      key,
+      ciphertextWithTag as BufferSource,
+    );
   } catch (error) {
     // Decryption failure: wrong key or corrupted ciphertext
     throw new Error(

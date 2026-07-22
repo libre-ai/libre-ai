@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { webcrypto } from "node:crypto";
 import { encryptString } from "../crypto/symmetric-encryption";
 import {
   type DatasetBinding,
@@ -173,7 +172,7 @@ describe("createInMemoryResponseStore", () => {
 
 describe("createInMemoryResponseStore — encryption", () => {
   test("detects and returns encrypted envelope on load", async () => {
-    const crypto = webcrypto.subtle;
+    const crypto = globalThis.crypto.subtle;
     const plaintext = serializeResponseSet(populated());
     const passphrase = "test-pin";
 
@@ -191,7 +190,7 @@ describe("createInMemoryResponseStore — encryption", () => {
   });
 
   test("decrypts with correct passphrase", async () => {
-    const crypto = webcrypto.subtle;
+    const crypto = globalThis.crypto.subtle;
     const set = populated();
     const plaintext = serializeResponseSet(set);
     const passphrase = "correct-pin";
@@ -214,7 +213,7 @@ describe("createInMemoryResponseStore — encryption", () => {
   });
 
   test("returns corrupt on wrong passphrase", async () => {
-    const crypto = webcrypto.subtle;
+    const crypto = globalThis.crypto.subtle;
     const plaintext = serializeResponseSet(populated());
     const passphrase = "correct-pin";
 
@@ -228,7 +227,9 @@ describe("createInMemoryResponseStore — encryption", () => {
     if (loadResult.status === "encrypted") {
       const decrypted = await store.decryptEnvelope(loadResult.envelope, "wrong-pin");
       expect(decrypted.status).toBe("corrupt");
-      expect(decrypted.refusal).toBe("boussole.local_state_corrupt");
+      if (decrypted.status === "corrupt") {
+        expect(decrypted.refusal).toBe("boussole.local_state_corrupt");
+      }
     }
   });
 

@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it } from "bun:test";
-import { webcrypto } from "node:crypto";
 import {
   decryptString,
   deriveKeyFromPassphrase,
@@ -11,7 +10,7 @@ describe("symmetric-encryption", () => {
   let cryptoSubtle: SubtleCrypto;
 
   beforeEach(() => {
-    cryptoSubtle = webcrypto.subtle;
+    cryptoSubtle = globalThis.crypto.subtle;
   });
 
   describe("encryptString", () => {
