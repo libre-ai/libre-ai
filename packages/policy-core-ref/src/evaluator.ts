@@ -1,0 +1,512 @@
+// Policy evaluation engine. SEMANTICS.md §2-8: validation, operators, freshness, verdict.
+
+import type {
+  ErrorCode,
+  FactValue,
+  JsonRecord,
+  Operator,
+  PolicyEvaluation,
+  ReasonCode,
+  RuleStatus,
+  RuleValue,
+  Verdict,
+} from "./types";
+import { StrictJsonError } from "./types";
+import { digest, jcs } from "./jcs";
+import { normalize } from "./normalize";
+import { parseStrictJson } from "./strict-parser";
+
+const ENGINE_VERSION = "2.0.0";
+
+interface InputLimits {
+  policyInput: number;
+  snapshotInput: number;
+  needInput: number;
+  evaluatedAt: number;
+  successfulOutput: number;
+}
+
+// SEMANTICS.md §2: resource budgets (preflight checks before parsing)
+const INPUT_LIMITS: InputLimits = {
+  policyInput: 8 * 1024 * 1024,
+  snapshotInput: 8 * 1024 * 1024,
+  needInput: 8 * 1024 * 1024,
+  evaluatedAt: 20,
+  successfulOutput: 2 * 1024 * 1024,
+};
+
+export type EvaluateResult = { ok: true; jcs: Uint8Array } | { ok: false; error: ErrorCode };
+
+export async function evaluate(
+  policyBytes: Uint8Array,
+  snapshotBytes: Uint8Array,
+  needBytes: Uint8Array,
+  evaluatedAt: string,
+): Promise<EvaluateResult> {
+  try {
+    // SEMANTICS.md §2: byte length preflight
+    if (
+      policyBytes.byteLength > INPUT_LIMITS.policyInput ||
+      snapshotBytes.byteLength > INPUT_LIMITS.snapshotInput ||
+      needBytes.byteLength > INPUT_LIMITS.needInput ||
+      new TextEncoder().encode(evaluatedAt).byteLength > INPUT_LIMITS.evaluatedAt
+    ) {
+      return { ok: false, error: "input-invalid" };
+    }
+
+    // Decode with strict JSON parser (depth 64, no duplicates, no BOM)
+    const maxDepth = 64;
+    const policy = parseStrictJson(policyBytes, maxDepth);
+    const snapshot = parseStrictJson(snapshotBytes, maxDepth);
+    const need = parseStrictJson(needBytes, maxDepth);
+
+    // SEMANTICS.md §2.1: validate inputs in order
+    const validation = validateInputs(policy, snapshot, need, evaluatedAt);
+    if (validation !== null) {
+      return { ok: false, error: validation };
+    }
+
+    // Compute digests for comparison (SEMANTICS.md §9)
+    const policySubject = {
+      schemaVersion: policy.schemaVersion,
+      id: policy.id,
+      tenantId: policy.tenantId,
+      version: policy.version,
+      status: policy.status,
+      proposedBy: policy.proposedBy,
+      rules: policy.rules,
+    };
+    const policyDigest = digest("libre-ai.policy-definition.v2", normalize(policySubject, "policy"));
+    const snapshotDigest = digest(
+      "libre-ai.model-snapshot.v2",
+      normalize(without(snapshot, "digest"), "snapshot"),
+    );
+    const needDigest = digest("libre-ai.policy-need.v2", normalize(without(need, "digest"), "need"));
+
+    // SEMANTICS.md §2.6: verify digests
+    if (
+      policy.digest !== policyDigest ||
+      (policy.approval as JsonRecord).subjectDigest !== policyDigest ||
+      snapshot.digest !== snapshotDigest ||
+      need.digest !== needDigest
+    ) {
+      return { ok: false, error: "digest-mismatch" };
+    }
+
+    // Evaluate all rules
+    const ruleResults = evaluateRules(policy, snapshot, need, evaluatedAt);
+
+    // Compute verdict (SEMANTICS.md §7)
+    const verdict = computeVerdict(policy, ruleResults);
+
+    // Build evaluation (SEMANTICS.md §9)
+    const unsignedEvaluation: PolicyEvaluation = {
+      schemaVersion: "libre-ai.policy-evaluation.v2",
+      tenantId: policy.tenantId,
+      policyId: policy.id,
+      policyDigest: policyDigest,
+      snapshotId: snapshot.id,
+      snapshotDigest: snapshotDigest,
+      needDigest: needDigest,
+      engineVersion: ENGINE_VERSION,
+      verdict: verdict,
+      ruleResults: ruleResults,
+      evaluatedAt: evaluatedAt,
+      digest: "", // computed below
+      id: "", // computed below
+    };
+
+    const evaluationDigest = digest(
+      "libre-ai.policy-evaluation.v2",
+      without(unsignedEvaluation, "id", "digest"),
+    );
+    unsignedEvaluation.digest = evaluationDigest;
+    unsignedEvaluation.id = `urn:libre-ai:evaluation:${evaluationDigest}`;
+
+    // Serialize to JCS
+    const resultJcs = jcs(unsignedEvaluation);
+
+    // SEMANTICS.md §2: output ceiling check
+    if (resultJcs.byteLength > INPUT_LIMITS.successfulOutput) {
+      return { ok: false, error: "input-invalid" };
+    }
+
+    return { ok: true, jcs: resultJcs };
+  } catch (error) {
+    if (error instanceof StrictJsonError) {
+      if (error.defect === "invalid-utf8") {
+        return { ok: false, error: "input-invalid" };
+      }
+      return { ok: false, error: "input-invalid" };
+    }
+    // Unexpected error -> input-invalid (safe default)
+    return { ok: false, error: "input-invalid" };
+  }
+}
+
+function validateInputs(
+  policy: JsonRecord,
+  snapshot: JsonRecord,
+  need: JsonRecord,
+  evaluatedAt: string,
+): ErrorCode | null {
+  // SEMANTICS.md §2.4: validate evaluated-at format (YYYY-MM-DDTHH:mm:ssZ)
+  if (!isUtcSeconds(evaluatedAt)) {
+    return "evaluated-at-invalid";
+  }
+
+  // SEMANTICS.md §2.5: check for duplicate rule IDs
+  const rules = policy.rules as JsonRecord[];
+  if (Array.isArray(rules)) {
+    const ruleIds = new Set<string>();
+    for (const rule of rules) {
+      const id = String(rule.id);
+      if (ruleIds.has(id)) {
+        return "rule-id-duplicate";
+      }
+      ruleIds.add(id);
+    }
+  }
+
+  // SEMANTICS.md §2.5: approval separation (approverId != proposedBy, actorKind = human)
+  const approval = policy.approval as JsonRecord;
+  if (approval.approverId === policy.proposedBy) {
+    return "approval-invalid";
+  }
+  if (approval.actorKind !== "human") {
+    return "approval-invalid";
+  }
+
+  // SEMANTICS.md §2.5: tenant mismatch
+  if (
+    policy.tenantId !== snapshot.tenantId ||
+    policy.tenantId !== need.tenantId
+  ) {
+    return "tenant-mismatch";
+  }
+
+  return null;
+}
+
+interface RuleEvaluationState {
+  ruleId: string;
+  fact: string;
+  occurrences: Array<{ value: FactValue; status: RuleStatus; reasonCode: ReasonCode }>;
+}
+
+function evaluateRules(
+  policy: JsonRecord,
+  snapshot: JsonRecord,
+  need: JsonRecord,
+  evaluatedAt: string,
+): Array<{ ruleId: string; status: RuleStatus; reasonCode: ReasonCode }> {
+  const rules = policy.rules as JsonRecord[];
+  const results: Array<{ ruleId: string; status: RuleStatus; reasonCode: ReasonCode }> = [];
+
+  for (const rule of rules) {
+    const ruleId = String(rule.id);
+    const fact = String(rule.fact);
+    const operator = String(rule.operator) as Operator;
+    const value = rule.value as RuleValue;
+    const maxSourceAgeDays = typeof rule.maxSourceAgeDays === "number" ? rule.maxSourceAgeDays : undefined;
+    const unknown = String(rule.unknown);
+
+    // Determine which namespace to search
+    let occurrences: FactValue[] = [];
+    if (fact.startsWith("need.")) {
+      occurrences = findFacts(need, fact, "need");
+    } else if (fact.startsWith("model.")) {
+      occurrences = findFacts(snapshot, fact, "model");
+    }
+
+    // SEMANTICS.md §3: zero occurrences -> unknown/fact_absent
+    if (occurrences.length === 0) {
+      results.push({
+        ruleId,
+        status: "unknown",
+        reasonCode: "policy.fact_absent",
+      });
+      continue;
+    }
+
+    // SEMANTICS.md §3: multiple occurrences -> evaluate all, reduce
+    const occurrenceStatuses: Array<{ status: RuleStatus; reasonCode: ReasonCode }> = [];
+    for (const occurrence of occurrences) {
+      const status = evaluateOccurrence(
+        occurrence,
+        operator,
+        value,
+        maxSourceAgeDays,
+        snapshot,
+        evaluatedAt,
+        fact,
+      );
+      occurrenceStatuses.push(status);
+    }
+
+    // SEMANTICS.md §6: reduce by priority: failed > unknown > satisfied
+    const ruleResult = reduceOccurrences(occurrenceStatuses);
+    results.push({
+      ruleId,
+      status: ruleResult.status,
+      reasonCode: ruleResult.reasonCode,
+    });
+  }
+
+  // SEMANTICS.md §6: sort by rule ID (ascending raw ASCII)
+  results.sort((a, b) => {
+    const aId = new TextEncoder().encode(a.ruleId);
+    const bId = new TextEncoder().encode(b.ruleId);
+    return compareBytes(aId, bId);
+  });
+
+  return results;
+}
+
+function evaluateOccurrence(
+  occurrence: FactValue,
+  operator: Operator,
+  value: RuleValue,
+  maxSourceAgeDays: number | undefined,
+  snapshot: JsonRecord,
+  evaluatedAt: string,
+  factName: string,
+): { status: RuleStatus; reasonCode: ReasonCode } {
+  // SEMANTICS.md §5: freshness check (for model facts)
+  if (factName.startsWith("model.")) {
+    const freshness = checkFreshness(occurrence, snapshot, evaluatedAt, factName, maxSourceAgeDays);
+    if (freshness !== null) {
+      return freshness;
+    }
+  }
+
+  // SEMANTICS.md §4: operator evaluation
+  return evaluateOperator(occurrence, operator, value);
+}
+
+function checkFreshness(
+  occurrence: FactValue,
+  snapshot: JsonRecord,
+  evaluatedAt: string,
+  factName: string,
+  maxSourceAgeDays: number | undefined,
+): { status: "unknown"; reasonCode: ReasonCode } | null {
+  // Find the matching fact to get its source.retrievedAt
+  const facts = snapshot.facts as JsonRecord[];
+  let retrievedAt: string | undefined;
+
+  for (const fact of facts) {
+    if (fact.name === factName.replace("model.", "")) {
+      const factValue = fact.value;
+      // Check if this is the occurrence we're checking
+      if (factValue === occurrence) {
+        const source = fact.source as JsonRecord;
+        retrievedAt = String(source.retrievedAt);
+        break;
+      }
+    }
+  }
+
+  if (!retrievedAt) {
+    // Shouldn't happen if fact exists
+    return { status: "unknown", reasonCode: "policy.fact_absent" };
+  }
+
+  const ageSeconds = Math.floor(new Date(evaluatedAt).getTime() / 1000) - Math.floor(new Date(retrievedAt).getTime() / 1000);
+
+  // SEMANTICS.md §5: source from future
+  if (ageSeconds < 0) {
+    return { status: "unknown", reasonCode: "policy.source_from_future" };
+  }
+
+  // SEMANTICS.md §5: snapshot stale
+  if (maxSourceAgeDays !== undefined) {
+    const maximumAgeSeconds = maxSourceAgeDays * 86400;
+    if (ageSeconds > maximumAgeSeconds) {
+      return { status: "unknown", reasonCode: "policy.snapshot_stale" };
+    }
+  }
+
+  return null;
+}
+
+function evaluateOperator(
+  occurrence: FactValue,
+  operator: Operator,
+  value: RuleValue,
+): { status: RuleStatus; reasonCode: ReasonCode } {
+  // SEMANTICS.md §4: operator/type matrix and predicate evaluation
+  try {
+    switch (operator) {
+      case "equals": {
+        if (typeof occurrence !== typeof value) {
+          return { status: "unknown", reasonCode: "policy.fact_type_mismatch" };
+        }
+        return occurrence === value
+          ? { status: "satisfied", reasonCode: "policy.rule_satisfied" }
+          : { status: "failed", reasonCode: "policy.rule_failed" };
+      }
+      case "not-equals": {
+        if (typeof occurrence !== typeof value) {
+          // Type mismatch on negated operator is unknown, not satisfied
+          return { status: "unknown", reasonCode: "policy.fact_type_mismatch" };
+        }
+        return occurrence !== value
+          ? { status: "satisfied", reasonCode: "policy.rule_satisfied" }
+          : { status: "failed", reasonCode: "policy.rule_failed" };
+      }
+      case "in": {
+        if (!Array.isArray(value)) {
+          return { status: "failed", reasonCode: "policy.rule_failed" };
+        }
+        for (const item of value) {
+          if (typeof occurrence === typeof item && occurrence === item) {
+            return { status: "satisfied", reasonCode: "policy.rule_satisfied" };
+          }
+        }
+        return { status: "failed", reasonCode: "policy.rule_failed" };
+      }
+      case "not-in": {
+        if (!Array.isArray(value)) {
+          return { status: "failed", reasonCode: "policy.rule_failed" };
+        }
+        for (const item of value) {
+          if (typeof occurrence === typeof item && occurrence === item) {
+            return { status: "failed", reasonCode: "policy.rule_failed" };
+          }
+        }
+        return { status: "satisfied", reasonCode: "policy.rule_satisfied" };
+      }
+      case "at-least": {
+        if (typeof occurrence !== "number" || typeof value !== "number") {
+          return { status: "unknown", reasonCode: "policy.fact_type_mismatch" };
+        }
+        return occurrence >= value
+          ? { status: "satisfied", reasonCode: "policy.rule_satisfied" }
+          : { status: "failed", reasonCode: "policy.rule_failed" };
+      }
+      case "at-most": {
+        if (typeof occurrence !== "number" || typeof value !== "number") {
+          return { status: "unknown", reasonCode: "policy.fact_type_mismatch" };
+        }
+        return occurrence <= value
+          ? { status: "satisfied", reasonCode: "policy.rule_satisfied" }
+          : { status: "failed", reasonCode: "policy.rule_failed" };
+      }
+      default:
+        return { status: "failed", reasonCode: "policy.rule_failed" };
+    }
+  } catch {
+    return { status: "failed", reasonCode: "policy.rule_failed" };
+  }
+}
+
+function reduceOccurrences(
+  statuses: Array<{ status: RuleStatus; reasonCode: ReasonCode }>,
+): { status: RuleStatus; reasonCode: ReasonCode } {
+  // SEMANTICS.md §6: failed > unknown > satisfied
+  for (const s of statuses) {
+    if (s.status === "failed") {
+      return s;
+    }
+  }
+  for (const s of statuses) {
+    if (s.status === "unknown") {
+      return s;
+    }
+  }
+  return { status: "satisfied", reasonCode: "policy.rule_satisfied" };
+}
+
+function computeVerdict(
+  policy: JsonRecord,
+  ruleResults: Array<{ ruleId: string; status: RuleStatus; reasonCode: ReasonCode }>,
+): Verdict {
+  // SEMANTICS.md §7: verdict logic
+  const rules = policy.rules as JsonRecord[];
+  const ruleUnknownDisposition = new Map<string, string>();
+
+  for (const rule of rules) {
+    const ruleId = String(rule.id);
+    const unknown = String(rule.unknown);
+    ruleUnknownDisposition.set(ruleId, unknown);
+  }
+
+  // Step 1: if any result is failed -> ineligible
+  for (const result of ruleResults) {
+    if (result.status === "failed") {
+      return "ineligible";
+    }
+  }
+
+  // Step 2: if any result is unknown AND that rule's unknown disposition is ineligible -> ineligible
+  for (const result of ruleResults) {
+    if (result.status === "unknown" && ruleUnknownDisposition.get(result.ruleId) === "ineligible") {
+      return "ineligible";
+    }
+  }
+
+  // Step 3: if any result is unknown -> indeterminate
+  for (const result of ruleResults) {
+    if (result.status === "unknown") {
+      return "indeterminate";
+    }
+  }
+
+  // Step 4: all satisfied -> eligible
+  return "eligible";
+}
+
+function findFacts(
+  container: JsonRecord,
+  factName: string,
+  prefix: string,
+): FactValue[] {
+  const facts = container.facts as JsonRecord[];
+  const targetName = factName.replace(`${prefix}.`, "");
+  const results: FactValue[] = [];
+
+  if (Array.isArray(facts)) {
+    for (const fact of facts) {
+      if (fact.name === targetName) {
+        results.push(fact.value as FactValue);
+      }
+    }
+  }
+
+  return results;
+}
+
+function isUtcSeconds(value: string): boolean {
+  // YYYY-MM-DDTHH:mm:ssZ format, exactly 20 bytes UTF-8
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(value)) {
+    return false;
+  }
+  if (new TextEncoder().encode(value).byteLength !== 20) {
+    return false;
+  }
+  const parsed = new Date(value);
+  // Verify round-trip: parsing and serializing should produce the same string
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString() === `${value.slice(0, -1)}.000Z`;
+}
+
+function without(value: JsonRecord, ...keys: string[]): JsonRecord {
+  const result: JsonRecord = {};
+  const keySet = new Set(keys);
+  for (const [k, v] of Object.entries(value)) {
+    if (!keySet.has(k)) {
+      result[k] = v;
+    }
+  }
+  return result;
+}
+
+function compareBytes(left: Uint8Array, right: Uint8Array): number {
+  for (let i = 0; i < Math.min(left.length, right.length); i++) {
+    const diff = (left[i] ?? 0) - (right[i] ?? 0);
+    if (diff !== 0) {
+      return diff;
+    }
+  }
+  return left.length - right.length;
+}

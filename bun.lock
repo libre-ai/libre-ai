@@ -182,6 +182,10 @@
         "ajv-formats": "catalog:",
       },
     },
+    "packages/policy-core-ref": {
+      "name": "@libre-ai/policy-core-ref",
+      "version": "2.0.0",
+    },
     "packages/provenance": {
       "name": "@libre-ai/provenance",
       "version": "0.1.0",
@@ -324,6 +328,8 @@
     "@libre-ai/model-policy": ["@libre-ai/model-policy@workspace:apps/model-policy"],
 
     "@libre-ai/notebook": ["@libre-ai/notebook@workspace:apps/notebook"],
+
+    "@libre-ai/policy-core-ref": ["@libre-ai/policy-core-ref@workspace:packages/policy-core-ref"],
 
     "@libre-ai/practices": ["@libre-ai/practices@workspace:apps/practices"],
 
