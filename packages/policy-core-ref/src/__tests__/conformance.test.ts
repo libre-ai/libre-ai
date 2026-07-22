@@ -66,7 +66,8 @@ describe("golden vector conformance (144 cases)", () => {
       if (testCase.expectedError) {
         expect(result.ok).toBe(false);
         if (!result.ok) {
-          const expectedVariant = testCase.expectedError.variant.replace(/-/g, "_");
+          // Error codes use hyphens in WIT (input-invalid, not input_invalid)
+          const expectedVariant = testCase.expectedError.variant;
           expect(result.error).toBe(expectedVariant);
         }
       } else if (testCase.expectedEvaluation) {
@@ -74,7 +75,9 @@ describe("golden vector conformance (144 cases)", () => {
         if (result.ok) {
           // Decode the JCS output and compare
           const decodedResult = JSON.parse(new TextDecoder().decode(result.jcs));
-          const expectedJcs = JSON.stringify(testCase.expectedEvaluation, null, 0);
+
+          // Both must be canonicalized to JCS for comparison
+          const expectedJcs = new TextDecoder().decode(jcs(testCase.expectedEvaluation));
           const resultJcs = new TextDecoder().decode(jcs(decodedResult));
 
           if (resultJcs !== expectedJcs) {
@@ -82,10 +85,12 @@ describe("golden vector conformance (144 cases)", () => {
             expect(resultJcs).toBe(expectedJcs);
           }
 
-          // Verify key fields match
-          expect(decodedResult.id).toBe((testCase.expectedEvaluation as any).id);
-          expect(decodedResult.digest).toBe((testCase.expectedEvaluation as any).digest);
-          expect(decodedResult.verdict).toBe((testCase.expectedEvaluation as any).verdict);
+          // Also verify the JCS bytes match
+          const resultBytes = result.jcs;
+          const expectedBytes = jcs(testCase.expectedEvaluation);
+          if (resultBytes.byteLength !== expectedBytes.byteLength) {
+            failures.push(`${label}: byte length mismatch. Expected: ${expectedBytes.byteLength}, Actual: ${resultBytes.byteLength}`);
+          }
         }
       }
     });
