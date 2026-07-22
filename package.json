@@ -7,6 +7,9 @@
   "engines": {
     "bun": ">=1.4.0"
   },
+  "overrides": {
+    "fast-uri": "4.1.1"
+  },
   "workspaces": {
     "packages": [
       "apps/*",
