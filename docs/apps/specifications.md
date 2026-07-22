@@ -12,7 +12,7 @@ Specifications turns an intent into an explicit, reviewable and immutable SpecPa
 ## Journeys
 
 1. **Frame:** author creates workspace/problem, actors, constraints and hypotheses; validation exposes missing decisions.
-2. **Specify/review:** author adds requirements, contracts, risk controls and tests; reviewers comment and accept/reject attributable decisions.
+2. **Specify/review:** author adds requirements, contracts, risk controls and tests; reviewers comment and accept/reject attributable decisions. When `collab_enabled`, authors and reviewers co-edit the DRAFT workspace in real time through the sovereign end-to-end-encrypted collaboration brick (MLS RFC 9420 per-epoch keys, ciphertext-only relay); once the package is submitted for review the CRDT is frozen and the review phase uses the append-only comment stream only. Accepted packages stay immutable and content-addressed. The workspace remains fully editable without collaboration enabled.
 3. **Accept:** approver freezes a complete package hash and signatures/attestations; accepted version becomes immutable.
 4. **Handoff/export:** authorized user emits planning-only handoff referencing accepted package/evidence; consumer verifies hash and capabilities before planning.
 
@@ -36,17 +36,17 @@ Draft is revisioned; submitted version is review-frozen; accepted package is imm
 
 ## Refusal matrix
 
-| Code | Refusal |
-| --- | --- |
-| `spec.problem_missing` | package lacks explicit problem/actor/outcome |
-| `spec.decision_open` | required cross-module decision unresolved |
-| `spec.contract_missing` | requirement crosses boundary without canonical contract |
-| `spec.acceptance_unverifiable` | criterion has no observable evidence/gate |
-| `spec.approval_self_only` | author is sole approver where separation required |
-| `spec.revision_stale` | draft mutation uses stale revision |
-| `spec.package_immutable` | mutation targets accepted version |
-| `spec.handoff_execution_right` | handoff requests executable capability |
-| `spec.evidence_hash_mismatch` | evidence/package digest differs |
+| Code                           | Refusal                                                 |
+| ------------------------------ | ------------------------------------------------------- |
+| `spec.problem_missing`         | package lacks explicit problem/actor/outcome            |
+| `spec.decision_open`           | required cross-module decision unresolved               |
+| `spec.contract_missing`        | requirement crosses boundary without canonical contract |
+| `spec.acceptance_unverifiable` | criterion has no observable evidence/gate               |
+| `spec.approval_self_only`      | author is sole approver where separation required       |
+| `spec.revision_stale`          | draft mutation uses stale revision                      |
+| `spec.package_immutable`       | mutation targets accepted version                       |
+| `spec.handoff_execution_right` | handoff requests executable capability                  |
+| `spec.evidence_hash_mismatch`  | evidence/package digest differs                         |
 
 Validation returns stable rule IDs and paths; it never fills missing content automatically.
 
