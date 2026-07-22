@@ -24,6 +24,15 @@ Notebook is a private local-first block notebook that lets its owner select exac
 - claiming remote revocation of a downloaded export ;
 - transmitting blocks to build an index.
 
+The notebook core stays strictly local-first: collaborative editing OF THE
+NOTEBOOK remains a non-goal. A separate, opt-in future capability (governed by a
+dedicated ADR, post-release) lets the owner export selected blocks into a
+Sessions workspace for real-time co-editing with others over the sovereign
+end-to-end-encrypted collaboration brick, then re-import the result as a new
+local revision. The collaboration surface is external (Sessions + ciphertext-only
+relay), never the notebook core; all such traffic is ciphertext, and the notebook
+remains fully functional with the capability disabled.
+
 ## Domain protocol
 
 **Commands:** `CreateWorkspace`, `CreateBlock`, `EditBlock`, `LinkBlocks`, `DeleteBlock`, `SelectContext`, `ExcludeContextBlock`, `CreateContextExport`, `MarkExportSuperseded`, `CreateEncryptedBackup`, `RestoreBackup`, `DeleteWorkspace`.
@@ -36,16 +45,16 @@ Blocks use immutable revision records plus current head. Restore never silently 
 
 ## Refusal matrix
 
-| Code | Refusal |
-| --- | --- |
-| `notebook.workspace_locked` | key unavailable or unlock refused |
-| `notebook.revision_stale` | edit targets a non-current block revision |
-| `notebook.export_dependency_missing` | selected graph references missing required block |
-| `notebook.export_exclusion_conflict` | excluded block is required by selected contract |
-| `notebook.export_preview_mismatch` | serialized export hash differs from preview hash |
-| `notebook.backup_authentication_failed` | backup AEAD verification fails |
-| `notebook.restore_version_unsupported` | backup contract version has no explicit adapter |
-| `notebook.remote_sync_forbidden` | v1 request attempts server note persistence |
+| Code                                    | Refusal                                          |
+| --------------------------------------- | ------------------------------------------------ |
+| `notebook.workspace_locked`             | key unavailable or unlock refused                |
+| `notebook.revision_stale`               | edit targets a non-current block revision        |
+| `notebook.export_dependency_missing`    | selected graph references missing required block |
+| `notebook.export_exclusion_conflict`    | excluded block is required by selected contract  |
+| `notebook.export_preview_mismatch`      | serialized export hash differs from preview hash |
+| `notebook.backup_authentication_failed` | backup AEAD verification fails                   |
+| `notebook.restore_version_unsupported`  | backup contract version has no explicit adapter  |
+| `notebook.remote_sync_forbidden`        | v1 request attempts server note persistence      |
 
 Failure never uploads data or drops the previous valid local revision.
 
