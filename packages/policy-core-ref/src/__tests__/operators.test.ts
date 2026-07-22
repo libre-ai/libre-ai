@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
-import { digest, evaluate } from "../index";
+import { digest, type ErrorCode, evaluate, type FactValue } from "../index";
 import { normalize } from "../normalize";
 
 interface OperatorVector {
@@ -356,7 +356,9 @@ describe("invalid policy vectors (10 cases)", () => {
       expect(result.ok).toBe(false);
       if (!result.ok) {
         // Map operators.json format (policy.input_invalid) to evaluator format (input-invalid)
-        const expectedError = vec.expectedError.replace("policy.", "").replace("_", "-");
+        const expectedError = vec.expectedError
+          .replace("policy.", "")
+          .replace("_", "-") as ErrorCode;
         expect(result.error).toBe(expectedError);
       }
     });
@@ -451,7 +453,13 @@ describe("unknown reason code priority (order-independence)", () => {
     };
 
     // Helper to run evaluation with given fact order
-    const runEvaluation = async (facts: (typeof factTypeMatchFirst)[]) => {
+    const runEvaluation = async (
+      facts: Array<{
+        name: string;
+        value: FactValue;
+        source: { uri: string; retrievedAt: string; digest: string; licence: string };
+      }>,
+    ) => {
       const snapshotBase = {
         schemaVersion: "libre-ai.model-snapshot.v2",
         id: "urn:libre-ai:snapshot:reason-priority-test",

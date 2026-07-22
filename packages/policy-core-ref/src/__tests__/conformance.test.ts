@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "bun:test";
 import { readFile } from "node:fs/promises";
-import { evaluate, jcs } from "../index";
+import { type ErrorCode, evaluate, jcs } from "../index";
 
 interface GoldenCase {
   id: string;
@@ -66,7 +66,7 @@ describe("golden vector conformance (20 cases)", () => {
         expect(result.ok).toBe(false);
         if (!result.ok) {
           // Error codes use hyphens in WIT (input-invalid, not input_invalid)
-          const expectedVariant = testCase.expectedError.variant;
+          const expectedVariant = testCase.expectedError.variant as ErrorCode;
           expect(result.error).toBe(expectedVariant);
         }
       } else if (testCase.expectedEvaluation) {

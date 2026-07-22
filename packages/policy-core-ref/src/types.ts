@@ -27,13 +27,7 @@ export type ReasonCode =
 
 export type Verdict = "eligible" | "ineligible" | "indeterminate";
 
-export type Operator =
-  | "equals"
-  | "not-equals"
-  | "in"
-  | "not-in"
-  | "at-least"
-  | "at-most";
+export type Operator = "equals" | "not-equals" | "in" | "not-in" | "at-least" | "at-most";
 
 export type RuleValue = string | number | boolean | (string | number | boolean)[];
 

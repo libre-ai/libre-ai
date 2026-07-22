@@ -55,7 +55,9 @@ function stringify(value: unknown): string {
   }
   if (isObject(value)) {
     const keys = Object.keys(value).sort();
-    const pairs = keys.map((key) => `${stringifyString(key)}:${stringify((value as JsonRecord)[key])}`);
+    const pairs = keys.map(
+      (key) => `${stringifyString(key)}:${stringify((value as JsonRecord)[key])}`,
+    );
     return `{${pairs.join(",")}}`;
   }
   throw new TypeError(`cannot stringify ${typeof value}`);
@@ -80,7 +82,8 @@ function stringifyNumber(value: number): string {
 function stringifyString(value: string): string {
   let result = '"';
   for (let i = 0; i < value.length; i++) {
-    const char = value[i]!;
+    const char = value[i];
+    if (!char) return `${result}"`; // Safety check, should never occur
     const code = char.charCodeAt(0);
     switch (char) {
       case '"':

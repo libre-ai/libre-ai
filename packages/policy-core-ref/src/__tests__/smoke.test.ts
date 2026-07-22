@@ -1,5 +1,5 @@
-import { describe, it, expect } from "bun:test";
-import { evaluate, jcs, digest } from "../index";
+import { describe, expect, it } from "bun:test";
+import { digest, evaluate, jcs } from "../index";
 
 describe("smoke tests", () => {
   it("should export evaluate function", () => {
@@ -16,7 +16,12 @@ describe("smoke tests", () => {
 
   it("should handle invalid policy (oversized)", async () => {
     const oversized = new Uint8Array(8 * 1024 * 1024 + 1);
-    const result = await evaluate(oversized, new Uint8Array([123]), new Uint8Array([123]), "2026-01-01T00:00:00Z");
+    const result = await evaluate(
+      oversized,
+      new Uint8Array([123]),
+      new Uint8Array([123]),
+      "2026-01-01T00:00:00Z",
+    );
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toBe("input-invalid");
@@ -25,12 +30,7 @@ describe("smoke tests", () => {
 
   it("should handle invalid evaluatedAt", async () => {
     const validJson = new Uint8Array(new TextEncoder().encode("{}"));
-    const result = await evaluate(
-      validJson,
-      validJson,
-      validJson,
-      "not-a-date",
-    );
+    const result = await evaluate(validJson, validJson, validJson, "not-a-date");
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toBe("evaluated-at-invalid");

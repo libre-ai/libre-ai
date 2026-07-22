@@ -4,10 +4,7 @@
 import { jcs } from "./jcs";
 import type { JsonRecord } from "./types";
 
-export function normalize(
-  value: JsonRecord,
-  kind: "policy" | "snapshot" | "need",
-): JsonRecord {
+export function normalize(value: JsonRecord, kind: "policy" | "snapshot" | "need"): JsonRecord {
   const normalized = structuredClone(value);
 
   if (kind === "policy") {
@@ -31,10 +28,7 @@ function normalizePolicy(value: JsonRecord): void {
   rules.sort((a, b) => {
     const aId = String(a.id);
     const bId = String(b.id);
-    return compareBytes(
-      new TextEncoder().encode(aId),
-      new TextEncoder().encode(bId),
-    );
+    return compareBytes(new TextEncoder().encode(aId), new TextEncoder().encode(bId));
   });
 
   // Normalize in/not-in sets within rules

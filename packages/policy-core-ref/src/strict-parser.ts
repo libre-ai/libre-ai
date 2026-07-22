@@ -1,4 +1,4 @@
-import { StrictJsonError, type JsonRecord, type RawDefect } from "./types";
+import { type JsonRecord, type RawDefect, StrictJsonError } from "./types";
 
 // RFC 8785 JSON Canonicalization + SEMANTICS.md §2 strict parsing.
 // Rejects: BOM, invalid UTF-8, duplicate member names, unpaired surrogates,
@@ -208,20 +208,28 @@ export class StrictJsonParser {
     }
     if (this.input[this.index] === "0") {
       this.index += 1;
-    } else if (this.input[this.index] && this.input[this.index]! >= "1" && this.input[this.index]! <= "9") {
-      while (this.index < this.input.length && this.input[this.index]! >= "0" && this.input[this.index]! <= "9") {
-        this.index += 1;
-      }
     } else {
-      this.fail("invalid JSON number");
+      const digit = this.input[this.index];
+      if (digit && digit >= "1" && digit <= "9") {
+        while (this.index < this.input.length) {
+          const d = this.input[this.index];
+          if (!d || d < "0" || d > "9") break;
+          this.index += 1;
+        }
+      } else {
+        this.fail("invalid JSON number");
+      }
     }
 
     if (this.input[this.index] === ".") {
       this.index += 1;
-      if (!this.input[this.index] || this.input[this.index]! < "0" || this.input[this.index]! > "9") {
+      const frac = this.input[this.index];
+      if (!frac || frac < "0" || frac > "9") {
         this.fail("invalid JSON number fraction");
       }
-      while (this.index < this.input.length && this.input[this.index]! >= "0" && this.input[this.index]! <= "9") {
+      while (this.index < this.input.length) {
+        const d = this.input[this.index];
+        if (!d || d < "0" || d > "9") break;
         this.index += 1;
       }
     }
@@ -231,10 +239,13 @@ export class StrictJsonParser {
       if (this.input[this.index] === "+" || this.input[this.index] === "-") {
         this.index += 1;
       }
-      if (!this.input[this.index] || this.input[this.index]! < "0" || this.input[this.index]! > "9") {
+      const exp = this.input[this.index];
+      if (!exp || exp < "0" || exp > "9") {
         this.fail("invalid JSON number exponent");
       }
-      while (this.index < this.input.length && this.input[this.index]! >= "0" && this.input[this.index]! <= "9") {
+      while (this.index < this.input.length) {
+        const d = this.input[this.index];
+        if (!d || d < "0" || d > "9") break;
         this.index += 1;
       }
     }

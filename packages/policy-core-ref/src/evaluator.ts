@@ -120,10 +120,10 @@ export async function evaluate(
     // Build evaluation (SEMANTICS.md §9)
     const unsignedEvaluation: PolicyEvaluation = {
       schemaVersion: "libre-ai.policy-evaluation.v2",
-      tenantId: policy.tenantId,
-      policyId: policy.id,
+      tenantId: String(policy.tenantId),
+      policyId: String(policy.id),
       policyDigest: policyDigest,
-      snapshotId: snapshot.id,
+      snapshotId: String(snapshot.id),
       snapshotDigest: snapshotDigest,
       needDigest: needDigest,
       engineVersion: ENGINE_VERSION,
@@ -136,7 +136,7 @@ export async function evaluate(
 
     const evaluationDigest = digest(
       "libre-ai.policy-evaluation.v2",
-      without(unsignedEvaluation, "id", "digest"),
+      without(unsignedEvaluation as unknown as JsonRecord, "id", "digest"),
     );
     unsignedEvaluation.digest = evaluationDigest;
     unsignedEvaluation.id = `urn:libre-ai:evaluation:${evaluationDigest}`;
