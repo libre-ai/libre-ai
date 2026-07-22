@@ -45,6 +45,9 @@ was reserved by the owner on 2026-07-22.
    `dry_run: true` (default). Green = preflight re-proven on CI hardware.
 4. **Publish** — re-run with `dry_run: false`; approve the environment gate.
    Order is dependency-safe (contracts → web-platform → ui → auth-web).
+   Auth path: bun's own publish documentation states `bun publish` respects
+   the `NPM_CONFIG_TOKEN` environment variable for CI workflows (docs/pm/cli/
+   publish.mdx) — which is exactly how the workflow passes the secret.
    OTP: if the token strategy requires it, publish locally instead:
    `cd packages/<p> && bun publish --access public --otp <code>` in the same
    order.

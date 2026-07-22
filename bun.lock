@@ -191,6 +191,7 @@
       },
       "peerDependencies": {
         "react": "catalog:",
+        "react-dom": "catalog:",
         "tailwindcss": "catalog:",
       },
       "optionalPeers": [
