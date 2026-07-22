@@ -13,8 +13,18 @@ export interface EncryptedEnvelope {
 }
 
 /**
+ * Key derivation source abstraction. Allows decoupling the envelope format
+ * (version 1, immutable) from the derivation mechanism. Future sources may
+ * include WebAuthn-PRF; passphrases are the current and only implementation.
+ * The envelope stays version 1 across all sources.
+ */
+export interface KeySource {
+  readonly kind: "passphrase";
+}
+
+/**
  * Derive an AES-256 key from a passphrase using PBKDF2-SHA256.
- * Uses 100,000 iterations per NIST SP 800-132 (2023 recommendation).
+ * Uses 600,000 iterations per OWASP 2026 guidance for special-category data.
  * The salt is returned separately; the caller stores it with the ciphertext.
  */
 export async function deriveKeyFromPassphrase(
@@ -34,7 +44,7 @@ export async function deriveKeyFromPassphrase(
     {
       name: "PBKDF2",
       salt,
-      iterations: 100_000,
+      iterations: 600_000,
       hash: "SHA-256",
     },
     passphraseKey,
@@ -45,27 +55,25 @@ export async function deriveKeyFromPassphrase(
 }
 
 /**
- * Encrypt a plaintext string using AES-256-GCM with a derived key.
- * Generates a random 16-byte salt (for PBKDF2) and a random 12-byte nonce (for GCM).
- * Returns an envelope with salt, nonce, ciphertext, and tag (all base64-encoded).
+ * Encrypt a plaintext string using AES-256-GCM with a pre-derived CryptoKey.
+ * Generates a random 12-byte nonce for GCM; the salt must be stored separately
+ * and passed to deriveKeyFromPassphrase on decryption.
+ * Returns an envelope with nonce, ciphertext, and tag (all base64-encoded).
  * Optionally accepts a SubtleCrypto implementation; uses globalThis.crypto if not provided.
  */
-export async function encryptString(
+export async function encryptWithKey(
   plaintext: string,
-  passphrase: string,
+  key: CryptoKey,
+  salt: Uint8Array,
   crypto?: SubtleCrypto,
 ): Promise<EncryptedEnvelope> {
   if (!crypto) {
     crypto = globalThis.crypto.subtle;
   }
-  // Generate random salt and nonce (use globalThis.crypto.getRandomValues)
-  const salt = new Uint8Array(16);
-  globalThis.crypto.getRandomValues(salt);
+
+  // Generate random nonce for GCM
   const nonce = new Uint8Array(12);
   globalThis.crypto.getRandomValues(nonce);
-
-  // Derive encryption key from passphrase
-  const key = await deriveKeyFromPassphrase(passphrase, salt, crypto);
 
   // Encrypt plaintext
   const plaintextBytes = new TextEncoder().encode(plaintext);
@@ -87,6 +95,30 @@ export async function encryptString(
     ciphertext: btoa(String.fromCharCode(...ciphertextArray)),
     tag: btoa(String.fromCharCode(...tag)),
   };
+}
+
+/**
+ * Encrypt a plaintext string using AES-256-GCM with a passphrase-derived key.
+ * Generates a random 16-byte salt (for PBKDF2) and a random 12-byte nonce (for GCM).
+ * Returns an envelope with salt, nonce, ciphertext, and tag (all base64-encoded).
+ * Optionally accepts a SubtleCrypto implementation; uses globalThis.crypto if not provided.
+ */
+export async function encryptString(
+  plaintext: string,
+  passphrase: string,
+  crypto?: SubtleCrypto,
+): Promise<EncryptedEnvelope> {
+  if (!crypto) {
+    crypto = globalThis.crypto.subtle;
+  }
+  // Generate random salt and nonce (use globalThis.crypto.getRandomValues)
+  const salt = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(salt);
+
+  // Derive encryption key from passphrase
+  const key = await deriveKeyFromPassphrase(passphrase, salt, crypto);
+
+  return encryptWithKey(plaintext, key, salt, crypto);
 }
 
 /**

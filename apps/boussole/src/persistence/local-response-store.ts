@@ -10,7 +10,7 @@
 // in-memory adapter that exercises the exact same encode/decode path.
 
 import type { EncryptedEnvelope } from "../crypto/symmetric-encryption";
-import { decryptString } from "../crypto/symmetric-encryption";
+import { decryptString, encryptWithKey } from "../crypto/symmetric-encryption";
 import {
   type DatasetBinding,
   type LocalResponse,
@@ -23,6 +23,16 @@ import {
 } from "../domain/response-set";
 
 const REFUSAL: RefusalCode = "boussole.local_state_corrupt";
+
+/**
+ * Encryption context: the derived key and salt needed to encrypt responses.
+ * The key is a non-extractable CryptoKey kept only in memory.
+ * The salt is derived from the passphrase and stored in the envelope.
+ */
+export interface EncryptionContext {
+  readonly key: CryptoKey;
+  readonly salt: Uint8Array;
+}
 
 /**
  * Encode a response set to a local string. This is a device-local form only —
@@ -118,7 +128,7 @@ export function deserializeResponseSet(raw: string): Outcome<ResponseSet> {
 
 export type LoadResult =
   | { readonly status: "empty" }
-  | { readonly status: "loaded"; readonly set: ResponseSet }
+  | { readonly status: "loaded"; readonly set: ResponseSet; readonly envelope?: EncryptedEnvelope }
   | { readonly status: "encrypted"; readonly envelope: EncryptedEnvelope }
   | { readonly status: "corrupt"; readonly refusal: RefusalCode };
 
@@ -128,9 +138,15 @@ export type LoadResult =
  * a `corrupt` result, keeping the fail-closed contract at the storage seam.
  * If the stored data is encrypted, `load` returns status "encrypted" with the envelope.
  * The caller must invoke `decryptEnvelope(envelope, passphrase)` to decrypt.
+ *
+ * `save` accepts an optional EncryptionContext (key + salt) for encryption.
+ * If no context is provided, save throws immediately (encryption is mandatory).
+ * In practice, the caller (use-questionnaire) manages the key lifecycle:
+ * - First save: if no context, prompt user to set passphrase → derive key → retry save
+ * - Subsequent saves: context is in memory, always provided
  */
 export interface LocalResponseStore {
-  save(set: ResponseSet): Promise<void>;
+  save(set: ResponseSet, encryption?: EncryptionContext): Promise<void>;
   load(): Promise<LoadResult>;
   decryptEnvelope(envelope: EncryptedEnvelope, passphrase: string): Promise<LoadResult>;
   clear(): Promise<void>;
@@ -141,6 +157,9 @@ export interface LocalResponseStore {
  * string (not the object), so `load` runs the true decode path and rejects
  * injected corruption exactly as a persistent adapter would.
  * If the stored raw is a JSON EncryptedEnvelope, `load` detects it and returns encrypted status.
+ * In-memory store stores plaintext (no encryption) for tests/SSR; encryption is only enforced
+ * in the real IndexedDB adapter. This allows tests to verify serialization without
+ * the encryption overhead.
  */
 export function createInMemoryResponseStore(seed?: string): LocalResponseStore {
   let raw: string | undefined = seed;
@@ -166,8 +185,12 @@ export function createInMemoryResponseStore(seed?: string): LocalResponseStore {
   }
 
   return {
-    async save(set: ResponseSet): Promise<void> {
-      raw = serializeResponseSet(set);
+    async save(set: ResponseSet, encryption?: EncryptionContext): Promise<void> {
+      // In-memory store saves plaintext (no encryption).
+      // In tests/SSR, this is fine (never persisted).
+      // In the browser, the real IndexedDB adapter enforces encryption.
+      const plaintext = serializeResponseSet(set);
+      raw = plaintext;
     },
     async load(): Promise<LoadResult> {
       if (raw === undefined) return { status: "empty" };
@@ -189,7 +212,7 @@ export function createInMemoryResponseStore(seed?: string): LocalResponseStore {
         const decrypted = await decryptString(envelope, passphrase);
         const outcome = deserializeResponseSet(decrypted);
         return outcome.ok
-          ? { status: "loaded", set: outcome.value }
+          ? { status: "loaded", set: outcome.value, envelope }
           : { status: "corrupt", refusal: outcome.refusal };
       } catch {
         // Decryption failed (wrong passphrase or corrupted envelope)

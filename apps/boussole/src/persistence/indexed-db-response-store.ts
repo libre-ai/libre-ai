@@ -11,10 +11,11 @@
 // stored response set from device backups; decryption requires the user's PIN.
 
 import type { EncryptedEnvelope } from "../crypto/symmetric-encryption";
-import { decryptString } from "../crypto/symmetric-encryption";
+import { decryptString, encryptWithKey } from "../crypto/symmetric-encryption";
 import type { ResponseSet } from "../domain/response-set";
 import {
   deserializeResponseSet,
+  type EncryptionContext,
   type LoadResult,
   type LocalResponseStore,
   serializeResponseSet,
@@ -29,7 +30,7 @@ const OPEN_DEADLINE_MS = 10_000;
 
 interface ResponseRecord {
   readonly key: typeof RECORD_KEY;
-  readonly raw: string;
+  readonly raw: string | EncryptedEnvelope;
 }
 
 /**
@@ -134,8 +135,20 @@ export function createIndexedDbResponseStore(
   }
 
   return {
-    async save(set: ResponseSet): Promise<void> {
-      const record: ResponseRecord = { key: RECORD_KEY, raw: serializeResponseSet(set) };
+    async save(set: ResponseSet, encryption?: EncryptionContext): Promise<void> {
+      if (!encryption) {
+        throw new Error("save() requires an EncryptionContext (passphrase must be set first)");
+      }
+
+      const plaintext = serializeResponseSet(set);
+      const envelope = await encryptWithKey(
+        plaintext,
+        encryption.key,
+        encryption.salt,
+        globalThis.crypto.subtle,
+      );
+
+      const record: ResponseRecord = { key: RECORD_KEY, raw: envelope };
       await withStore("readwrite", (store) => store.put(record));
     },
 
@@ -163,7 +176,7 @@ export function createIndexedDbResponseStore(
         const decrypted = await decryptString(envelope, passphrase);
         const outcome = deserializeResponseSet(decrypted);
         return outcome.ok
-          ? { status: "loaded", set: outcome.value }
+          ? { status: "loaded", set: outcome.value, envelope }
           : { status: "corrupt", refusal: outcome.refusal };
       } catch {
         // Decryption failed (wrong passphrase or corrupted envelope)
