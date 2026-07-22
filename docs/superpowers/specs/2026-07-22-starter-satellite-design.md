@@ -28,13 +28,16 @@ only its own e2e harness does).
    installed).
 2. **G1/G3 scope**: walking skeleton "journal souverain" — sign in (auth-web
    dev-issuer, opaque session, CSRF), write a note (domain: pure functions),
-   SSR baseline + hydration + PWA shell (bun-app pattern), notes validated
-   against a canonical contract at the API boundary (contracts, fail-closed),
+   SSR baseline + hydration + PWA shell (bun-app pattern), a contract-validation
+   playground at the API boundary (contracts, fail-closed),
    accessible UI (ui primitives). No storage beyond in-memory (YAGNI: the
    starter teaches the seams, not a database).
-3. **G4 contracts at runtime**: the `POST /api/notes` boundary validates its
-   payload with `loadCanonicalContractRegistry()` against an existing locked
-   schema — real runtime usage, not test-only.
+3. **G4 contracts at runtime**: no locked schema describes a starter note, so
+   forcing one would be dishonest. Instead the starter exposes `POST
+   /api/validate` — a session-gated contract-validation playground: `{
+   schemaName, document }` → the fail-closed verdict from
+   `loadCanonicalContractRegistry()` (plus `GET /api/schemas` listing
+   `schemaNames()`). Real runtime SDK usage; notes stay domain-validated.
 4. **G5 npm-proof (exit gate)**: in-workspace, the starter uses `workspace:*`
    (dev truth). The proof of real npm consumption is
    `tools/release/starter-npm-proof.ts`: copies the starter OUT of the
@@ -62,8 +65,9 @@ distribution/templates/starter/
 ├── scripts/build.ts        # client bundle + tailwind + manifest + sw (bun-app pattern)
 ├── src/domain/journal.ts   # pure note functions (add/list, refusal codes)
 ├── src/server/index.ts     # Bun.serve adapter (parseServerAddress)
-├── src/server/handler.ts   # createRequestHandler: / (SSR), /api/notes (contracts-
-│                           #   validated POST), auth-web session boundary + CSRF
+├── src/server/handler.ts   # createRequestHandler: / (SSR), /api/notes (domain-validated POST),
+│                           #   /api/schemas + /api/validate (contracts playground),
+│                           #   auth-web session boundary + CSRF
 ├── src/shared/document.tsx # DocumentDescriptor (clientModule, manifest)
 ├── src/client/app.tsx      # hydrateDocument
 ├── src/ui/journal-app.tsx  # ui primitives, lai-enhanced-only interactivity
