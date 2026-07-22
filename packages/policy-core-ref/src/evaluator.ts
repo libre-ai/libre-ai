@@ -431,11 +431,21 @@ function reduceOccurrences(statuses: Array<{ status: RuleStatus; reasonCode: Rea
       return s;
     }
   }
-  for (const s of statuses) {
-    if (s.status === "unknown") {
-      return s;
-    }
+
+  // SEMANTICS.md §6: among unknowns, choose by fixed priority order (not input order)
+  // This ensures deterministic output regardless of fact array order
+  const reasonPriority = [
+    "policy.source_from_future",
+    "policy.snapshot_stale",
+    "policy.fact_type_mismatch",
+    "policy.fact_absent",
+  ] as const;
+
+  for (const reason of reasonPriority) {
+    const hit = statuses.find((s) => s.status === "unknown" && s.reasonCode === reason);
+    if (hit) return hit;
   }
+
   return { status: "satisfied", reasonCode: "policy.rule_satisfied" };
 }
 
