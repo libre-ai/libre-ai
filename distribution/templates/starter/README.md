@@ -201,7 +201,9 @@ Ce template n'est pas une application prête pour la production. Il démontre le
 1. Remplacez l'émetteur `DevIssuer` par un vrai (Keycloak, Auth0, etc.) en `index.ts`
 2. Remplacez l'`InMemorySessionStore` par une vraie DB
 3. Remplacez les CSRF tokens manuels par une vraie vérification (boundary les gère déjà)
-4. Déployez le `/dist` build sur un CDN (static assets) + le serveur sur un compute
+4. **Supprimez l'endpoint `/e2e/csrf`** (`src/server/handler.ts`) — surface de test
+   e2e uniquement, jamais en production
+5. Déployez le `/dist` build sur un CDN (static assets) + le serveur sur un compute
 
 ### Pour ajouter une brique
 
