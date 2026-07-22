@@ -63,24 +63,24 @@ test("POST /api/notes with valid CSRF token succeeds", async ({ page }) => {
   expect(csrfToken.length).toBeGreaterThan(0);
 
   // POST a note with the CSRF token
-  const response = await page.evaluate(
-    async (token) => {
-      const createdAt = new Date().toISOString().replace(/\.\d{3}/, "").replace("Z", "Z");
-      const res = await fetch("/api/notes", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-Token": token,
-        },
-        body: JSON.stringify({
-          text: "Protected note",
-          createdAt,
-        }),
-      });
-      return { status: res.status, body: await res.json() };
-    },
-    csrfToken,
-  );
+  const response = await page.evaluate(async (token) => {
+    const createdAt = new Date()
+      .toISOString()
+      .replace(/\.\d{3}/, "")
+      .replace("Z", "Z");
+    const res = await fetch("/api/notes", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": token,
+      },
+      body: JSON.stringify({
+        text: "Protected note",
+        createdAt,
+      }),
+    });
+    return { status: res.status, body: await res.json() };
+  }, csrfToken);
 
   // Should succeed with 201 Created
   expect(response.status).toBe(201);

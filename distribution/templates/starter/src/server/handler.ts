@@ -1,15 +1,15 @@
+import { join } from "node:path";
 import type { AuthHttpBoundary, SessionService } from "@libre-ai/auth-web";
 import { SESSION_COOKIE, verifyCsrf } from "@libre-ai/auth-web";
 import { loadCanonicalContractRegistry } from "@libre-ai/contracts";
 import {
-  renderSsrDocument,
-  secureResponse,
   createRequestHandler,
+  renderSsrDocument,
   type StaticAsset,
+  secureResponse,
 } from "@libre-ai/web-platform";
 import { addNote, createJournal, type Journal, listNotes } from "../domain/journal";
 import { starterDocument } from "../shared/document";
-import { join } from "node:path";
 
 interface TemplateHandlerOptions {
   boundary?: AuthHttpBoundary;
