@@ -1,8 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("PWA manifest and service worker are correctly served", async ({
-  page,
-}) => {
+test("PWA manifest and service worker are correctly served", async ({ page }) => {
   // Navigate to the app
   await page.goto("/");
   await expect(page.locator("html")).toHaveAttribute("data-hydrated", "true");
@@ -10,9 +8,7 @@ test("PWA manifest and service worker are correctly served", async ({
   // Verify manifest is served with correct content-type and contains required fields
   const manifestResponse = await page.request.get("/manifest.webmanifest");
   expect(manifestResponse.status()).toBe(200);
-  expect(manifestResponse.headers()["content-type"]).toContain(
-    "application/manifest+json",
-  );
+  expect(manifestResponse.headers()["content-type"]).toContain("application/manifest+json");
 
   const manifest = (await manifestResponse.json()) as Record<string, unknown>;
   expect(manifest).toHaveProperty("name");
@@ -29,9 +25,7 @@ test("PWA manifest and service worker are correctly served", async ({
     if (!("serviceWorker" in navigator)) return 0;
     // Manually trigger registration if it hasn't happened
     try {
-      const reg = await navigator.serviceWorker.register("/sw.js", {
-        scope: "/",
-      });
+      await navigator.serviceWorker.register("/sw.js", { scope: "/" });
       const regs = await navigator.serviceWorker.getRegistrations();
       return regs.length;
     } catch {

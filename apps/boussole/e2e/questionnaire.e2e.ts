@@ -26,16 +26,12 @@ test("answers persist on-device and are restored on reload, with zero transmissi
     .click();
 
   // Verify the answer is recorded
-  await expect(page.getByTestId("state-stmt-services-publics")).toContainText(
-    "Répondu (3)",
-  );
+  await expect(page.getByTestId("state-stmt-services-publics")).toContainText("Répondu (3)");
   await expect(page.getByTestId("progress")).toContainText("1 / 4");
 
   // Reload: the answer should be restored from IndexedDB
   await page.reload();
-  await expect(page.getByTestId("state-stmt-services-publics")).toContainText(
-    "Répondu (3)",
-  );
+  await expect(page.getByTestId("state-stmt-services-publics")).toContainText("Répondu (3)");
 
   // Verify no cross-origin request was made (local-only operation)
   expect(requests).toEqual([]);
