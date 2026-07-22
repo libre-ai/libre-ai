@@ -138,9 +138,9 @@ describe("keygen-ceremony helpers", () => {
 
   test("isValidSpkiPem rejects malformed PEM", () => {
     expect(isValidSpkiPem("not a pem")).toBe(false);
-    expect(isValidSpkiPem("-----BEGIN PUBLIC KEY-----\ninvalid base64!\n-----END PUBLIC KEY-----")).toBe(
-      false,
-    );
+    expect(
+      isValidSpkiPem("-----BEGIN PUBLIC KEY-----\ninvalid base64!\n-----END PUBLIC KEY-----"),
+    ).toBe(false);
     // Reject wrong PEM type (header mismatch)
     const wrongType = `-----BEGIN RSA PUBLIC KEY-----\nbase64\n-----END RSA PUBLIC KEY-----`;
     expect(isValidSpkiPem(wrongType)).toBe(false);

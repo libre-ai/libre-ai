@@ -1,4 +1,10 @@
-import { createCipheriv, createHash, generateKeyPairSync, randomBytes, scryptSync } from "node:crypto";
+import {
+  createCipheriv,
+  createHash,
+  generateKeyPairSync,
+  randomBytes,
+  scryptSync,
+} from "node:crypto";
 import { writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
