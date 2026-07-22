@@ -55,7 +55,11 @@ async function setupSubmittedWorkspace(workspaceId: string) {
   }
 
   // Load and return the final submitted state
-  return withTenantDbTransaction(tdb.db, TENANT_A, (tx) => loadWorkspace(tx, workspaceId));
+  const state = await withTenantDbTransaction(tdb.db, TENANT_A, (tx) =>
+    loadWorkspace(tx, workspaceId),
+  );
+  if (!state) throw new Error(`workspace ${workspaceId} was not persisted`);
+  return state;
 }
 
 function validPackage(overrides = {}) {
@@ -100,7 +104,7 @@ describe("persist-acceptance — composition of decideAcceptance + persistence",
 
     const result = await withTenantDbTransaction(tdb.db, TENANT_A, async (tx) => {
       // Act: persist acceptance (load, decide, persist + store package)
-      const persisted = await persistAcceptance(tx, workspaceId, pkg, submittedState?.revision);
+      const persisted = await persistAcceptance(tx, workspaceId, pkg, submittedState.revision);
 
       // Assert: decision was accepted
       if (persisted.status !== "accepted") return persisted;
@@ -108,7 +112,7 @@ describe("persist-acceptance — composition of decideAcceptance + persistence",
       // Assert: workspace is now accepted
       const loadedWorkspace = await loadWorkspace(tx, workspaceId);
       expect(loadedWorkspace?.status).toBe("accepted");
-      expect(loadedWorkspace?.revision).toBe(submittedState?.revision + 1);
+      expect(loadedWorkspace?.revision).toBe(submittedState.revision + 1);
 
       // Assert: package is stored
       const storedPackage = await loadAcceptedPackage(tx, pkg.digest);
@@ -128,7 +132,7 @@ describe("persist-acceptance — composition of decideAcceptance + persistence",
 
     const result = await withTenantDbTransaction(tdb.db, TENANT_A, async (tx) => {
       // Act: try to accept with a stale revision — should be refused
-      const persisted = await persistAcceptance(tx, workspaceId, pkg, submittedState?.revision - 1);
+      const persisted = await persistAcceptance(tx, workspaceId, pkg, submittedState.revision - 1);
 
       // Assert: decision was refused
       if (persisted.status !== "refused") return persisted;
@@ -136,7 +140,7 @@ describe("persist-acceptance — composition of decideAcceptance + persistence",
       // Assert: workspace is unchanged
       const loadedWorkspace = await loadWorkspace(tx, workspaceId);
       expect(loadedWorkspace?.status).toBe("submitted");
-      expect(loadedWorkspace?.revision).toBe(submittedState?.revision);
+      expect(loadedWorkspace?.revision).toBe(submittedState.revision);
 
       // Assert: package is NOT stored
       const storedPackage = await loadAcceptedPackage(tx, pkg.digest);
@@ -155,7 +159,7 @@ describe("persist-acceptance — composition of decideAcceptance + persistence",
     const result = await withTenantDbTransaction(tdb.db, TENANT_A, async (tx) => {
       // Act: try to accept with malformed package bytes — should be malformed at byte gate
       // (Note: we pass {} which is malformed, and the persistAcceptance will fail-closed)
-      const persisted = await persistAcceptance(tx, workspaceId, {}, submittedState?.revision);
+      const persisted = await persistAcceptance(tx, workspaceId, {}, submittedState.revision);
 
       // Assert: decision was malformed, not persisted
       expect(persisted.status).toBe("malformed");
@@ -178,15 +182,15 @@ describe("persist-acceptance — composition of decideAcceptance + persistence",
 
     const result = await withTenantDbTransaction(tdb.db, TENANT_A, async (tx) => {
       // Accept once
-      const firstAccept = await persistAcceptance(tx, workspaceId, pkg1, submittedState?.revision);
+      const firstAccept = await persistAcceptance(tx, workspaceId, pkg1, submittedState.revision);
       expect(firstAccept.status).toBe("accepted");
 
       // Load the now-accepted workspace
       const acceptedState = await loadWorkspace(tx, workspaceId);
-      expect(acceptedState?.status).toBe("accepted");
+      expect(acceptedState!.status).toBe("accepted");
 
       // Try to accept again — should be invalid (state is now "accepted", not "submitted")
-      const secondAttempt = await persistAcceptance(tx, workspaceId, pkg2, acceptedState?.revision);
+      const secondAttempt = await persistAcceptance(tx, workspaceId, pkg2, acceptedState!.revision);
 
       return secondAttempt;
     });
@@ -202,7 +206,7 @@ describe("persist-acceptance — composition of decideAcceptance + persistence",
 
     const result = await withTenantDbTransaction(tdb.db, TENANT_A, async (tx) => {
       // Accept once
-      const firstAccept = await persistAcceptance(tx, workspaceId, pkg, submittedState?.revision);
+      const firstAccept = await persistAcceptance(tx, workspaceId, pkg, submittedState.revision);
       expect(firstAccept.status).toBe("accepted");
 
       // Verify the package is stored
