@@ -28,6 +28,7 @@
         "react-dom": "catalog:",
       },
       "devDependencies": {
+        "@playwright/test": "catalog:testing",
         "fake-indexeddb": "catalog:testing",
       },
     },
