@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { webcrypto } from "node:crypto";
-
+import { encryptString } from "../crypto/symmetric-encryption";
 import {
   type DatasetBinding,
   type ResponseSet,
@@ -13,7 +13,6 @@ import {
   deserializeResponseSet,
   serializeResponseSet,
 } from "./local-response-store";
-import { encryptString } from "../crypto/symmetric-encryption";
 
 const BINDING: DatasetBinding = {
   datasetId: "urn:libre-ai:dataset:civic-2026",

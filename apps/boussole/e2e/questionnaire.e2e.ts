@@ -1,9 +1,9 @@
-import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import type { EncryptedEnvelope } from "../src/crypto/symmetric-encryption";
 
 test("answers persist encrypted and are restored on reload after passphrase entry, with zero transmission", async ({
   page,
-  context,
 }) => {
   const requests: string[] = [];
 
@@ -88,6 +88,10 @@ test("wrong passphrase is refused; answers remain encrypted", async ({ page }) =
   await page.fill('input[id="passphrase-input"]', testPassphrase);
   await page.fill('input[id="confirm-input"]', testPassphrase);
   await page.click('button[data-testid="submit-passphrase"]');
+
+  // Verify passphrase gate disappears and questionnaire appears
+  await expect(page.getByTestId("passphrase-gate")).not.toBeVisible();
+  await expect(page.getByTestId("progress")).toContainText("1 / 4");
 
   // Reload and try wrong passphrase
   await page.reload();
@@ -190,11 +194,12 @@ async function verifyEncryptedAtRest(page: Page): Promise<void> {
     );
   }
 
+  // Type the record as EncryptedEnvelope after validation
+  const envelope = stored as EncryptedEnvelope;
+
   // Confirm version is 1
-  if ((stored as any).version !== 1) {
-    throw new Error(
-      `Expected version 1, got: ${(stored as any).version}`,
-    );
+  if (envelope.version !== 1) {
+    throw new Error(`Expected version 1, got: ${envelope.version}`);
   }
 
   // Verify it does NOT contain plaintext statement IDs or response values

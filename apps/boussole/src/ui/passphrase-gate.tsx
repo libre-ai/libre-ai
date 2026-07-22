@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState } from "react";
 import { StatusMessage } from "@libre-ai/ui";
+import { useCallback, useRef, useState } from "react";
 
 interface PassphraseGateProps {
   readonly mode: "set" | "enter";

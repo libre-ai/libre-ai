@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { deriveKeyFromPassphrase } from "../crypto/symmetric-encryption";
 import {
   deleteResponses,
   type ExportedResponseSet,
@@ -8,7 +9,6 @@ import {
   skipStatement,
   startQuestionnaire,
 } from "../domain/response-set";
-import { deriveKeyFromPassphrase } from "../crypto/symmetric-encryption";
 import type { EncryptionContext, LocalResponseStore } from "../persistence/local-response-store";
 import { QUESTIONNAIRE_BINDING, QUESTIONNAIRE_STATEMENTS } from "../ui/fixture";
 
@@ -18,12 +18,7 @@ function emptySet(): ResponseSet {
   return started.value;
 }
 
-export type QuestionnaireStatus =
-  | "loading"
-  | "ready"
-  | "locked"
-  | "needs-passphrase"
-  | "corrupt";
+export type QuestionnaireStatus = "loading" | "ready" | "locked" | "needs-passphrase" | "corrupt";
 export type PassphraseErrorKind = "wrong-passphrase" | "too-short";
 
 export interface QuestionnaireController {
@@ -65,8 +60,7 @@ export function useQuestionnaire(store?: LocalResponseStore): QuestionnaireContr
   );
   const [deferredSet, setDeferredSet] = useState<ResponseSet | undefined>(undefined);
   const [encryptedEnvelope, setEncryptedEnvelope] = useState<
-    | { version: 1; salt: string; nonce: string; ciphertext: string; tag: string }
-    | undefined
+    { version: 1; salt: string; nonce: string; ciphertext: string; tag: string } | undefined
   >(undefined);
 
   useEffect(() => {
@@ -125,11 +119,7 @@ export function useQuestionnaire(store?: LocalResponseStore): QuestionnaireContr
       globalThis.crypto.getRandomValues(salt);
 
       // Derive key from passphrase
-      const key = await deriveKeyFromPassphrase(
-        passphrase,
-        salt,
-        globalThis.crypto.subtle,
-      );
+      const key = await deriveKeyFromPassphrase(passphrase, salt, globalThis.crypto.subtle);
 
       const context: EncryptionContext = { key, salt };
       setEncryption(context);
@@ -141,7 +131,7 @@ export function useQuestionnaire(store?: LocalResponseStore): QuestionnaireContr
       }
 
       setStatus("ready");
-    } catch (error) {
+    } catch (_error) {
       // Passphrase derivation error
       setPassphraseError("too-short");
     }
@@ -163,7 +153,7 @@ export function useQuestionnaire(store?: LocalResponseStore): QuestionnaireContr
 
     try {
       const result = await store?.decryptEnvelope(encryptedEnvelope, passphrase);
-      if (!result || result.status !== "loaded") {
+      if (result?.status !== "loaded") {
         setPassphraseError("wrong-passphrase");
         return;
       }
@@ -181,17 +171,13 @@ export function useQuestionnaire(store?: LocalResponseStore): QuestionnaireContr
         return;
       }
 
-      const key = await deriveKeyFromPassphrase(
-        passphrase,
-        salt,
-        globalThis.crypto.subtle,
-      );
+      const key = await deriveKeyFromPassphrase(passphrase, salt, globalThis.crypto.subtle);
 
       const context: EncryptionContext = { key, salt };
       setEncryption(context);
       setSet(result.set);
       setStatus("ready");
-    } catch (error) {
+    } catch (_error) {
       setPassphraseError("wrong-passphrase");
     }
   }

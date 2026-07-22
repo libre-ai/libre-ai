@@ -30,7 +30,7 @@ const OPEN_DEADLINE_MS = 10_000;
 
 interface ResponseRecord {
   readonly key: typeof RECORD_KEY;
-  readonly raw: string | EncryptedEnvelope;
+  readonly raw: string;
 }
 
 /**
@@ -148,7 +148,7 @@ export function createIndexedDbResponseStore(
         globalThis.crypto.subtle,
       );
 
-      const record: ResponseRecord = { key: RECORD_KEY, raw: envelope };
+      const record: ResponseRecord = { key: RECORD_KEY, raw: JSON.stringify(envelope) };
       await withStore("readwrite", (store) => store.put(record));
     },
 

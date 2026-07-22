@@ -10,7 +10,7 @@
 // in-memory adapter that exercises the exact same encode/decode path.
 
 import type { EncryptedEnvelope } from "../crypto/symmetric-encryption";
-import { decryptString, encryptWithKey } from "../crypto/symmetric-encryption";
+import { decryptString } from "../crypto/symmetric-encryption";
 import {
   type DatasetBinding,
   type LocalResponse,
@@ -185,7 +185,7 @@ export function createInMemoryResponseStore(seed?: string): LocalResponseStore {
   }
 
   return {
-    async save(set: ResponseSet, encryption?: EncryptionContext): Promise<void> {
+    async save(set: ResponseSet, _encryption?: EncryptionContext): Promise<void> {
       // In-memory store saves plaintext (no encryption).
       // In tests/SSR, this is fine (never persisted).
       // In the browser, the real IndexedDB adapter enforces encryption.
