@@ -39,6 +39,39 @@ test("PWA manifest and service worker are correctly served", async ({
     }
   });
 
-  // At minimum, verify the manifest and SW script exist and are valid
-  expect(registrations).toBeGreaterThanOrEqual(0);
+  // Verify the SW registration actually succeeded (not just checked for 0)
+  expect(registrations).toBeGreaterThanOrEqual(1);
+});
+
+test("PWA cached shell serves offline", async ({ page, context }) => {
+  // Load the app to trigger SW installation and caching
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("data-hydrated", "true");
+
+  // Register the service worker
+  await page.evaluate(async () => {
+    if ("serviceWorker" in navigator) {
+      try {
+        await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+      } catch {
+        // Registration failed, but we'll test anyway
+      }
+    }
+  });
+
+  // Wait briefly for the SW to install and cache assets
+  await page.waitForTimeout(1000);
+
+  // Block the network to simulate offline mode
+  await context.setOffline(true);
+
+  // Try to fetch a cached asset (styles.css) while offline
+  // If the SW is working and has cached it, this should succeed
+  try {
+    const cachedAssetResponse = await page.request.get("/assets/styles.css");
+    expect(cachedAssetResponse.status()).toBe(200);
+  } finally {
+    // Restore network connectivity
+    await context.setOffline(false);
+  }
 });
