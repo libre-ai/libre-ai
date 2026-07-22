@@ -10,7 +10,7 @@ async function answerFirst(page: import("@playwright/test").Page): Promise<void>
   // First save triggers passphrase gate (needs-passphrase status)
   await expect(page.getByTestId("passphrase-gate")).toBeVisible();
 
-  // Set a passphrase (minimum 8 characters)
+  // Set a passphrase (minimum 12 characters)
   const testPassphrase = "test-passphrase-data-ownership";
   await page.fill('input[id="passphrase-input"]', testPassphrase);
   await page.fill('input[id="confirm-input"]', testPassphrase);

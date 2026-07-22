@@ -26,7 +26,8 @@ export function PassphraseGate({ mode, error, onSubmit }: PassphraseGateProps) {
     [passphrase, onSubmit],
   );
 
-  const MIN_LENGTH = 8;
+  // Keep in sync with PASSPHRASE_MIN_LENGTH in use-questionnaire.ts (Art. 9 entropy margin).
+  const MIN_LENGTH = 12;
   const isPassphraseTooShort = passphrase.length < MIN_LENGTH;
   const isConfirmMismatch = mode === "set" && passphrase !== confirm && confirm.length > 0;
   const isFormValid = !isPassphraseTooShort && (mode === "enter" || !isConfirmMismatch);

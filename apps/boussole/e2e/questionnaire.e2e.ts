@@ -32,7 +32,7 @@ test("answers persist encrypted and are restored on reload after passphrase entr
   await expect(page.getByTestId("passphrase-gate")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Protégez vos réponses" })).toBeVisible();
 
-  // Set a passphrase (minimum 8 characters)
+  // Set a passphrase (minimum 12 characters)
   const testPassphrase = "my-secure-passphrase-123";
   await page.fill('input[id="passphrase-input"]', testPassphrase);
   await page.fill('input[id="confirm-input"]', testPassphrase);
@@ -130,12 +130,15 @@ test("passphrase too short is rejected with feedback", async ({ page }) => {
   const submitBtn = page.locator('button[data-testid="submit-passphrase"]');
   await expect(submitBtn).toBeDisabled();
 
-  // Fill to minimum length
-  const minPass = "12345678";
+  // An 8-char value is still below the 12-char minimum: submit stays disabled
+  await page.fill('input[id="passphrase-input"]', "12345678");
+  await page.fill('input[id="confirm-input"]', "12345678");
+  await expect(submitBtn).toBeDisabled();
+
+  // Fill to the minimum length (12 chars): submit becomes enabled
+  const minPass = "123456789012";
   await page.fill('input[id="passphrase-input"]', minPass);
   await page.fill('input[id="confirm-input"]', minPass);
-
-  // Submit button should now be enabled
   await expect(submitBtn).toBeEnabled();
 });
 

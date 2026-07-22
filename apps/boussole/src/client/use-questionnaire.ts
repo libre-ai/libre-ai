@@ -103,7 +103,10 @@ export function useQuestionnaire(store?: LocalResponseStore): QuestionnaireContr
     }
   }
 
-  const PASSPHRASE_MIN_LENGTH = 8;
+  // Art. 9 special-category data: an 8-char passphrase (~52 bits) is the weak link
+  // even under PBKDF2-600k; 12 chars (~78 bits) gives the entropy margin a crypto
+  // review flagged for political-opinion data (K4 crypto-at-rest, 2026-07-22).
+  const PASSPHRASE_MIN_LENGTH = 12;
 
   async function setPassphrase(passphrase: string): Promise<void> {
     setPassphraseError(undefined);
