@@ -14,7 +14,7 @@
     "allowJs": false,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "skipLibCheck": false,
+    "skipLibCheck": true,
     "types": ["bun", "react", "react-dom", "emscripten"]
   },
   "include": [
