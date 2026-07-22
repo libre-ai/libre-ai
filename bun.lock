@@ -1,5 +1,5 @@
 {
-  "lockfileVersion": 2,
+  "lockfileVersion": 1,
   "configVersion": 1,
   "workspaces": {
     "": {
@@ -122,6 +122,21 @@
       },
       "devDependencies": {
         "@libre-ai/contracts": "workspace:*",
+        "@playwright/test": "catalog:testing",
+      },
+    },
+    "distribution/templates/starter": {
+      "name": "@libre-ai/starter-template",
+      "version": "0.1.0",
+      "dependencies": {
+        "@libre-ai/auth-web": "workspace:*",
+        "@libre-ai/contracts": "workspace:*",
+        "@libre-ai/ui": "workspace:*",
+        "@libre-ai/web-platform": "workspace:*",
+        "react": "catalog:",
+        "react-dom": "catalog:",
+      },
+      "devDependencies": {
         "@playwright/test": "catalog:testing",
       },
     },
@@ -307,6 +322,8 @@
     "@libre-ai/sessions": ["@libre-ai/sessions@workspace:apps/sessions"],
 
     "@libre-ai/specifications": ["@libre-ai/specifications@workspace:apps/specifications"],
+
+    "@libre-ai/starter-template": ["@libre-ai/starter-template@workspace:distribution/templates/starter"],
 
     "@libre-ai/testing": ["@libre-ai/testing@workspace:packages/testing"],
 

@@ -1,11 +1,16 @@
-namespace CheckBunVersionBunApp {
+// biome-ignore lint/correctness/noUnusedVariables: namespace scopes check-bun-version.ts execution
+namespace CheckBunVersionStarter {
   const MINIMUM_BUN_VERSION = "1.4.0";
   const PATTERN = /^(\d+)\.(\d+)\.(\d+)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 
   function parse(value: string): [number, number, number] | null {
     const match = PATTERN.exec(value);
     if (!match) return null;
-    const version: [number, number, number] = [Number(match[1]), Number(match[2]), Number(match[3])];
+    const version: [number, number, number] = [
+      Number(match[1]),
+      Number(match[2]),
+      Number(match[3]),
+    ];
     return version.every(Number.isSafeInteger) ? version : null;
   }
 
