@@ -55,9 +55,9 @@ describe("sync-schemas", () => {
       await writeFile(join(src, "only-in-src.schema.json"), "{}\n");
       await writeFile(join(dst, "only-in-dst.schema.json"), "{}\n");
       const issues = await compareSchemaDirectories(src, dst);
-      expect(issues.some((issue) => issue.includes("only-in-src") && issue.includes("missing"))).toBe(
-        true,
-      );
+      expect(
+        issues.some((issue) => issue.includes("only-in-src") && issue.includes("missing")),
+      ).toBe(true);
       expect(issues.some((issue) => issue.includes("only-in-dst") && issue.includes("extra"))).toBe(
         true,
       );

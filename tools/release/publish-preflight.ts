@@ -88,10 +88,9 @@ async function packAndInspect(
 ): Promise<{ manifest: TarballManifest; issues: string[] }> {
   const workDirectory = await mkdtemp(join(tmpdir(), "publish-preflight-"));
   try {
-    const packed = Bun.spawnSync(
-      ["bun", "pm", "pack", "--destination", workDirectory, "--quiet"],
-      { cwd: resolve(repositoryRoot, packageDirectory) },
-    );
+    const packed = Bun.spawnSync(["bun", "pm", "pack", "--destination", workDirectory, "--quiet"], {
+      cwd: resolve(repositoryRoot, packageDirectory),
+    });
     if (packed.exitCode !== 0) {
       return {
         manifest: {},

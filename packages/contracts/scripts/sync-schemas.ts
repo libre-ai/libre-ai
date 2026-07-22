@@ -82,7 +82,9 @@ if (import.meta.main) {
     const issues = await compareSchemaDirectories(sourceDirectory, vendoredDirectory);
     if (issues.length > 0) {
       for (const issue of issues) console.error(issue);
-      console.error("Vendored schemas drift from contracts/schemas. Run: bun scripts/sync-schemas.ts");
+      console.error(
+        "Vendored schemas drift from contracts/schemas. Run: bun scripts/sync-schemas.ts",
+      );
       process.exit(1);
     }
     console.log("Vendored schemas are byte-exact against contracts/schemas");

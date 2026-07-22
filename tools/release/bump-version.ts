@@ -14,7 +14,9 @@ const SEMVER = /^(\d+)\.(\d+)\.(\d+)$/;
 export function computeNextVersion(current: string, bump: string): string {
   const parsed = SEMVER.exec(current);
   if (parsed === null) throw new Error(`current version is not x.y.z semver: ${current}`);
-  const [, major, minor, patch] = parsed.map(Number);
+  const major = Number(parsed[1]);
+  const minor = Number(parsed[2]);
+  const patch = Number(parsed[3]);
   switch (bump) {
     case "patch":
       return `${major}.${minor}.${patch + 1}`;
@@ -79,5 +81,7 @@ if (import.meta.main) {
     await Bun.write(update.path, `${JSON.stringify(manifest, null, 2)}\n`);
     console.log(`${update.name} -> ${update.nextVersion}`);
   }
-  console.log(`Linked set bumped to ${plan.nextVersion}. Re-run bun install to refresh the lockfile.`);
+  console.log(
+    `Linked set bumped to ${plan.nextVersion}. Re-run bun install to refresh the lockfile.`,
+  );
 }

@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { analyzeTarballEntries, analyzeTarballManifest, checkVersionCoherence } from "./publish-preflight";
+import {
+  analyzeTarballEntries,
+  analyzeTarballManifest,
+  checkVersionCoherence,
+} from "./publish-preflight";
 
 // Fail-closed publish gate: a satellite tarball must be self-contained and
 // clean BEFORE the owner runs bun publish. These are the pure analysis rules;
@@ -37,9 +41,9 @@ describe("analyzeTarballManifest", () => {
 
 describe("analyzeTarballEntries", () => {
   test("accepts src + LICENSE + README and flags missing LICENSE", () => {
-    expect(
-      analyzeTarballEntries(["package.json", "README.md", "LICENSE", "src/index.ts"]),
-    ).toEqual([]);
+    expect(analyzeTarballEntries(["package.json", "README.md", "LICENSE", "src/index.ts"])).toEqual(
+      [],
+    );
     const issues = analyzeTarballEntries(["package.json", "src/index.ts"]);
     expect(issues.some((issue) => issue.includes("LICENSE"))).toBe(true);
   });
@@ -57,7 +61,12 @@ describe("analyzeTarballEntries", () => {
 
 describe("checkVersionCoherence", () => {
   test("accepts one shared version and flags drift", () => {
-    expect(checkVersionCoherence([{ name: "a", version: "0.1.0" }, { name: "b", version: "0.1.0" }])).toEqual([]);
+    expect(
+      checkVersionCoherence([
+        { name: "a", version: "0.1.0" },
+        { name: "b", version: "0.1.0" },
+      ]),
+    ).toEqual([]);
     const issues = checkVersionCoherence([
       { name: "a", version: "0.1.0" },
       { name: "b", version: "0.2.0" },
