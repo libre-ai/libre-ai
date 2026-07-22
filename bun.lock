@@ -225,6 +225,18 @@
         "react-dom": "catalog:",
       },
     },
+    "tools/review": {
+      "name": "@libre-ai/review-tools",
+      "version": "0.0.0",
+      "dependencies": {
+        "@libre-ai/envelope": "workspace:*",
+        "ajv": "8.20.0",
+      },
+      "devDependencies": {
+        "@types/bun": "1.3.14",
+        "typescript": "7.0.2",
+      },
+    },
   },
   "overrides": {
     "fast-uri": "4.1.1",
@@ -318,6 +330,8 @@
     "@libre-ai/provenance": ["@libre-ai/provenance@workspace:packages/provenance"],
 
     "@libre-ai/radar": ["@libre-ai/radar@workspace:apps/radar"],
+
+    "@libre-ai/review-tools": ["@libre-ai/review-tools@workspace:tools/review"],
 
     "@libre-ai/sessions": ["@libre-ai/sessions@workspace:apps/sessions"],
 
