@@ -77,9 +77,12 @@ export function useQuestionnaire(store?: LocalResponseStore): QuestionnaireContr
       return result.ok ? result.value : null;
     },
     async deleteAll() {
+      // Persist first, mutate UI state after: if the save rejects, the visible
+      // state must keep matching the (unchanged) store — never show an emptied
+      // questionnaire whose old answers would come back on reload.
       const next = deleteResponses(set);
-      setSet(next);
       await store?.save(next);
+      setSet(next);
     },
   };
 }

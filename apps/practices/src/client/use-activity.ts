@@ -66,8 +66,11 @@ export function useActivity(store?: LocalOutcomeStore): ActivityController {
       return exportOutcome(outcome);
     },
     async deleteAll() {
-      setOutcome(ACTIVITY_FIXTURE);
+      // Persist first, mutate UI state after: if the clear rejects, the visible
+      // state must keep matching the (unchanged) store — never show a reset
+      // activity whose old outcome would come back on reload.
       await store?.clear();
+      setOutcome(ACTIVITY_FIXTURE);
     },
   };
 }

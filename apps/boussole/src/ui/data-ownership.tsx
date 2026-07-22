@@ -1,5 +1,5 @@
 import { StatusMessage, Surface } from "@libre-ai/ui";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { ExportedResponseSet } from "../domain/response-set";
 
 // The export is a LOCAL file operation: a Blob, an object URL and a synthetic
@@ -22,7 +22,7 @@ function downloadLocalJson(filename: string, payload: unknown): void {
   URL.revokeObjectURL(url);
 }
 
-type DeletePhase = "idle" | "confirming" | "deleted";
+type DeletePhase = "idle" | "confirming" | "deleting" | "deleted" | "failed";
 
 // Enhanced-only region: a user without JavaScript has no client store to export or
 // delete, so the controls are hidden until hydration (`lai-enhanced-only`). Delete
@@ -38,6 +38,10 @@ export function DataOwnership({
   readonly hasResponses: boolean;
 }) {
   const [phase, setPhase] = useState<DeletePhase>("idle");
+  // Synchronous re-entry guard: the confirm button unmounts on the next render,
+  // but a double-click can land before React re-renders — the ref closes that
+  // sub-millisecond window so the save is never issued twice.
+  const deleting = useRef(false);
 
   function handleExport(): void {
     const data = exportData();
@@ -46,9 +50,20 @@ export function DataOwnership({
 
   // The success message claims deletion happened, so it appears only after the
   // store has durably saved the emptied set (deleteAll resolves post-persistence).
+  // A rejected save surfaces as an assertive failure message with a retry path —
+  // never a silent unhandled rejection with the UI stuck on the confirm step.
   async function handleConfirmDelete(): Promise<void> {
-    await onDeleteAll();
-    setPhase("deleted");
+    if (deleting.current) return;
+    deleting.current = true;
+    setPhase("deleting");
+    try {
+      await onDeleteAll();
+      setPhase("deleted");
+    } catch {
+      setPhase("failed");
+    } finally {
+      deleting.current = false;
+    }
   }
 
   return (
@@ -66,7 +81,7 @@ export function DataOwnership({
         <button type="button" onClick={handleExport} disabled={!hasResponses}>
           Télécharger mes réponses
         </button>
-        {phase === "idle" ? (
+        {phase === "idle" || phase === "failed" ? (
           <button type="button" onClick={() => setPhase("confirming")}>
             Supprimer mes réponses
           </button>
@@ -90,8 +105,14 @@ export function DataOwnership({
           </div>
         </div>
       ) : null}
+      {phase === "deleting" ? <StatusMessage>Suppression en cours…</StatusMessage> : null}
       {phase === "deleted" ? (
         <StatusMessage data-testid="delete-done">Vos réponses ont été supprimées.</StatusMessage>
+      ) : null}
+      {phase === "failed" ? (
+        <StatusMessage politeness="assertive" data-testid="delete-failed">
+          La suppression a échoué. Vos données locales sont inchangées — réessayez.
+        </StatusMessage>
       ) : null}
     </Surface>
   );
