@@ -92,12 +92,31 @@ export class JsonSchemaContractRegistry {
   }
 }
 
+/**
+ * Root of the monorepo checkout. Only meaningful when this package runs from
+ * its workspace location — in a published tarball it points inside
+ * `node_modules` and must not be used to locate repository files.
+ */
 export function canonicalRepositoryRoot(): string {
   return resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 }
 
+/**
+ * The schema set shipped WITH the package (`schemas/`, vendored byte-exact
+ * from `contracts/schemas` by `scripts/sync-schemas.ts` and gated in CI). A
+ * published tarball has no repository around it, so the default load path
+ * must never reach outside the package.
+ */
+function packagedSchemaDirectory(): string {
+  return resolve(dirname(fileURLToPath(import.meta.url)), "../schemas");
+}
+
 export async function loadCanonicalContractRegistry(
-  repositoryRoot = canonicalRepositoryRoot(),
+  repositoryRoot?: string,
 ): Promise<JsonSchemaContractRegistry> {
-  return JsonSchemaContractRegistry.load(resolve(repositoryRoot, "contracts/schemas"));
+  const schemaDirectory =
+    repositoryRoot === undefined
+      ? packagedSchemaDirectory()
+      : resolve(repositoryRoot, "contracts/schemas");
+  return JsonSchemaContractRegistry.load(schemaDirectory);
 }
