@@ -23,10 +23,10 @@ export interface QuestionnaireController {
   readonly skip: (statementId: string) => void;
 }
 
-// The interactive controller. Without a store (SSR) it stays at the empty set and
-// "loading" so the first client render matches the server markup. With a store it
-// loads the persisted set on mount and persists every mutation; a corrupt local
-// store is surfaced fail-closed (never rehydrated).
+// The interactive controller. Without a store (SSR) it stays at the empty set with
+// status "ready" (the SSR baseline). With a store, the initial status is "loading"
+// until the mount effect loads the persisted set; it then persists every mutation.
+// A corrupt local store is surfaced fail-closed (never rehydrated).
 export function useQuestionnaire(store?: LocalResponseStore): QuestionnaireController {
   const [set, setSet] = useState<ResponseSet>(emptySet);
   const [status, setStatus] = useState<QuestionnaireStatus>(store ? "loading" : "ready");
