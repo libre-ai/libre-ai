@@ -104,32 +104,7 @@ const server = Bun.serve({
       return new Response(null, { headers: { Location: location.toString() }, status: 302 });
     }
 
-    // Try to serve static files from dist
-    if (
-      url.pathname.startsWith("/assets/") ||
-      url.pathname === "/manifest.webmanifest" ||
-      url.pathname === "/sw.js" ||
-      url.pathname === "/static"
-    ) {
-      const filePath = url.pathname === "/static" ? "/static/index.html" : url.pathname;
-      const distFile = Bun.file(join(import.meta.dir, `../../dist${filePath}`));
-      if (await distFile.exists()) {
-        const contentType = filePath.endsWith(".js")
-          ? "text/javascript; charset=utf-8"
-          : filePath.endsWith(".css")
-            ? "text/css; charset=utf-8"
-            : filePath.endsWith(".webmanifest")
-              ? "application/manifest+json"
-              : filePath.endsWith(".html")
-                ? "text/html; charset=utf-8"
-                : "application/octet-stream";
-        return new Response(distFile, {
-          headers: { "Content-Type": contentType },
-        });
-      }
-    }
-
-    // Delegate all other routes to the main handler
+    // Delegate all other routes to the main handler (which includes static asset serving)
     return fetch(request);
   },
   hostname,

@@ -1,14 +1,21 @@
 import type { AuthHttpBoundary, SessionService } from "@libre-ai/auth-web";
 import { SESSION_COOKIE, verifyCsrf } from "@libre-ai/auth-web";
 import { loadCanonicalContractRegistry } from "@libre-ai/contracts";
-import { renderSsrDocument, secureResponse } from "@libre-ai/web-platform";
+import {
+  renderSsrDocument,
+  secureResponse,
+  createRequestHandler,
+  type StaticAsset,
+} from "@libre-ai/web-platform";
 import { addNote, createJournal, type Journal, listNotes } from "../domain/journal";
 import { starterDocument } from "../shared/document";
+import { join } from "node:path";
 
 interface TemplateHandlerOptions {
   boundary?: AuthHttpBoundary;
   origin?: string;
   sessions?: SessionService;
+  distRoot?: string;
 }
 
 // Per-session state: maps session cookie to user's journal
@@ -58,75 +65,80 @@ export function createTemplateHandler(
   const boundary = options?.boundary;
   const origin = options?.origin ?? "http://127.0.0.1:3000";
   const sessions = options?.sessions;
+  const distRoot = options?.distRoot ?? join(import.meta.dir, "../../dist");
 
-  return async (request: Request): Promise<Response> => {
-    const url = new URL(request.url);
-    const id = requestId();
+  // Build static assets map
+  const assets: Record<string, StaticAsset> = {
+    "/assets/app.js": {
+      body: Bun.file(join(distRoot, "assets/app.js")),
+      cacheControl: "public, max-age=300",
+      contentType: "text/javascript; charset=utf-8",
+    },
+    "/assets/styles.css": {
+      body: Bun.file(join(distRoot, "assets/styles.css")),
+      cacheControl: "public, max-age=300",
+      contentType: "text/css; charset=utf-8",
+    },
+    "/manifest.webmanifest": {
+      body: Bun.file(join(distRoot, "manifest.webmanifest")),
+      cacheControl: "public, max-age=3600",
+      contentType: "application/manifest+json",
+    },
+    "/static": {
+      body: Bun.file(join(distRoot, "static/index.html")),
+      cacheControl: "public, max-age=300",
+      contentType: "text/html; charset=utf-8",
+    },
+    "/sw.js": {
+      body: Bun.file(join(distRoot, "sw.js")),
+      cacheControl: "public, max-age=300",
+      contentType: "text/javascript; charset=utf-8",
+    },
+  };
 
-    // Auth-web boundary routes (priority: match before session check)
-    if (boundary) {
-      if (url.pathname === "/v1/auth/login" && request.method === "POST") {
-        return boundary.handleLogin(request);
-      }
-      if (url.pathname === "/v1/auth/callback" && request.method === "GET") {
-        return boundary.handleCallback(request);
-      }
-      if (url.pathname === "/v1/auth/session" && request.method === "GET") {
-        return boundary.handleGetSession(request);
-      }
-      if (url.pathname === "/v1/auth/session" && request.method === "DELETE") {
-        return boundary.handleDeleteSession(request);
-      }
-    }
-
-    // GET / - SSR document
-    if (url.pathname === "/" && request.method === "GET") {
+  // Create routes that require GET/HEAD only (for createRequestHandler)
+  const routes: Record<string, (request: Request, url: URL) => Response | Promise<Response>> = {
+    "/": async (request) => {
       return renderSsrDocument(starterDocument());
-    }
+    },
 
-    // GET /api/health
-    if (url.pathname === "/api/health" && request.method === "GET") {
-      return secureResponse(
-        Response.json(
-          {
-            service: "libre-ai-starter",
-            status: "ok",
-            version: "v1",
-          },
-          { status: 200 },
-        ),
+    "/api/health": async () => {
+      return Response.json(
+        {
+          service: "libre-ai-starter",
+          status: "ok",
+          version: "v1",
+        },
+        { status: 200 },
       );
-    }
+    },
 
-    // GET /api/session - show authenticated state (no session required)
-    if (url.pathname === "/api/session" && request.method === "GET") {
+    "/api/session": async (request) => {
       const sessionCookie = readCookie(request, SESSION_COOKIE);
       if (sessionCookie === null) {
-        return secureResponse(Response.json({ authenticated: false }, { status: 200 }));
+        return Response.json({ authenticated: false }, { status: 200 });
       }
 
       if (sessions) {
         const resolved = await sessions.resolveSession(sessionCookie);
         if (!resolved.ok) {
-          return secureResponse(Response.json({ authenticated: false }, { status: 200 }));
+          return Response.json({ authenticated: false }, { status: 200 });
         }
-        return secureResponse(
-          Response.json(
-            {
-              authenticated: true,
-              userId: resolved.record.userId,
-              tenantId: resolved.record.tenantId,
-            },
-            { status: 200 },
-          ),
+        return Response.json(
+          {
+            authenticated: true,
+            userId: resolved.record.userId,
+            tenantId: resolved.record.tenantId,
+          },
+          { status: 200 },
         );
       }
 
-      return secureResponse(Response.json({ authenticated: false }, { status: 200 }));
-    }
+      return Response.json({ authenticated: false }, { status: 200 });
+    },
 
-    // E2E CSRF endpoint (development only, requires session)
-    if (url.pathname === "/e2e/csrf" && request.method === "GET") {
+    "/e2e/csrf": async (request) => {
+      const id = requestId();
       const sessionCookie = readCookie(request, SESSION_COOKIE);
       if (sessionCookie === null) {
         return problemResponse(401, "auth.session_missing", id);
@@ -134,16 +146,16 @@ export function createTemplateHandler(
       if (sessions) {
         try {
           const { csrfToken } = await sessions.refreshCsrfSecret(sessionCookie);
-          return secureResponse(Response.json({ csrfToken }, { status: 200 }));
+          return Response.json({ csrfToken }, { status: 200 });
         } catch {
           return problemResponse(401, "auth.session_invalid", id);
         }
       }
       return problemResponse(401, "auth.session_invalid", id);
-    }
+    },
 
-    // Helper to require session for protected endpoints
-    const requireSession = async (): Promise<string | Response> => {
+    "/api/schemas": async (request) => {
+      const id = requestId();
       const sessionCookie = readCookie(request, SESSION_COOKIE);
       if (sessionCookie === null) {
         return problemResponse(401, "auth.session_missing", id);
@@ -156,16 +168,57 @@ export function createTemplateHandler(
         }
       }
 
-      return sessionCookie;
-    };
+      try {
+        const registry = await getContractsRegistry();
+        const schemaNames = registry.schemaNames();
+        return Response.json({ data: schemaNames }, { status: 200 });
+      } catch {
+        return problemResponse(500, "web.internal_error", id);
+      }
+    },
+  };
+
+  const requestHandler = createRequestHandler({
+    assets,
+    requestId: () => requestId(),
+    routes,
+  });
+
+  // Return a wrapper that handles POST/DELETE routes before delegating to createRequestHandler
+  return async (request: Request): Promise<Response> => {
+    const url = new URL(request.url);
+    const id = requestId();
+
+    // Auth-web boundary routes (handle POST/DELETE first)
+    if (boundary) {
+      if (url.pathname === "/v1/auth/login" && request.method === "POST") {
+        return secureResponse(await boundary.handleLogin(request));
+      }
+      if (url.pathname === "/v1/auth/callback" && request.method === "GET") {
+        return secureResponse(await boundary.handleCallback(request));
+      }
+      if (url.pathname === "/v1/auth/session" && request.method === "GET") {
+        return secureResponse(await boundary.handleGetSession(request));
+      }
+      if (url.pathname === "/v1/auth/session" && request.method === "DELETE") {
+        return secureResponse(await boundary.handleDeleteSession(request));
+      }
+    }
 
     // POST /api/notes - add a note to the journal
     if (url.pathname === "/api/notes" && request.method === "POST") {
-      const sessionResult = await requireSession();
-      if (typeof sessionResult !== "string") {
-        return sessionResult;
+      const id = requestId();
+      const sessionCookie = readCookie(request, SESSION_COOKIE);
+      if (sessionCookie === null) {
+        return secureResponse(problemResponse(401, "auth.session_missing", id));
       }
-      const sessionCookie = sessionResult;
+
+      if (sessions) {
+        const resolved = await sessions.resolveSession(sessionCookie);
+        if (!resolved.ok) {
+          return secureResponse(problemResponse(401, "auth.session_invalid", id));
+        }
+      }
 
       // CSRF check
       if (sessions) {
@@ -179,7 +232,7 @@ export function createTemplateHandler(
             secFetchSite: request.headers.get("Sec-Fetch-Site"),
           });
           if (!csrf.ok) {
-            return problemResponse(403, "auth.csrf_invalid", id);
+            return secureResponse(problemResponse(403, "auth.csrf_invalid", id));
           }
         }
       }
@@ -190,14 +243,14 @@ export function createTemplateHandler(
         const createdAt = body.createdAt;
 
         if (typeof text !== "string" || typeof createdAt !== "string") {
-          return problemResponse(400, "web.request_body_invalid", id);
+          return secureResponse(problemResponse(400, "web.request_body_invalid", id));
         }
 
         let journal = sessionJournals.get(sessionCookie) ?? createJournal();
 
         const result = addNote(journal, text, createdAt);
         if (!result.ok) {
-          return problemResponse(422, result.refusal, id);
+          return secureResponse(problemResponse(422, result.refusal, id));
         }
 
         journal = result.value;
@@ -205,17 +258,24 @@ export function createTemplateHandler(
 
         return secureResponse(Response.json({ ok: true }, { status: 201 }));
       } catch {
-        return problemResponse(400, "web.request_body_invalid", id);
+        return secureResponse(problemResponse(400, "web.request_body_invalid", id));
       }
     }
 
     // GET /api/notes - list notes for the session
     if (url.pathname === "/api/notes" && request.method === "GET") {
-      const sessionResult = await requireSession();
-      if (typeof sessionResult !== "string") {
-        return sessionResult;
+      const id = requestId();
+      const sessionCookie = readCookie(request, SESSION_COOKIE);
+      if (sessionCookie === null) {
+        return secureResponse(problemResponse(401, "auth.session_missing", id));
       }
-      const sessionCookie = sessionResult;
+
+      if (sessions) {
+        const resolved = await sessions.resolveSession(sessionCookie);
+        if (!resolved.ok) {
+          return secureResponse(problemResponse(401, "auth.session_invalid", id));
+        }
+      }
 
       const journal = sessionJournals.get(sessionCookie) ?? createJournal();
       const notes = listNotes(journal);
@@ -223,29 +283,20 @@ export function createTemplateHandler(
       return secureResponse(Response.json({ data: notes }, { status: 200 }));
     }
 
-    // GET /api/schemas - list available schema names
-    if (url.pathname === "/api/schemas" && request.method === "GET") {
-      const sessionResult = await requireSession();
-      if (typeof sessionResult !== "string") {
-        return sessionResult;
-      }
-
-      try {
-        const registry = await getContractsRegistry();
-        const schemaNames = registry.schemaNames();
-        return secureResponse(Response.json({ data: schemaNames }, { status: 200 }));
-      } catch {
-        return problemResponse(500, "web.internal_error", id);
-      }
-    }
-
     // POST /api/validate - validation playground
     if (url.pathname === "/api/validate" && request.method === "POST") {
-      const sessionResult = await requireSession();
-      if (typeof sessionResult !== "string") {
-        return sessionResult;
+      const id = requestId();
+      const sessionCookie = readCookie(request, SESSION_COOKIE);
+      if (sessionCookie === null) {
+        return secureResponse(problemResponse(401, "auth.session_missing", id));
       }
-      const sessionCookie = sessionResult;
+
+      if (sessions) {
+        const resolved = await sessions.resolveSession(sessionCookie);
+        if (!resolved.ok) {
+          return secureResponse(problemResponse(401, "auth.session_invalid", id));
+        }
+      }
 
       // CSRF check
       if (sessions) {
@@ -259,7 +310,7 @@ export function createTemplateHandler(
             secFetchSite: request.headers.get("Sec-Fetch-Site"),
           });
           if (!csrf.ok) {
-            return problemResponse(403, "auth.csrf_invalid", id);
+            return secureResponse(problemResponse(403, "auth.csrf_invalid", id));
           }
         }
       }
@@ -270,7 +321,7 @@ export function createTemplateHandler(
         const document = body.document;
 
         if (typeof schemaName !== "string") {
-          return problemResponse(400, "web.request_body_invalid", id);
+          return secureResponse(problemResponse(400, "web.request_body_invalid", id));
         }
 
         const registry = await getContractsRegistry();
@@ -287,16 +338,16 @@ export function createTemplateHandler(
         } catch (error) {
           // Schema not found
           if (error instanceof Error && error.message.includes("not found")) {
-            return problemResponse(404, "contracts.schema_not_found", id);
+            return secureResponse(problemResponse(404, "contracts.schema_not_found", id));
           }
           throw error;
         }
       } catch {
-        return problemResponse(400, "web.request_body_invalid", id);
+        return secureResponse(problemResponse(400, "web.request_body_invalid", id));
       }
     }
 
-    // Not found
-    return problemResponse(404, "web.route_not_found", id);
+    // Delegate to createRequestHandler for GET/HEAD routes and static assets
+    return requestHandler(request);
   };
 }

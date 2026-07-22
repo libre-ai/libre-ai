@@ -1,197 +1,144 @@
 import { expect, test } from "@playwright/test";
 
-const IDEMPOTENCY = `idem_${"e".repeat(16)}`;
-
-async function loginViaApi(page: import("@playwright/test").Page): Promise<void> {
-  // Get authorization URL from the login endpoint
-  const authorizationUrl = await page.evaluate(async (idempotency) => {
-    const response = await fetch("/v1/auth/login", {
-      body: JSON.stringify({ returnPath: "/" }),
-      headers: {
-        "Content-Type": "application/json",
-        "Idempotency-Key": idempotency,
-        "If-Match": '"0"',
-      },
-      method: "POST",
-    });
-    if (!response.ok) {
-      throw new Error(`login failed: ${response.status}`);
-    }
-    const body = (await response.json()) as { authorizationUrl: string };
-    return body.authorizationUrl;
-  }, IDEMPOTENCY);
-
-  // Navigate to the authorization endpoint (dev-issuer)
-  await page.goto(authorizationUrl);
-
-  // The dev-issuer automatically issues a code and redirects to /v1/auth/callback
-  // which sets the session cookie and redirects back to /
-  await page.waitForURL("**/");
-
-  // Verify session is authenticated
-  const sessionState = await page.evaluate(async () => {
-    const res = await fetch("/api/session");
-    if (!res.ok) {
-      throw new Error(`Session check failed: ${res.status}`);
-    }
-    return (await res.json()) as Record<string, unknown>;
+async function loginViaUI(page: import("@playwright/test").Page): Promise<void> {
+  // Hydration: wait for client module to execute and set data-hydrated
+  // Use waitForFunction to poll the attribute since it's set asynchronously
+  await page.waitForFunction(() => {
+    return document.documentElement.getAttribute("data-hydrated") === "true";
   });
 
-  if (!sessionState.authenticated) {
-    throw new Error(`Login failed: not authenticated`);
-  }
+  // Click the login button
+  await page.locator("button", { hasText: "Se connecter" }).click();
+
+  // The login flow will navigate to the dev-issuer authorization endpoint
+  // which automatically issues a code and redirects to /v1/auth/callback
+  // which sets the session cookie and redirects back to /
+  await page.waitForURL("**/", { timeout: 10_000 });
+
+  // Verify the UI has hydrated data by checking for authenticated content
+  // The authenticated state should show the form to add notes
+  await expect(page.locator("textarea[placeholder='Entrez votre note…']")).toBeVisible();
 }
 
-test("full authentication flow: login and logout via API", async ({ page }) => {
+test("login flow: clicking login button initiates OIDC flow", async ({ page }) => {
   // Navigate to home
   await page.goto("/");
 
-  // Perform login
-  await loginViaApi(page);
+  // Verify hydration
+  await page.waitForFunction(() => {
+    return document.documentElement.getAttribute("data-hydrated") === "true";
+  });
+
+  // Before login: unauthenticated
+  let sessionState = await page.evaluate(async () => {
+    const res = await fetch("/api/session");
+    return res.json();
+  });
+  expect(sessionState.authenticated).toBe(false);
+
+  // Click the login button
+  await page.locator("button", { hasText: "Se connecter" }).click();
+
+  // The login flow navigates through dev-issuer and redirects back to /
+  await page.waitForURL("**/", { timeout: 10_000 });
+
+  // After login: authenticated UI should be rendered
+  const textarea = page.locator("textarea[placeholder='Entrez votre note…']");
+  await expect(textarea).toBeVisible({ timeout: 5_000 });
 
   // Verify authenticated state
-  const sessionState = await page.evaluate(async () => {
-    const response = await fetch("/api/session");
-    return (await response.json()) as Record<string, unknown>;
+  sessionState = await page.evaluate(async () => {
+    const res = await fetch("/api/session");
+    return res.json();
   });
-  expect(sessionState.authenticated).toBeTruthy();
+  expect(sessionState.authenticated).toBe(true);
   expect(sessionState.userId).toBeDefined();
   expect(sessionState.tenantId).toBeDefined();
 });
 
-test("add note and verify via API", async ({ page }) => {
+test("add note via UI and verify in list", async ({ page }) => {
   await page.goto("/");
-  await loginViaApi(page);
+  await loginViaUI(page);
 
-  // Get CSRF token
-  const csrfToken = await page.evaluate(async () => {
-    const res = await fetch("/e2e/csrf");
-    const data = (await res.json()) as { csrfToken: string };
-    return data.csrfToken;
-  });
-  expect(csrfToken.length).toBeGreaterThan(0);
+  // Wait for the session to fully load (includes CSRF token)
+  // The CSRF token is fetched in the useEffect after authentication
+  await page.waitForTimeout(1000);
 
-  // Add a note via API
-  // Set token on window object for access in evaluate
-  await page.evaluate((token: string) => {
-    (window as unknown as Record<string, unknown>).__test_csrf_token = token;
-  }, csrfToken);
+  // Fill in the note textarea
+  const textarea = page.locator("textarea[placeholder='Entrez votre note…']");
+  await expect(textarea).toBeEnabled({ timeout: 5_000 });
+  await textarea.fill("Test note from UI");
 
-  const noteResponse = await page.evaluate(async () => {
-    const token = (window as unknown as Record<string, unknown>).__test_csrf_token as string;
-    // ISO 8601 UTC seconds format (YYYY-MM-DDTHH:mm:ssZ) without milliseconds
-    const createdAt = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
-    const res = await fetch("/api/notes", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRF-Token": token,
-      },
-      body: JSON.stringify({ text: "Test note", createdAt }),
-    });
-    return { status: res.status, ok: (await res.json()) as Record<string, unknown> };
-  });
+  // Click the submit button
+  const submitButton = page.locator("button", { hasText: "Ajouter la note" });
+  await submitButton.click();
 
-  // Verify note was added (201 Created)
-  expect(noteResponse.status).toBe(201);
-  expect(noteResponse.ok.ok).toBeTruthy();
+  // Wait for success message
+  const message = page.locator("[data-testid='message']");
+  await expect(message).toBeVisible({ timeout: 10_000 });
+
+  // Verify it's a success message
+  const messageText = await message.textContent();
+  expect(messageText).toContain("Note ajoutée avec succès");
 
   // Verify the note appears in the list
-  const notes = await page.evaluate(async () => {
-    const res = await fetch("/api/notes");
-    const data = (await res.json()) as { data: unknown[] };
-    return data.data;
-  });
-  expect(notes.length).toBe(1);
+  const noteList = page.locator("[data-testid='note-list']");
+  await expect(noteList).toContainText("Test note from UI");
 });
 
-test("domain refusal: empty note is rejected with 422", async ({ page }) => {
+test("empty note is rejected with error message", async ({ page }) => {
   await page.goto("/");
-  await loginViaApi(page);
+  await loginViaUI(page);
 
-  // Get CSRF token
-  const csrfToken = await page.evaluate(async () => {
-    const res = await fetch("/e2e/csrf");
-    const data = (await res.json()) as { csrfToken: string };
-    return data.csrfToken;
-  });
+  // Wait a bit for the session to be loaded
+  await page.waitForTimeout(500);
 
-  // Set token on window object for access in evaluate
-  await page.evaluate((token: string) => {
-    (window as unknown as Record<string, unknown>).__test_csrf_token = token;
-  }, csrfToken);
+  // Try to submit empty note (textarea is empty by default)
+  const submitButton = page.locator("button", { hasText: "Ajouter la note" });
+  await submitButton.click();
 
-  // Try to add an empty note
-  const noteResponse = await page.evaluate(async () => {
-    const token = (window as unknown as Record<string, unknown>).__test_csrf_token as string;
-    // ISO 8601 UTC seconds format (YYYY-MM-DDTHH:mm:ssZ) without milliseconds
-    const createdAt = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
-    const res = await fetch("/api/notes", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRF-Token": token,
-      },
-      body: JSON.stringify({ text: "", createdAt }),
-    });
-    return {
-      status: res.status,
-      body: (await res.json()) as Record<string, unknown>,
-    };
-  });
+  // Error message should appear
+  const message = page.locator("[data-testid='message']");
+  await expect(message).toBeVisible({ timeout: 10_000 });
 
-  // Verify rejection (422 Unprocessable Entity with refusal code)
-  expect(noteResponse.status).toBe(422);
-  expect(noteResponse.body).toHaveProperty("error.code", "starter.note_invalid");
+  // Verify it's an error message about empty note
+  const messageText = await message.textContent();
+  expect(messageText).toMatch(/Veuillez entrer du texte pour la note/);
+
+  // Note list should remain empty
+  const noteList = page.locator("[data-testid='note-list']");
+  await expect(noteList).not.toBeVisible();
 });
 
-test("contracts validation playground via API", async ({ page }) => {
+test("contracts validation playground via UI", async ({ page }) => {
   await page.goto("/");
-  await loginViaApi(page);
+  await loginViaUI(page);
 
-  // Get available schemas
-  const schemas = await page.evaluate(async () => {
-    const res = await fetch("/api/schemas");
-    const data = (await res.json()) as { data: string[] };
-    return data.data;
-  });
-  expect(schemas.length).toBeGreaterThan(0);
+  // Wait a bit for the session and schemas to be loaded
+  await page.waitForTimeout(500);
 
-  // Get CSRF token
-  const csrfToken = await page.evaluate(async () => {
-    const res = await fetch("/e2e/csrf");
-    const data = (await res.json()) as { csrfToken: string };
-    return data.csrfToken;
-  });
+  // Wait for schema select to be populated
+  const schemaSelect = page.locator("#schema-select");
+  await expect(schemaSelect).toBeEnabled();
 
-  // Validate a document against the first schema
-  const schemaName = schemas[0];
+  // Get first schema option (skip the placeholder "Sélectionner un schéma…")
+  const firstSchema = schemaSelect.locator("option").nth(1);
+  const schemaValue = await firstSchema.getAttribute("value");
 
-  // First set the values on the window object
-  await page.evaluate((obj: { schema: string; token: string }) => {
-    (window as unknown as Record<string, unknown>).__test_schema = obj.schema;
-    (window as unknown as Record<string, unknown>).__test_token = obj.token;
-  }, { schema: schemaName, token: csrfToken } as unknown as { schema: string; token: string });
+  // Select the first schema
+  await schemaSelect.selectOption(schemaValue!);
 
-  // Then evaluate the validation
-  const validationResponse = await page.evaluate(async () => {
-    const schema = (window as unknown as Record<string, unknown>).__test_schema as string;
-    const token = (window as unknown as Record<string, unknown>).__test_token as string;
-    const res = await fetch("/api/validate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRF-Token": token,
-      },
-      body: JSON.stringify({ schemaName: schema, document: {} }),
-    });
-    return {
-      status: res.status,
-      body: (await res.json()) as Record<string, unknown>,
-    };
-  });
+  // Fill in JSON document
+  const jsonTextarea = page.locator("textarea[placeholder='{}']");
+  await jsonTextarea.fill("{}");
 
-  // Verify validation response (200 with ok: true/false)
-  expect(validationResponse.status).toBe(200);
-  expect(validationResponse.body).toHaveProperty("ok");
+  // Click validate button
+  const validateButton = page.locator("button", { hasText: "Valider" });
+  await validateButton.click();
+
+  // Message should appear (either valid or invalid)
+  const statusMessage = page.locator("[data-testid='message']");
+  await expect(statusMessage).toBeVisible({ timeout: 10_000 });
+  const text = await statusMessage.textContent();
+  expect(text).toMatch(/Document (valide|invalide)/);
 });

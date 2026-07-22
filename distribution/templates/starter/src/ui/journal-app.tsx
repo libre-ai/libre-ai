@@ -111,7 +111,8 @@ export function JournalApp() {
       }
 
       try {
-        const createdAt = new Date().toISOString();
+        // ISO 8601 UTC seconds format (YYYY-MM-DDTHH:mm:ssZ) without milliseconds
+        const createdAt = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
         const headers: Record<string, string> = {
           "Content-Type": "application/json",
         };
@@ -244,8 +245,33 @@ export function JournalApp() {
     }
   }, []);
 
-  const handleLogin = useCallback(() => {
-    window.location.href = "/v1/auth/login";
+  const handleLogin = useCallback(async () => {
+    try {
+      // Fetch the authorization URL from the login endpoint (POST required)
+      const response = await fetch("/v1/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": `idem_${"e".repeat(16)}`,
+          "If-Match": '"0"',
+        },
+        body: JSON.stringify({ returnPath: "/" }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Login failed: ${response.status}`);
+      }
+
+      const data = (await response.json()) as { authorizationUrl: string };
+      // Navigate to the authorization endpoint
+      window.location.href = data.authorizationUrl;
+    } catch (error) {
+      console.error("Failed to initiate login:", error);
+      setMessage({
+        type: "error",
+        text: "Impossible de démarrer le flux de connexion.",
+      });
+    }
   }, []);
 
   return (
