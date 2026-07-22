@@ -2,8 +2,16 @@
   "name": "@libre-ai/contracts",
   "version": "0.1.0",
   "description": "TypeScript SDK projection of the Libre AI locked contracts — fail-closed validators and generated types (sdk-ts, layer 4).",
-  "private": true,
   "license": "Apache-2.0",
+  "types": "./src/index.ts",
+  "files": [
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "schemas",
+    "README.md",
+    "LICENSE"
+  ],
   "type": "module",
   "keywords": [
     "libre-ai",
@@ -33,7 +41,9 @@
     "pregenerate": "bun run check:bun",
     "generate": "bun scripts/generate-types.ts",
     "pregenerate:check": "bun run check:bun",
-    "generate:check": "bun scripts/generate-types.ts --check",
+    "generate:check": "bun scripts/generate-types.ts --check && bun scripts/sync-schemas.ts --check",
+    "preschemas:sync": "bun run check:bun",
+    "schemas:sync": "bun scripts/sync-schemas.ts",
     "pretest": "bun run check:bun",
     "test": "bun test"
   },

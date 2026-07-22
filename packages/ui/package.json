@@ -2,8 +2,15 @@
   "name": "@libre-ai/ui",
   "version": "0.1.0",
   "description": "Accessible, verifiable UI primitives for the Libre AI sovereign application workshop (layer 4).",
-  "private": true,
   "license": "Apache-2.0",
+  "types": "./src/index.ts",
+  "files": [
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "README.md",
+    "LICENSE"
+  ],
   "type": "module",
   "keywords": [
     "libre-ai",
@@ -35,11 +42,21 @@
     "test": "bun test"
   },
   "dependencies": {
+    "react-aria-components": "catalog:"
+  },
+  "peerDependencies": {
     "react": "catalog:",
-    "react-aria-components": "catalog:",
+    "react-dom": "catalog:",
     "tailwindcss": "catalog:"
   },
+  "peerDependenciesMeta": {
+    "tailwindcss": {
+      "optional": true
+    }
+  },
   "devDependencies": {
-    "react-dom": "catalog:"
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tailwindcss": "catalog:"
   }
 }
