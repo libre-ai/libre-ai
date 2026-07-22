@@ -218,12 +218,15 @@ describe("guardEvidence (K3 envelope integration)", () => {
     expect(contentSection).not.toContain("⟦/LAI-UNTRUSTED⟧");
   });
 
-  test("fails closed on tampering (content alteration)", () => {
-    // guardEvidence uses renderGuarded internally, which verifies before rendering.
-    // If we can't directly manipulate the result, we test through the envelope API.
+  test("renders the evidence content readably inside the guard", () => {
+    // This asserts the INTEGRATION property only: guardEvidence preserves the
+    // content (delimiters escaped) inside the guarded block, so the model can
+    // still read it. The cryptographic fail-closed-on-tamper property is proven
+    // at the envelope layer (packages/envelope/src/envelope.test.ts:
+    // verifyEnvelope throws EnvelopeIntegrityError on any alteration); this
+    // orchestrator test does not re-prove it.
     const content = "original evidence";
     const guarded = guardEvidence("test.txt", content, testKey, "2026-07-22T00:00:00Z");
-    // The rendered output is verified and integrity-signed, so it's resistant to tampering.
     expect(guarded).toContain(content.replace(/⟧/g, "%u27E7"));
   });
 
