@@ -58,7 +58,7 @@ export function DataOwnership({
       <h2 id="data-ownership-legend">Mes données</h2>
       <p>
         Vos réponses restent sur votre appareil. Vous pouvez les exporter dans un fichier local ou
-        les supprimer à tout moment. Rien n'est transmis.
+        les supprimer à tout moment. Aucune donnée ne quitte l'appareil.
       </p>
       <div className="lai-cluster">
         <button type="button" onClick={handleExport} disabled={!hasResponses}>
