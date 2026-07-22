@@ -1,12 +1,12 @@
 import { StatusMessage, Surface } from "@libre-ai/ui";
 import { useRef, useState } from "react";
-import type { ExportedResponseSet } from "../domain/response-set";
+import type { ExportedActivityOutcome } from "../domain/activity-outcome";
 
 // The export is a LOCAL file operation: a Blob, an object URL and a synthetic
 // anchor click. It touches NO network primitive (no fetch / XHR / WebSocket /
 // sendBeacon / EventSource / RTCPeerConnection / node net), so the
 // `check-no-transmission` guard stays green with no allowlist entry — and this
-// helper lives inside `apps/boussole` precisely so the guard scans it. It is
+// helper lives inside `apps/practices` precisely so the guard scans it. It is
 // called only from an event handler, never during render, so SSR and hydration
 // never touch these browser globals.
 function downloadLocalJson(filename: string, payload: unknown): void {
@@ -28,30 +28,28 @@ type DeletePhase = "idle" | "confirming" | "deleting" | "deleted" | "failed";
 // delete, so the controls are hidden until hydration (`lai-enhanced-only`). Delete
 // is destructive, so it goes through an in-page two-step confirmation — never
 // `window.confirm`, which blocks the event loop and reads poorly to screen readers.
+// Unlike boussole, export has no empty state: an activity outcome always exists.
 export function DataOwnership({
   exportData,
   onDeleteAll,
-  hasResponses,
 }: {
-  readonly exportData: () => ExportedResponseSet | null;
+  readonly exportData: () => ExportedActivityOutcome;
   readonly onDeleteAll: () => Promise<void>;
-  readonly hasResponses: boolean;
 }) {
   const [phase, setPhase] = useState<DeletePhase>("idle");
   // Synchronous re-entry guard: the confirm button unmounts on the next render,
   // but a double-click can land before React re-renders — the ref closes that
-  // sub-millisecond window so the save is never issued twice.
+  // sub-millisecond window so `store.clear()` is never issued twice.
   const deleting = useRef(false);
 
   function handleExport(): void {
-    const data = exportData();
-    if (data) downloadLocalJson("boussole-reponses.json", data);
+    downloadLocalJson("practices-activite.json", exportData());
   }
 
   // The success message claims deletion happened, so it appears only after the
-  // store has durably saved the emptied set (deleteAll resolves post-persistence).
-  // A rejected save surfaces as an assertive failure message with a retry path —
-  // never a silent unhandled rejection with the UI stuck on the confirm step.
+  // store has durably cleared (deleteAll resolves post-persistence). A rejected
+  // clear surfaces as an assertive failure message with a retry path — never a
+  // silent unhandled rejection with the UI stuck on the confirm step.
   async function handleConfirmDelete(): Promise<void> {
     if (deleting.current) return;
     deleting.current = true;
@@ -74,26 +72,23 @@ export function DataOwnership({
     >
       <h2 id="data-ownership-legend">Mes données</h2>
       <p>
-        Vos réponses restent sur votre appareil. Vous pouvez les exporter dans un fichier local ou
-        les supprimer à tout moment. Aucune donnée ne quitte l'appareil.
+        Votre activité reste sur votre appareil. Vous pouvez l'exporter dans un fichier local ou la
+        supprimer à tout moment. Aucune donnée ne quitte l'appareil.
       </p>
       <div className="lai-cluster">
-        <button type="button" onClick={handleExport} disabled={!hasResponses}>
-          Télécharger mes réponses
+        <button type="button" onClick={handleExport}>
+          Télécharger mon activité
         </button>
         {phase === "idle" || phase === "failed" ? (
           <button type="button" onClick={() => setPhase("confirming")}>
-            Supprimer mes réponses
+            Supprimer mon activité
           </button>
         ) : null}
       </div>
-      {hasResponses ? null : (
-        <StatusMessage data-testid="export-empty">Rien à exporter pour l'instant.</StatusMessage>
-      )}
       {phase === "confirming" ? (
         <div className="lai-stack" data-testid="delete-confirm">
           <StatusMessage politeness="assertive">
-            Confirmer la suppression de toutes vos réponses ? Cette action est définitive.
+            Confirmer la suppression de votre activité locale ? Cette action est définitive.
           </StatusMessage>
           <div className="lai-cluster">
             <button type="button" onClick={handleConfirmDelete}>
@@ -107,7 +102,7 @@ export function DataOwnership({
       ) : null}
       {phase === "deleting" ? <StatusMessage>Suppression en cours…</StatusMessage> : null}
       {phase === "deleted" ? (
-        <StatusMessage data-testid="delete-done">Vos réponses ont été supprimées.</StatusMessage>
+        <StatusMessage data-testid="delete-done">Votre activité a été supprimée.</StatusMessage>
       ) : null}
       {phase === "failed" ? (
         <StatusMessage politeness="assertive" data-testid="delete-failed">
