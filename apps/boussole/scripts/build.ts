@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { buildTailwindUtilities } from "@libre-ai/ui/tailwind";
 import { renderStaticDocument } from "@libre-ai/web-platform";
 import { boussoleDocument } from "../src/shared/document";
+import { renderServiceWorker } from "./build-service-worker";
 
 const root = join(import.meta.dir, "..");
 const dist = join(root, "dist");
@@ -63,10 +64,6 @@ for (const path of cachedAssets) {
   cacheHasher.update(await Bun.file(join(dist, relativePath)).arrayBuffer());
 }
 const cacheDigest = cacheHasher.digest("hex");
-const swTemplate = await Bun.file(join(import.meta.dir, "service-worker-template.js")).text();
-const swContent = swTemplate
-  .replace("{{CACHE}}", `"libre-ai-boussole-${cacheDigest}"`)
-  .replace("{{ASSETS}}", JSON.stringify(cachedAssets));
-await Bun.write(join(dist, "sw.js"), swContent);
+await Bun.write(join(dist, "sw.js"), renderServiceWorker(cachedAssets, cacheDigest));
 
 console.log("Built SSR client, static document and local PWA assets");

@@ -7,14 +7,12 @@ const forbiddenLockfiles = new Set([
   "yarn.lock",
 ]);
 const forbiddenSourceExtensions = [".js", ".jsx", ".mjs", ".cjs"];
-const ignoredPrefixes = [".git/", ".tools/", "node_modules/", "target/"];
-const ignoredPathComponents = ["dist", "coverage"];
+const ignoredPrefixes = [".git/", ".tools/", "node_modules/", "target/", "dist/"];
 const failures: string[] = [];
 const glob = new Bun.Glob("**/*");
 
 for await (const path of glob.scan({ cwd: ".", dot: true, onlyFiles: true })) {
   if (ignoredPrefixes.some((prefix) => path.startsWith(prefix))) continue;
-  if (ignoredPathComponents.some((component) => path.split("/").includes(component))) continue;
   const name = path.split("/").at(-1) ?? path;
   if (forbiddenLockfiles.has(name)) failures.push(`Forbidden lockfile: ${path}`);
   if (forbiddenSourceExtensions.some((extension) => path.endsWith(extension))) {
