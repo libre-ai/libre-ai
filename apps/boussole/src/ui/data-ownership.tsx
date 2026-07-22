@@ -34,7 +34,7 @@ export function DataOwnership({
   hasResponses,
 }: {
   readonly exportData: () => ExportedResponseSet | null;
-  readonly onDeleteAll: () => void;
+  readonly onDeleteAll: () => Promise<void>;
   readonly hasResponses: boolean;
 }) {
   const [phase, setPhase] = useState<DeletePhase>("idle");
@@ -44,8 +44,10 @@ export function DataOwnership({
     if (data) downloadLocalJson("boussole-reponses.json", data);
   }
 
-  function handleConfirmDelete(): void {
-    onDeleteAll();
+  // The success message claims deletion happened, so it appears only after the
+  // store has durably saved the emptied set (deleteAll resolves post-persistence).
+  async function handleConfirmDelete(): Promise<void> {
+    await onDeleteAll();
     setPhase("deleted");
   }
 

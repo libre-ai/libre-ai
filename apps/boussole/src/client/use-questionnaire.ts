@@ -28,9 +28,11 @@ export interface QuestionnaireController {
   // export document (null when empty, mirroring the domain's empty-refusal); the
   // caller turns it into a LOCAL file download — never a network upload. `deleteAll`
   // erases every response through the domain and persists the emptied set (binding
-  // kept), so a reload restores an empty questionnaire rather than the old answers.
+  // kept); it resolves only once the store has durably saved, so the caller can
+  // truthfully announce deletion (unlike the optimistic answer/skip saves, a
+  // deletion claim must be durable).
   readonly exportData: () => ExportedResponseSet | null;
-  readonly deleteAll: () => void;
+  readonly deleteAll: () => Promise<void>;
 }
 
 // The interactive controller. Without a store (SSR) it stays at the empty set with
@@ -74,8 +76,10 @@ export function useQuestionnaire(store?: LocalResponseStore): QuestionnaireContr
       const result = exportResponseSet(set);
       return result.ok ? result.value : null;
     },
-    deleteAll() {
-      commit(deleteResponses(set));
+    async deleteAll() {
+      const next = deleteResponses(set);
+      setSet(next);
+      await store?.save(next);
     },
   };
 }
