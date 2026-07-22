@@ -211,16 +211,16 @@ function evaluateRules(
     const maxSourceAgeDays = typeof rule.maxSourceAgeDays === "number" ? rule.maxSourceAgeDays : undefined;
     const unknown = String(rule.unknown);
 
-    // Determine which namespace to search
-    let occurrences: FactValue[] = [];
+    // Find fact objects (not just values) so we can access source for freshness
+    let factObjects: JsonRecord[] = [];
     if (fact.startsWith("need.")) {
-      occurrences = findFacts(need, fact, "need");
+      factObjects = findFactObjects(need, fact);
     } else if (fact.startsWith("model.")) {
-      occurrences = findFacts(snapshot, fact, "model");
+      factObjects = findFactObjects(snapshot, fact);
     }
 
     // SEMANTICS.md §3: zero occurrences -> unknown/fact_absent
-    if (occurrences.length === 0) {
+    if (factObjects.length === 0) {
       results.push({
         ruleId,
         status: "unknown",
@@ -231,15 +231,15 @@ function evaluateRules(
 
     // SEMANTICS.md §3: multiple occurrences -> evaluate all, reduce
     const occurrenceStatuses: Array<{ status: RuleStatus; reasonCode: ReasonCode }> = [];
-    for (const occurrence of occurrences) {
+    for (const factObject of factObjects) {
+      const occurrence = factObject.value as FactValue;
       const status = evaluateOccurrence(
         occurrence,
         operator,
         value,
         maxSourceAgeDays,
-        snapshot,
+        factObject,
         evaluatedAt,
-        fact,
       );
       occurrenceStatuses.push(status);
     }
@@ -268,13 +268,12 @@ function evaluateOccurrence(
   operator: Operator,
   value: RuleValue,
   maxSourceAgeDays: number | undefined,
-  snapshot: JsonRecord,
+  factObject: JsonRecord,
   evaluatedAt: string,
-  factName: string,
 ): { status: RuleStatus; reasonCode: ReasonCode } {
-  // SEMANTICS.md §5: freshness check (for model facts)
-  if (factName.startsWith("model.")) {
-    const freshness = checkFreshness(occurrence, snapshot, evaluatedAt, factName, maxSourceAgeDays);
+  // SEMANTICS.md §5: freshness check (for model facts with source)
+  if (factObject.source !== undefined) {
+    const freshness = checkFreshness(evaluatedAt, factObject, maxSourceAgeDays);
     if (freshness !== null) {
       return freshness;
     }
@@ -285,32 +284,12 @@ function evaluateOccurrence(
 }
 
 function checkFreshness(
-  occurrence: FactValue,
-  snapshot: JsonRecord,
   evaluatedAt: string,
-  factName: string,
+  factObject: JsonRecord,
   maxSourceAgeDays: number | undefined,
 ): { status: "unknown"; reasonCode: ReasonCode } | null {
-  // Find the matching fact to get its source.retrievedAt
-  const facts = snapshot.facts as JsonRecord[];
-  let retrievedAt: string | undefined;
-
-  for (const fact of facts) {
-    if (fact.name === factName.replace("model.", "")) {
-      const factValue = fact.value;
-      // Check if this is the occurrence we're checking
-      if (factValue === occurrence) {
-        const source = fact.source as JsonRecord;
-        retrievedAt = String(source.retrievedAt);
-        break;
-      }
-    }
-  }
-
-  if (!retrievedAt) {
-    // Shouldn't happen if fact exists
-    return { status: "unknown", reasonCode: "policy.fact_absent" };
-  }
+  const source = factObject.source as JsonRecord;
+  const retrievedAt = String(source.retrievedAt);
 
   const ageSeconds = Math.floor(new Date(evaluatedAt).getTime() / 1000) - Math.floor(new Date(retrievedAt).getTime() / 1000);
 
@@ -457,19 +436,18 @@ function computeVerdict(
   return "eligible";
 }
 
-function findFacts(
+function findFactObjects(
   container: JsonRecord,
   factName: string,
-  prefix: string,
-): FactValue[] {
+): JsonRecord[] {
   const facts = container.facts as JsonRecord[];
-  const targetName = factName.replace(`${prefix}.`, "");
-  const results: FactValue[] = [];
+  const results: JsonRecord[] = [];
 
   if (Array.isArray(facts)) {
     for (const fact of facts) {
-      if (fact.name === targetName) {
-        results.push(fact.value as FactValue);
+      // Fact names in the container already include the full prefix (e.g., "model.score", "need.foo")
+      if (fact.name === factName) {
+        results.push(fact);
       }
     }
   }
