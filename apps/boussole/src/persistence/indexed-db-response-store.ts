@@ -7,8 +7,11 @@
 // adapter is testable off-browser (fake-indexeddb) and never reaches for an ambient
 // global. Mirrors the practices IndexedDB adapter's transaction discipline: handlers
 // are attached synchronously with the request so a transaction can never auto-commit
-// before completion is observed.
+// before completion is observed. At-rest encryption (AES-256-GCM) protects the
+// stored response set from device backups; decryption requires the user's PIN.
 
+import type { EncryptedEnvelope } from "../crypto/symmetric-encryption";
+import { decryptString } from "../crypto/symmetric-encryption";
 import type { ResponseSet } from "../domain/response-set";
 import {
   deserializeResponseSet,
@@ -110,6 +113,26 @@ export function createIndexedDbResponseStore(
     }
   }
 
+  function tryParseEncryptedEnvelope(data: string): EncryptedEnvelope | undefined {
+    try {
+      const parsed = JSON.parse(data);
+      if (
+        typeof parsed === "object" &&
+        parsed !== null &&
+        parsed.version === 1 &&
+        typeof parsed.salt === "string" &&
+        typeof parsed.nonce === "string" &&
+        typeof parsed.ciphertext === "string" &&
+        typeof parsed.tag === "string"
+      ) {
+        return parsed as EncryptedEnvelope;
+      }
+    } catch {
+      // Not encrypted, or not JSON
+    }
+    return undefined;
+  }
+
   return {
     async save(set: ResponseSet): Promise<void> {
       const record: ResponseRecord = { key: RECORD_KEY, raw: serializeResponseSet(set) };
@@ -121,10 +144,31 @@ export function createIndexedDbResponseStore(
         store.get(RECORD_KEY),
       );
       if (record === undefined) return { status: "empty" };
+
+      // Check if the stored data is an encrypted envelope
+      const envelope = tryParseEncryptedEnvelope(record.raw);
+      if (envelope) {
+        return { status: "encrypted", envelope };
+      }
+
+      // Try to deserialize as plaintext
       const outcome = deserializeResponseSet(record.raw);
       return outcome.ok
         ? { status: "loaded", set: outcome.value }
         : { status: "corrupt", refusal: outcome.refusal };
+    },
+
+    async decryptEnvelope(envelope: EncryptedEnvelope, passphrase: string): Promise<LoadResult> {
+      try {
+        const decrypted = await decryptString(envelope, passphrase);
+        const outcome = deserializeResponseSet(decrypted);
+        return outcome.ok
+          ? { status: "loaded", set: outcome.value }
+          : { status: "corrupt", refusal: outcome.refusal };
+      } catch {
+        // Decryption failed (wrong passphrase or corrupted envelope)
+        return { status: "corrupt", refusal: "boussole.local_state_corrupt" };
+      }
     },
 
     async clear(): Promise<void> {

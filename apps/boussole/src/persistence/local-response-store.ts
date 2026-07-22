@@ -4,10 +4,13 @@
 // deletion"). Serialization is a plain local encoding; deserialization is
 // fail-closed and reconstructs the set THROUGH the domain, so a corrupt or
 // tampered local envelope can never rehydrate into an invalid state
-// (boussole.local_state_corrupt). The concrete IndexedDB adapter is a thin
-// boundary deferred to a later increment; this module carries the port and an
+// (boussole.local_state_corrupt). At-rest encryption (AES-256-GCM, PBKDF2-derived
+// PIN key) protects IndexedDB from device backups and physical access. The concrete
+// IndexedDB adapter is a thin boundary; this module carries the port and an
 // in-memory adapter that exercises the exact same encode/decode path.
 
+import type { EncryptedEnvelope } from "../crypto/symmetric-encryption";
+import { decryptString } from "../crypto/symmetric-encryption";
 import {
   type DatasetBinding,
   type LocalResponse,
@@ -116,16 +119,20 @@ export function deserializeResponseSet(raw: string): Outcome<ResponseSet> {
 export type LoadResult =
   | { readonly status: "empty" }
   | { readonly status: "loaded"; readonly set: ResponseSet }
+  | { readonly status: "encrypted"; readonly envelope: EncryptedEnvelope }
   | { readonly status: "corrupt"; readonly refusal: RefusalCode };
 
 /**
  * The device-local persistence port. Async to match the real IndexedDB adapter.
  * `load` never throws on corruption: a malformed or tampered store surfaces as
  * a `corrupt` result, keeping the fail-closed contract at the storage seam.
+ * If the stored data is encrypted, `load` returns status "encrypted" with the envelope.
+ * The caller must invoke `decryptEnvelope(envelope, passphrase)` to decrypt.
  */
 export interface LocalResponseStore {
   save(set: ResponseSet): Promise<void>;
   load(): Promise<LoadResult>;
+  decryptEnvelope(envelope: EncryptedEnvelope, passphrase: string): Promise<LoadResult>;
   clear(): Promise<void>;
 }
 
@@ -133,19 +140,61 @@ export interface LocalResponseStore {
  * In-memory adapter for tests and deterministic previews. It stores the encoded
  * string (not the object), so `load` runs the true decode path and rejects
  * injected corruption exactly as a persistent adapter would.
+ * If the stored raw is a JSON EncryptedEnvelope, `load` detects it and returns encrypted status.
  */
 export function createInMemoryResponseStore(seed?: string): LocalResponseStore {
   let raw: string | undefined = seed;
+
+  function tryParseEncryptedEnvelope(data: string): EncryptedEnvelope | undefined {
+    try {
+      const parsed = JSON.parse(data);
+      if (
+        typeof parsed === "object" &&
+        parsed !== null &&
+        parsed.version === 1 &&
+        typeof parsed.salt === "string" &&
+        typeof parsed.nonce === "string" &&
+        typeof parsed.ciphertext === "string" &&
+        typeof parsed.tag === "string"
+      ) {
+        return parsed as EncryptedEnvelope;
+      }
+    } catch {
+      // Not encrypted, or not JSON
+    }
+    return undefined;
+  }
+
   return {
     async save(set: ResponseSet): Promise<void> {
       raw = serializeResponseSet(set);
     },
     async load(): Promise<LoadResult> {
       if (raw === undefined) return { status: "empty" };
+
+      // Check if the stored data is an encrypted envelope
+      const envelope = tryParseEncryptedEnvelope(raw);
+      if (envelope) {
+        return { status: "encrypted", envelope };
+      }
+
+      // Try to deserialize as plaintext
       const outcome = deserializeResponseSet(raw);
       return outcome.ok
         ? { status: "loaded", set: outcome.value }
         : { status: "corrupt", refusal: outcome.refusal };
+    },
+    async decryptEnvelope(envelope: EncryptedEnvelope, passphrase: string): Promise<LoadResult> {
+      try {
+        const decrypted = await decryptString(envelope, passphrase);
+        const outcome = deserializeResponseSet(decrypted);
+        return outcome.ok
+          ? { status: "loaded", set: outcome.value }
+          : { status: "corrupt", refusal: outcome.refusal };
+      } catch {
+        // Decryption failed (wrong passphrase or corrupted envelope)
+        return { status: "corrupt", refusal: REFUSAL };
+      }
     },
     async clear(): Promise<void> {
       raw = undefined;
