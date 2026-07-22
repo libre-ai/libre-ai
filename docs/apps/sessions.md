@@ -26,7 +26,7 @@ Sessions supports sourced collective work where owners/facilitators control memb
 
 ## Domain protocol
 
-**Commands:** `CreateSpace`, `AddMember`, `CreateSession(collab_enabled, collab_relay_url)`, `SetAudiencePolicy`, `AttachSource`, `JoinSession`, `SubmitContribution`, `AcknowledgeEvents`, `RequestSynthesis`, `ApproveOutcome`, `RejectOutcome`, `CloseSession`, `ExportSession`, `DeleteSession`.
+**Commands:** `CreateSpace`, `AddMember`, `CreateSession`, `SetAudiencePolicy`, `AttachSource`, `JoinSession`, `SubmitContribution`, `AcknowledgeEvents`, `RequestSynthesis`, `ApproveOutcome`, `RejectOutcome`, `CloseSession`, `ExportSession`, `DeleteSession`.
 
 **Queries:** `GetSession`, `ListVisibleSources`, `GetEventsSince`, `GetParticipantState`, `GetDraftOutcome`, `PreviewAudienceExport`, `GetApprovedOutcome`.
 
