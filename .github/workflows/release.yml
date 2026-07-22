@@ -1,0 +1,77 @@
+# Wave-1 satellite publication (EXECUTION-SEQUENCING vague 1).
+#
+# Manual only (workflow_dispatch), dry-run by default. The publish job requires
+# the `npm-publish` GitHub environment — created by the owner, holding the
+# NPM_TOKEN secret (granular token scoped to the @libre-ai packages) — so no
+# autonomous run can publish. Publication order follows the dependency closure:
+# contracts -> web-platform -> ui -> auth-web. bun publish materializes
+# workspace:/catalog: refs at pack time; the preflight proves it before any
+# publish and fails closed otherwise.
+name: Release satellites
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (no publication) — uncheck only on the owner's npm day"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    name: Publish preflight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Install archived Bun toolchain
+        env:
+          BUN_ARCHIVE_URL: https://github.com/libre-ai/libre-ai/releases/download/toolchain-bun-1.4.0-canary.1-57f349f63/bun-linux-x64.zip
+          BUN_ARCHIVE_SHA256: 83144e2542c33aaae541cf16b42f8cf1c55c3b94c5395fc776417fa27e95bcbf
+        run: |
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/bun.zip" "$BUN_ARCHIVE_URL"
+          echo "$BUN_ARCHIVE_SHA256  $RUNNER_TEMP/bun.zip" | sha256sum --check --strict
+          unzip -q "$RUNNER_TEMP/bun.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/bun-linux-x64" >> "$GITHUB_PATH"
+      - name: Verify Bun 1.4+ floor and exact CI revision
+        run: |
+          test "$(bun --revision)" = "1.4.0-canary.1+57f349f63"
+          bun run check:toolchain
+      - run: bun install --frozen-lockfile
+      - name: Satellite test suites
+        run: bun test packages/contracts packages/web-platform packages/ui packages/auth-web
+      - name: Vendored schema drift gate
+        run: bun run --cwd packages/contracts generate:check
+      - name: Publish preflight (tarball inspection)
+        run: bun tools/release/publish-preflight.ts
+
+  publish:
+    name: Publish to npm (@libre-ai)
+    needs: preflight
+    if: ${{ inputs.dry_run == false }}
+    runs-on: ubuntu-latest
+    # The owner-created environment gates this job: it holds NPM_TOKEN and can
+    # require a manual approval before the job starts.
+    environment: npm-publish
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Install archived Bun toolchain
+        env:
+          BUN_ARCHIVE_URL: https://github.com/libre-ai/libre-ai/releases/download/toolchain-bun-1.4.0-canary.1-57f349f63/bun-linux-x64.zip
+          BUN_ARCHIVE_SHA256: 83144e2542c33aaae541cf16b42f8cf1c55c3b94c5395fc776417fa27e95bcbf
+        run: |
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/bun.zip" "$BUN_ARCHIVE_URL"
+          echo "$BUN_ARCHIVE_SHA256  $RUNNER_TEMP/bun.zip" | sha256sum --check --strict
+          unzip -q "$RUNNER_TEMP/bun.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/bun-linux-x64" >> "$GITHUB_PATH"
+      - run: bun install --frozen-lockfile
+      - name: Publish the four satellites in dependency order
+        env:
+          NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          for package in packages/contracts packages/web-platform packages/ui packages/auth-web; do
+            echo "Publishing $package"
+            (cd "$package" && bun publish --access public)
+          done
