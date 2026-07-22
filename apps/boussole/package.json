@@ -12,6 +12,12 @@
     "pretest": "bun run check:bun",
     "test": "bun test"
   },
+  "dependencies": {
+    "@libre-ai/ui": "workspace:*",
+    "@libre-ai/web-platform": "workspace:*",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
   "devDependencies": {
     "fake-indexeddb": "catalog:testing"
   }
