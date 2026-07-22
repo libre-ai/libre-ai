@@ -168,6 +168,14 @@ function validateInputs(
     }
   }
 
+  // SEMANTICS.md §3: check for exact duplicate facts (by JCS canonicalization)
+  if (hasDuplicateFacts(snapshot)) {
+    return "input-invalid";
+  }
+  if (hasDuplicateFacts(need)) {
+    return "input-invalid";
+  }
+
   // SEMANTICS.md §2.5: approval separation (approverId != proposedBy, actorKind = human)
   const approval = policy.approval as JsonRecord;
   if (approval.approverId === policy.proposedBy) {
@@ -186,6 +194,28 @@ function validateInputs(
   }
 
   return null;
+}
+
+function hasDuplicateFacts(container: JsonRecord): boolean {
+  const facts = container.facts as JsonRecord[];
+  if (!Array.isArray(facts)) {
+    return false;
+  }
+
+  // Compute JCS for each fact and detect duplicates
+  const jcsStrings = new Set<string>();
+  for (const fact of facts) {
+    const factJcs = jcs(fact);
+    // Convert Uint8Array to string for Set comparison
+    const factJcsStr = Array.from(factJcs).join(",");
+    if (jcsStrings.has(factJcsStr)) {
+      // Exact duplicate found (same name, value, AND source)
+      return true;
+    }
+    jcsStrings.add(factJcsStr);
+  }
+
+  return false;
 }
 
 interface RuleEvaluationState {
