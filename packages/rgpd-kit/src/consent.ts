@@ -64,8 +64,13 @@ const ISO_PERIOD = /^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)D)?$/;
 
 function addPeriodUtc(startIso: string, period: string): Date {
   const match = ISO_PERIOD.exec(period);
-  if (match === null || (match[1] === undefined && match[2] === undefined && match[3] === undefined)) {
-    throw new InvalidConsentPeriodError("duration must be an ISO 8601 date period (e.g. P1Y, P3M, P30D)");
+  if (
+    match === null ||
+    (match[1] === undefined && match[2] === undefined && match[3] === undefined)
+  ) {
+    throw new InvalidConsentPeriodError(
+      "duration must be an ISO 8601 date period (e.g. P1Y, P3M, P30D)",
+    );
   }
   const start = new Date(startIso);
   const expiry = new Date(start.getTime());

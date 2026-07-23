@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
+import type { DataCategoryDeclaration } from "../data-category";
 import type {
   AccessRequestResult,
   ErasureRequestResult,
   PortabilityRequestResult,
   RestrictionRequestResult,
 } from "../data-subject-request";
-import type { DataCategoryDeclaration } from "../data-category";
 import { deriveSubjectDigest } from "../subject-digest";
 import type { DataSubjectRightsPort } from "./data-subject-rights";
 

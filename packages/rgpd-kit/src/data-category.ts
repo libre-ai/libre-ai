@@ -75,7 +75,10 @@ export function validateDataCategoryDeclaration(input: unknown): DataCategoryDec
   if (!isIn(LEGAL_BASES, candidate.legalBasis)) {
     throw new InvalidDataCategoryDeclarationError("legalBasis");
   }
-  if (typeof candidate.retentionRule !== "string" || !RETENTION_RULE_ID.test(candidate.retentionRule)) {
+  if (
+    typeof candidate.retentionRule !== "string" ||
+    !RETENTION_RULE_ID.test(candidate.retentionRule)
+  ) {
     throw new InvalidDataCategoryDeclarationError("retentionRule");
   }
   if (!isIn(ERASURE_SCOPES, candidate.erasureScope)) {

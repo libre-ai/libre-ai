@@ -114,7 +114,10 @@ export function validateDataSubjectRequest(input: unknown): DataSubjectRequest {
     throw new InvalidDataSubjectRequestError("deadline");
   }
   if (candidate.status === "refused") {
-    if (typeof candidate.refusalReason !== "string" || !isRgpdRefusalCode(candidate.refusalReason)) {
+    if (
+      typeof candidate.refusalReason !== "string" ||
+      !isRgpdRefusalCode(candidate.refusalReason)
+    ) {
       throw new InvalidDataSubjectRequestError("refusalReason");
     }
   } else if (candidate.refusalReason !== undefined) {

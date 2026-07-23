@@ -39,10 +39,7 @@ export async function deriveSubjectDigest(
   if (!PRIVATE_TENANT_ID.test(tenantId)) {
     throw new MalformedTenantIdError();
   }
-  if (
-    subjectIdentifier.trim() === "" ||
-    subjectIdentifier.length > MAX_IDENTIFIER_LENGTH
-  ) {
+  if (subjectIdentifier.trim() === "" || subjectIdentifier.length > MAX_IDENTIFIER_LENGTH) {
     throw new InvalidSubjectIdentifierError();
   }
   const bytes = encoder.encode(`${DIGEST_DOMAIN}:${tenantId}:${subjectIdentifier}`);

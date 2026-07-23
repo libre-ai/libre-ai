@@ -83,7 +83,11 @@ export function validateProcessingActivity(input: unknown): ProcessingActivity {
   const candidate = input as Record<string, unknown>;
   const name = requireNonBlank(candidate.name, "name");
   const product = requireNonBlank(candidate.product, "product");
-  const dataCategories = requireEnumList(DATA_CATEGORIES, candidate.dataCategories, "dataCategories");
+  const dataCategories = requireEnumList(
+    DATA_CATEGORIES,
+    candidate.dataCategories,
+    "dataCategories",
+  );
   if (!Array.isArray(candidate.purposes) || candidate.purposes.length === 0) {
     throw new InvalidProcessingActivityError("purposes");
   }

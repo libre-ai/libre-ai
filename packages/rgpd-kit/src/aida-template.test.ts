@@ -35,7 +35,13 @@ describe("createDpiaScaffold", () => {
       date: "2026-07-23T00:00:00Z",
       version: "v1",
     };
-    for (const override of [{ id: " " }, { product: "" }, { scope: "" }, { date: "today" }, { version: "" }]) {
+    for (const override of [
+      { id: " " },
+      { product: "" },
+      { scope: "" },
+      { date: "today" },
+      { version: "" },
+    ]) {
       expect(() => createDpiaScaffold({ ...valid, ...override })).toThrow(InvalidDpiaScaffoldError);
     }
   });
