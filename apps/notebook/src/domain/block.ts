@@ -28,7 +28,8 @@ export type BlockRefusal =
   | "notebook.invalid_block_type"
   | "notebook.content_empty"
   | "notebook.circular_reference"
-  | "notebook.link_target_not_found";
+  | "notebook.link_target_not_found"
+  | "notebook.export_dependency_missing";
 
 export interface BlockRevision {
   readonly revisionId: string;

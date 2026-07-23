@@ -9,6 +9,15 @@ import {
   searchLocalIndex,
 } from "./block";
 
+// Narrows an indexed access (array/Map iteration) to its element type. tsconfig
+// enables noUncheckedIndexedAccess, so `arr[0]` is `T | undefined`; in these
+// tests the element is always present by construction, and a missing one is a
+// test-setup bug worth throwing on rather than a silent `undefined`.
+function requireDefined<T>(value: T | undefined, label: string): T {
+  if (value === undefined) throw new Error(`expected ${label} to be defined`);
+  return value;
+}
+
 describe("Block Domain", () => {
   describe("CreateWorkspace", () => {
     it("should create an empty workspace", () => {
@@ -18,7 +27,7 @@ describe("Block Domain", () => {
       expect(result.accepted).toBe(true);
       if (result.accepted) {
         expect(result.events).toHaveLength(1);
-        expect(result.events[0].type).toBe("WorkspaceCreated");
+        expect(requireDefined(result.events[0], "event").type).toBe("WorkspaceCreated");
         expect(result.state.blocks.size).toBe(0);
       }
     });
@@ -60,7 +69,7 @@ describe("Block Domain", () => {
       expect(result.accepted).toBe(true);
       if (result.accepted) {
         expect(result.state.blocks.size).toBe(1);
-        const block = Array.from(result.state.blocks.values())[0];
+        const block = requireDefined(Array.from(result.state.blocks.values())[0], "block");
         expect(block.type).toBe("paragraph");
         expect(block.currentRevision.content).toBe("Hello, World!");
         expect(block.currentRevision.revisionNumber).toBe(1);
@@ -93,7 +102,7 @@ describe("Block Domain", () => {
       expect(result1.accepted).toBe(true);
       if (!result1.accepted) return;
 
-      const blockId = Array.from(result1.state.blocks.keys())[0];
+      const blockId = requireDefined(Array.from(result1.state.blocks.keys())[0], "blockId");
 
       // Create second block linking to first
       const cmd2: BlockCommand = {
@@ -151,7 +160,7 @@ describe("Block Domain", () => {
       expect(result.accepted).toBe(true);
       if (result.accepted) {
         state = result.state;
-        blockId = Array.from(state.blocks.keys())[0];
+        blockId = requireDefined(Array.from(state.blocks.keys())[0], "blockId");
       }
     });
 
@@ -284,8 +293,8 @@ describe("Block Domain", () => {
       if (!result2.accepted) return;
 
       const ids = Array.from(result2.state.blocks.keys());
-      block1Id = ids[0];
-      block2Id = ids[1];
+      block1Id = requireDefined(ids[0], "block1Id");
+      block2Id = requireDefined(ids[1], "block2Id");
       state = result2.state;
     });
 
@@ -375,7 +384,7 @@ describe("Block Domain", () => {
       expect(result.accepted).toBe(true);
       if (result.accepted) {
         state = result.state;
-        blockId = Array.from(state.blocks.keys())[0];
+        blockId = requireDefined(Array.from(state.blocks.keys())[0], "blockId");
       }
     });
 
@@ -453,7 +462,7 @@ describe("Block Domain", () => {
       expect(result1.accepted).toBe(true);
       if (!result1.accepted) return;
 
-      block1Id = Array.from(result1.state.blocks.keys())[0];
+      block1Id = requireDefined(Array.from(result1.state.blocks.keys())[0], "block1Id");
 
       const create2: BlockCommand = {
         type: "CreateBlock",
@@ -496,7 +505,7 @@ describe("Block Domain", () => {
     it("should search blocks by full-text match", () => {
       const results = searchLocalIndex(state, "Important");
       expect(results).toHaveLength(1);
-      expect(results[0].id).toBe(block1Id);
+      expect(requireDefined(results[0], "result").id).toBe(block1Id);
     });
 
     it("should search case-insensitively", () => {
@@ -507,7 +516,7 @@ describe("Block Domain", () => {
     it("should search with partial matches", () => {
       const results = searchLocalIndex(state, "paragraph");
       expect(results).toHaveLength(1);
-      expect(results[0].id).toBe(block2Id);
+      expect(requireDefined(results[0], "result").id).toBe(block2Id);
     });
 
     it("should filter search by block type", () => {
@@ -515,7 +524,7 @@ describe("Block Domain", () => {
         blockType: "paragraph",
       });
       expect(results).toHaveLength(1);
-      expect(results[0].type).toBe("paragraph");
+      expect(requireDefined(results[0], "result").type).toBe("paragraph");
     });
 
     it("should return empty results for no match", () => {
@@ -545,7 +554,7 @@ describe("Block Domain", () => {
 
       const results = searchLocalIndex(resultContains.state, "search");
       // Exact match should come first
-      expect(results[0].currentRevision.content).toBe("search");
+      expect(requireDefined(results[0], "result").currentRevision.content).toBe("search");
     });
   });
 
@@ -560,7 +569,7 @@ describe("Block Domain", () => {
 
       expect(result.accepted).toBe(true);
       if (result.accepted) {
-        expect(result.events[0].type).toBe("WorkspaceDeleted");
+        expect(requireDefined(result.events[0], "event").type).toBe("WorkspaceDeleted");
       }
     });
   });
