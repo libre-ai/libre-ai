@@ -72,21 +72,22 @@ fn test_conformance_golden_vectors() {
                     let result_json: serde_json::Value = serde_json::from_slice(&evaluation_jcs)
                         .expect("Failed to parse result as JSON");
 
-                    // Check critical fields: verdict
-                    if let Some(expected_evaluation) = test_case.get("expectedEvaluation") {
-                        let result_verdict = result_json.get("verdict").and_then(|v| v.as_str());
-                        let expected_verdict =
-                            expected_evaluation.get("verdict").and_then(|v| v.as_str());
-                        if result_verdict == expected_verdict {
-                            println!("✓ Case {}: {} (passed)", i, case_id);
-                            passed += 1;
-                        } else {
-                            println!(
-                                "✗ Case {}: {} - verdict mismatch: got {:?}, expected {:?}",
-                                i, case_id, result_verdict, expected_verdict
-                            );
-                            failed += 1;
-                        }
+                    // Full conformance (SEMANTICS §10): the engine's evaluation must match
+                    // expectedEvaluation EXACTLY on every field — verdict, id, tenantId,
+                    // policyId, policyDigest, snapshotId, snapshotDigest, needDigest, and
+                    // per-rule reason codes. Structural (order-independent) JSON equality.
+                    let expected_evaluation = test_case
+                        .get("expectedEvaluation")
+                        .expect("expectedEvaluation present");
+                    if result_json == *expected_evaluation {
+                        println!("✓ Case {}: {} (passed — full field match)", i, case_id);
+                        passed += 1;
+                    } else {
+                        println!(
+                            "✗ Case {}: {} - evaluation mismatch:\n  got:      {}\n  expected: {}",
+                            i, case_id, result_json, expected_evaluation
+                        );
+                        failed += 1;
                     }
                 }
             }
