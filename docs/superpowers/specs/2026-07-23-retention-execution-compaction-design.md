@@ -17,8 +17,7 @@ follow. Likewise every retention rule in `contracts/data/retention.v1.json`
 is an executable maximum with no executor. The doctrine specifies the job
 (DATA-LIFECYCLE §Retention execution): daily, owner-scoped, expired
 selection under the machine policy, bounded transactions, aggregate counts
-
-- Evidence Report, attenuated token, never logging content.
+plus an Evidence Report, attenuated token, never logging content.
 
 Existing assets are THINNER than they look (review finding):
 `selectExpiredRowIds` hard-codes `id`/`created_at` columns that
@@ -61,11 +60,16 @@ compaction couples data-lifecycle concerns into the domain kernel.
 ### Option G-C — payload scrubbing (UPDATE the erased subject's rows)
 
 Column-scoped `GRANT UPDATE (data, actor_id)` and overwrite content in
-place, keeping the causal skeleton. Rejected for v1: scrubbed events break
-the per-type data requirements on refold (`contribution-submitted` demands
-resourceId/audience/contentDigest), so it needs G-B's reducer relaxation
-ANYWAY, plus a second floor relaxation (UPDATE). Noted as the only path to
-sub-session erasure latency if the owner rejects G-A's latency.
+place, keeping the causal skeleton. Technically VIABLE without touching the
+reducer: refold does not re-validate payloads (`loadSessionState` documents
+that field-level payload integrity is the write-time `validateEvent`
+guarantee, not re-checked on load) — corrected from v1 of this doc, which
+wrongly claimed G-C needed G-B's relaxation. Its real cost is the UPDATE
+grant (a second, different relaxation of the append-only floor: rows become
+rewritable by the retention role) plus a scrubbing protocol (what replaces
+`data`/`actor_id`, how the scrub is evidenced). Rejected for v1 on that
+cost alone; it is the honest, workable fallback if the owner refuses G-A's
+erasure-compaction latency (§7.2).
 
 ### Option G-D — partition-drop
 
@@ -124,26 +128,39 @@ becomes a schema compromise; the opposite of the attenuated-token doctrine.
        reads `session_events`, `session_deleted_subjects`,
        `session_restricted_subjects`, `retention_rules` — review finding:
        the retention role does NOT get read grants on the evidence tables):
-       compute fully-expired sessions, minus exclusions (§5), plus
-       erasure-compactable sessions.
+       compute fully-expired sessions, minus exclusions (§5).
     2. **Deletion under the RETENTION barrier**, one bounded transaction
-       per session.
+       per session, which **RE-CHECKS the predicate inside the deleting
+       transaction** — expiry (no event newer than the window) and the §5
+       restriction exclusion — before the prefix DELETE (delta-review
+       finding: between the two phases a fresh event can be appended or a
+       subject restricted; the selection is advisory, the deleting
+       transaction's own check is the guard).
        Returns the evidence report `{ owner, tenantId, ruleId,
 sessionsSelected, sessionsDeleted, eventsDeleted,
-compactedReceiptIds, sweptAt }` — aggregate counts plus opaque receipt
-       ids (needed for the restore-drill cross-check, review finding; receipt
-       ids are opaque, never identifiers or content).
+compactedReceiptIds, sweptAt }` — aggregate counts plus opaque
+       receipt ids (needed for the restore-drill cross-check; receipt ids
+       are opaque, never identifiers or content).
 - **apps/sessions** — first compaction spec:
   - migration `000N_retention_grants.sql` — `GRANT SELECT, DELETE ON
 session_events TO libre_ai_retention` (numbering sequenced with the
     restriction increment's migrations at implementation time).
   - `sessionsCompactionSpec`: **age column = `recorded_at`** (server-set at
     append; `occurred_at` is client-supplied and forgeable — decision
-    §7.3); a session is expired when `max(recorded_at)` of its stream is
-    past the `sessions-content` window; erasure-compactable when every
-    contributor digest of the session is either tombstoned or the session
-    is expired. Tombstones, audit rows and restriction rows are NEVER
-    swept (they are the evidence).
+    §7.3). **Sweep eligibility = full expiry, nothing else** (delta-review
+    finding: an earlier formula made "all contributors tombstoned" an
+    alternative trigger, which would delete a NON-expired session's
+    system/provider events early — contradiction removed): a session is
+    swept when `max(recorded_at)` of its stream is past the
+    `sessions-content` window and §5 does not exclude it. Erasure changes
+    the REPORT, not the eligibility: when a swept session contains events
+    of tombstoned subjects, their receipt ids land in
+    `compactedReceiptIds` (this is how deferred compaction is evidenced).
+    Tombstones, audit rows and restriction rows are NEVER swept (they are
+    the evidence). Sequencing dependency: the §5 exclusion reads
+    `session_restricted_subjects`, so the restriction increment's
+    migration lands BEFORE (or with) this one — the spec does not guess
+    around a missing table.
 - **Legal hold** (review finding): the sweep spec carries a pre-check hook
   `holds(tenant, scope)` that MUST answer empty before deletion. v1: no
   hold registry exists, the hook is a documented constant-empty — the
@@ -196,8 +213,12 @@ erasure supersedes). Acceptance-tested in whichever increment lands second.
 2. **Erasure-compaction latency under G-A**: physical removal waits for
    each containing session to expire (≤ the rule maximum, P365D for
    `sessions-content`), while logical access stays removed from the
-   accepted transaction. Accept this as the meaning of
-   `deletion.deferred-compaction`?
+   accepted transaction. **Visible corollary** (delta-review finding): with
+   expiry measured on `max(recorded_at)`, a continuously-active session
+   retains its OLD events beyond the declared window — the stream ages as
+   a whole (Art. 5(1)(e) tension if a session lives for years). Accept
+   both as the meaning of `deletion.deferred-compaction`, or require a
+   per-event ceiling (which reopens the granularity question G-C)?
 3. **Age column**: `recorded_at` (server-set, recommended) vs `occurred_at`
    (client-supplied).
 4. **Role model Option A with its honest property** (§3): floor relativized
