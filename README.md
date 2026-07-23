@@ -1,35 +1,58 @@
-# Libre AI
+**English** · [Français](README.fr.md)
 
-Monorepo canonique de l’écosystème Libre AI reconstruit pour l’ère IA-native.
+# Libre AI — canonical base repository
 
-## Décisions actives
+**Everything Libre AI builds is built here first.** This monorepo holds the contracts, specifications, doctrine, shared foundations and first product engines of the whole constellation — until each product graduates into its own repository.
 
-- migration Big Bang depuis les repositories historiques figés ;
-- Bun `>=1.4.0` fullstack + TypeScript strict + React 19 pour le web ; la CI conserve le pin qualifié exact ;
-- Rust pour les moteurs spécialisés, WASM, sécurité, preuve et tooling système ;
-- un `bun.lock`, un workspace Cargo, une source de contrats ;
-- Clever Cloud Paris/UE comme cible de déploiement ;
-- cible multi-repository : socle + repositories produits réels construits sur lui (ADR-0008) ; « projection » désigne des artefacts générés, jamais des repositories.
+New here? The [organization profile](https://github.com/libre-ai) tells the story for humans: what we build, how, and why the method itself is the first product.
 
-Lire dans cet ordre :
+## How this repository relates to the rest
 
-1. [`vision.md`](vision.md)
-2. [`docs/decisions/DECISION-REGISTER.md`](docs/decisions/DECISION-REGISTER.md) et [`docs/decisions/INVARIANTS.md`](docs/decisions/INVARIANTS.md)
-3. [`GOALS.md`](GOALS.md) et [`STATUS.md`](STATUS.md)
-4. [`LICENSING.md`](LICENSING.md), [`TRADEMARKS.md`](TRADEMARKS.md) et [`DATA-PROVENANCE.md`](DATA-PROVENANCE.md)
-5. [`docs/adr/0001-bun-fullstack-rust-specialized-big-bang.md`](docs/adr/0001-bun-fullstack-rust-specialized-big-bang.md)
-6. [`docs/adr/0002-g1-cross-cutting-product-decisions.md`](docs/adr/0002-g1-cross-cutting-product-decisions.md)
-7. [`docs/adr/0004-licensing-governance.md`](docs/adr/0004-licensing-governance.md)
-8. [`docs/adr/0005-notebook-gate-b-host-qualification.md`](docs/adr/0005-notebook-gate-b-host-qualification.md)
-9. [`docs/adr/0008-multi-repo-target-topology-and-brand.md`](docs/adr/0008-multi-repo-target-topology-and-brand.md)
-10. [`docs/specifications/SPECIFICATION-STANDARD.md`](docs/specifications/SPECIFICATION-STANDARD.md)
-11. [`docs/specifications/DATA-LIFECYCLE.md`](docs/specifications/DATA-LIFECYCLE.md) et [`IDENTITY-AUTHORIZATION.md`](docs/specifications/IDENTITY-AUTHORIZATION.md)
-12. [`docs/architecture/TARGET.md`](docs/architecture/TARGET.md)
-13. [`docs/transformation/CLEANUP.md`](docs/transformation/CLEANUP.md)
-14. [`docs/transformation/BIG-BANG.md`](docs/transformation/BIG-BANG.md)
-15. [`docs/transformation/WORKSTREAMS.md`](docs/transformation/WORKSTREAMS.md)
-16. [`prompts/`](prompts/) pour l’exécution par phase
+The target is one repository per product ([ADR-0008](docs/adr/0008-multi-repo-target-topology-and-brand.md)): each product repository reopens as an independent, interoperable unit consuming this base as a versioned dependency. Until a product is activated by owner decision, its repository stays a public reserved home and all of its work happens here. The authoritative inventory of repositories and exposure states is [`ecosystem/repositories.v1.yaml`](ecosystem/repositories.v1.yaml); the 18 historical repositories are frozen at the SHAs recorded in [`ecosystem/LEGACY-MANIFEST.yaml`](ecosystem/LEGACY-MANIFEST.yaml).
 
-## État
+## What's inside
 
-Les 18 repositories historiques sont figés et archivés aux SHAs enregistrés dans `ecosystem/LEGACY-MANIFEST.yaml`. G0 et le Specification Lock sont fermés ; les 85 autorités du catalogue sont verrouillées. Foundation Build poursuit uniquement la qualification Notebook Core v2 Gate B et les autres fondations explicitement contrôlées. Un host Notebook désactivé peut traiter les fixtures publiques de qualification, mais Gate B, les données utilisateur, les nouveaux moteurs produit, la production et la release restent bloqués.
+| Path                                              | What lives there                                                                                                                                                                        |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`apps/`](apps)                                   | Product hosts: boussole, missions, model-policy, notebook, practices, radar, sessions, specifications                                                                                   |
+| [`packages/`](packages)                           | TypeScript bricks shared by products: web-platform, ui, contracts, data, auth-web, envelope, provenance, classification, knowledge, collab-core, collab-relay, policy-core-ref, testing |
+| [`crates/`](crates)                               | Rust engines — deterministic cores where durability and security justify them                                                                                                           |
+| [`contracts/`](contracts)                         | The locked interoperability surface: JSON Schemas, OpenAPI, WIT worlds, golden vectors                                                                                                  |
+| [`docs/`](docs)                                   | Doctrine: ADRs, product briefs ([`docs/apps/`](docs/apps)), specifications, target architecture, transformation program                                                                 |
+| [`ecosystem/`](ecosystem)                         | Machine-readable truth: repository inventory, legacy manifest, portfolio records                                                                                                        |
+| [`distribution/evidence/`](distribution/evidence) | Public evidence: gate acceptance log, reports, commitment hashes                                                                                                                        |
+| [`prompts/`](prompts)                             | Phase execution prompts for the governed agent workflow                                                                                                                                 |
+
+## Engineering decisions
+
+- Bun `>=1.4.0` fullstack + TypeScript strict + React 19 for the web; CI keeps the exact qualified pin.
+- Rust for specialized engines, WASM, security, proof and system tooling.
+- One `bun.lock`, one Cargo workspace, one source of contracts.
+- Clever Cloud Paris/EU as deployment target.
+- Multi-repository target: base + real product repositories built on it ([ADR-0008](docs/adr/0008-multi-repo-target-topology-and-brand.md)); "projection" refers to generated artifacts, never repositories.
+
+## How work is governed
+
+The constellation is built by AI agents under a governed method ([ADR-0009](docs/adr/0009-constellation-portfolio-and-method.md)): bounded plans, evidence at every step, human control gates, documented refusals. What is doctrine — and nothing else — is recorded in [`docs/decisions/INVARIANTS.md`](docs/decisions/INVARIANTS.md); every merge carries a DCO sign-off and green required checks; the public evidence trail lives in [`distribution/evidence/`](distribution/evidence).
+
+## Status
+
+G0–G2 are closed; wave 1 (layer-4 satellites) is opening, sequenced by [`docs/transformation/EXECUTION-SEQUENCING.md`](docs/transformation/EXECUTION-SEQUENCING.md). Live state: [`STATUS.md`](STATUS.md) · goals: [`GOALS.md`](GOALS.md) · roadmap: [`ROADMAP.md`](ROADMAP.md).
+
+## Read in this order
+
+1. [`vision.md`](vision.md) — why a greenfield rebuild, on a 5–10 year horizon
+2. [`docs/decisions/DECISION-REGISTER.md`](docs/decisions/DECISION-REGISTER.md) and [`docs/decisions/INVARIANTS.md`](docs/decisions/INVARIANTS.md) — what has been decided, what is doctrine
+3. [`GOALS.md`](GOALS.md) and [`STATUS.md`](STATUS.md) — where we are
+4. [`docs/architecture/TARGET.md`](docs/architecture/TARGET.md) — the target architecture
+5. [`docs/adr/`](docs/adr) — the architecture decision records
+6. [`docs/specifications/SPECIFICATION-STANDARD.md`](docs/specifications/SPECIFICATION-STANDARD.md), [`DATA-LIFECYCLE.md`](docs/specifications/DATA-LIFECYCLE.md) and [`IDENTITY-AUTHORIZATION.md`](docs/specifications/IDENTITY-AUTHORIZATION.md) — the cross-cutting specifications
+7. [`LICENSING.md`](LICENSING.md), [`TRADEMARKS.md`](TRADEMARKS.md) and [`DATA-PROVENANCE.md`](DATA-PROVENANCE.md) — legal governance
+
+## Contributing
+
+Issues and pull requests for every product happen here — see [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`SECURITY.md`](SECURITY.md). Every commit carries a DCO sign-off.
+
+## License
+
+Differentiated licensing ([ADR-0004](docs/adr/0004-licensing-governance.md)): EUPL-1.2 for first-party software, Apache-2.0 and MIT on designated boundaries, CC BY 4.0 for editorial documentation — see [`LICENSING.md`](LICENSING.md).
