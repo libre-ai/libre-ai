@@ -2,6 +2,8 @@ import {
   buildCompletedDeletionReceipt,
   type DeletionReceipt,
   type DeletionStoreOutcome,
+  InvalidStoreOutcomeError,
+  isDeletionReasonCode,
 } from "../deletion-receipt";
 import type { BlobStorePort } from "./blob-store-port";
 import { persistDeletionReceipt } from "./deletion-receipt-store";
@@ -72,6 +74,17 @@ export async function executeActiveDeletion(
   blobs: BlobStorePort,
   request: ActiveDeletionRequest,
 ): Promise<DeletionReceipt> {
+  // Fail closed BEFORE any mutation: the blob enqueue below is an external
+  // effect no SQL rollback can undo, so a receipt the builder would refuse
+  // must be refused here first. Never echo the offending value (PII risk).
+  if (
+    request.postgresqlReasonCode !== undefined &&
+    !isDeletionReasonCode(request.postgresqlReasonCode)
+  ) {
+    throw new InvalidStoreOutcomeError(
+      `malformed postgresql reason code (a ${request.postgresqlReasonCode.length}-char value)`,
+    );
+  }
   let lastFailure: unknown;
   let purged = false;
   for (let attempt = 1; attempt <= CACHE_PURGE_ATTEMPTS; attempt += 1) {
