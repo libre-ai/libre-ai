@@ -6,9 +6,12 @@ use std::fs;
 
 #[test]
 fn test_conformance_golden_vectors() {
-    // Load golden.json
-    let golden_path =
-        "/Users/ifi6567/Documents/libre-ai-d01/contracts/fixtures/policy-core-v2/golden.json";
+    // Load golden.json — resolved from the crate root (portable across machines/CI),
+    // never a hardcoded absolute path.
+    let golden_path = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../contracts/fixtures/policy-core-v2/golden.json"
+    );
     let golden_content = fs::read_to_string(golden_path).expect("Failed to read golden.json");
     let golden: serde_json::Value =
         serde_json::from_str(&golden_content).expect("Failed to parse golden.json");
