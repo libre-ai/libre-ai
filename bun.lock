@@ -169,7 +169,7 @@
         "@libre-ai/collab-core": "workspace:*",
       },
       "devDependencies": {
-        "ws": ">=8.17.0",
+        "ws": ">=8.21.0",
       },
     },
     "packages/contracts": {
