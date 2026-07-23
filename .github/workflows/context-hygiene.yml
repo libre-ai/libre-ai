@@ -1,11 +1,9 @@
 name: Context hygiene
 
 # Blocks private identifiers and machine-local paths from entering the public
-# tree. Two tiers:
-#   - banned: private identifiers that must never appear in tracked files
-#     (hard fail);
-#   - warned: machine-local absolute paths (/Users/<user>/...), reported until
-#     the existing occurrences are cleaned up, then promoted to hard fail.
+# tree. Two checks, both hard fail:
+#   - banned: private identifiers that must never appear in tracked files;
+#   - machine-local absolute paths (/Users/<user>/...).
 # Patterns are written with a character class around their first letter so this
 # workflow never contains the literal identifier it bans. Lines carrying the
 # `allow-local-path` marker are exempt from the path check (test fixtures,
@@ -24,7 +22,7 @@ jobs:
     name: No private identifiers or machine-local paths
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Banned private identifiers (hard fail)
         run: |
@@ -36,15 +34,14 @@ jobs:
           fi
           echo "OK: no banned identifier in tracked files."
 
-      - name: Machine-local paths (warn until cleanup, then hard fail)
+      - name: Machine-local paths (hard fail)
         run: |
           set -euo pipefail
           local_path='/Users/[i]fi6567'
           hits="$(git grep -I -n -E -e "$local_path" -- . | grep -v 'allow-local-path' || true)"
           if [ -n "$hits" ]; then
-            count="$(printf '%s\n' "$hits" | wc -l | tr -d ' ')"
-            echo "::warning::$count machine-local path occurrence(s) in tracked files (pattern: $local_path). Cleanup tracked; this check becomes blocking afterwards."
             printf '%s\n' "$hits"
-          else
-            echo "OK: no machine-local path in tracked files."
+            echo "::error::Machine-local path found in tracked files (pattern: $local_path)."
+            exit 1
           fi
+          echo "OK: no machine-local path in tracked files."
