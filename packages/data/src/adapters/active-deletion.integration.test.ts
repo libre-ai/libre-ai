@@ -124,6 +124,31 @@ describe("executeActiveDeletion", () => {
     });
   });
 
+  test("an append-only owner can qualify the postgresql outcome with a reason code", async () => {
+    // Append-only stores (e.g. sessions' event log) erase by removing
+    // logical access in the accepted transaction; the receipt stays
+    // outcome=deleted (DATA-LIFECYCLE §Explicit deletion item 6) but carries
+    // the qualifier so an auditor sees compaction is deferred.
+    await seedNotes();
+    const receipt = await executeActiveDeletion(tdb.db, new InMemoryProjectionCache(), new InMemoryBlobStore(), {
+      ...deletionRequest("rcp_reason"),
+      postgresqlReasonCode: "deletion.deferred-compaction",
+    });
+    const postgresql = receipt.stores.find((s) => s.store === "postgresql");
+    expect(postgresql?.outcome).toBe("deleted");
+    expect(postgresql?.reasonCode).toBe("deletion.deferred-compaction");
+  });
+
+  test("a malformed postgresql reason code is refused by the receipt builder", async () => {
+    await seedNotes();
+    await expect(
+      executeActiveDeletion(tdb.db, new InMemoryProjectionCache(), new InMemoryBlobStore(), {
+        ...deletionRequest("rcp_badreason"),
+        postgresqlReasonCode: "free text with PII",
+      }),
+    ).rejects.toThrow();
+  });
+
   test("no blobs for the digests yields a cellar not-applicable outcome", async () => {
     await seedNotes();
     const cache = new InMemoryProjectionCache();

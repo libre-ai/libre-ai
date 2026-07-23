@@ -197,6 +197,11 @@ describe("handleErasureRequest", () => {
     expect(receipt?.subjectDigests).toEqual([digest]);
     expect(receipt?.owner).toBe("sessions");
     expect(receipt?.status).toBe("complete");
+    // Append-only log: the receipt qualifies the accepted logical deletion
+    // so an auditor sees physical compaction is deferred to retention.
+    const postgresql = receipt?.stores.find((store) => store.store === "postgresql");
+    expect(postgresql?.outcome).toBe("deleted");
+    expect(postgresql?.reasonCode).toBe("deletion.deferred-compaction");
 
     const tombstones = await withTenantDbTransaction(tdb.db, TENANT_A, (tx) =>
       tx.query<{ subject_digest: string; receipt_id: string }>(
