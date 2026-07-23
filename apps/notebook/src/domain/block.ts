@@ -180,7 +180,7 @@ export function decideBlockCommand(
       currentRevision: {
         revisionId,
         revisionNumber: 1,
-        contentHash: computeHash(command.content),
+        contentHash: computeContentFingerprint(command.content),
         editedAt: now,
         content: command.content,
       },
@@ -188,7 +188,7 @@ export function decideBlockCommand(
         {
           revisionId,
           revisionNumber: 1,
-          contentHash: computeHash(command.content),
+          contentHash: computeContentFingerprint(command.content),
           editedAt: now,
           content: command.content,
         },
@@ -264,7 +264,7 @@ export function decideBlockCommand(
     const newRevision: BlockRevision = {
       revisionId,
       revisionNumber: newRevisionNumber,
-      contentHash: computeHash(command.newContent),
+      contentHash: computeContentFingerprint(command.newContent),
       editedAt: now,
       content: command.newContent,
     };
@@ -545,10 +545,13 @@ function generateRevisionId(): string {
     .join("")}`;
 }
 
-// Utility: Compute SHA-256 hash of content (synchronous, for local use)
-function computeHash(content: string): string {
-  // Note: In production, this would use Web Crypto API.
-  // For testing, use simple deterministic hash.
+// A deterministic, non-cryptographic content fingerprint used to tag revisions
+// for local change-detection. It is deliberately NOT an integrity digest: the
+// domain fold is synchronous and runs on-device (the browser), where a real
+// content hash (Web Crypto) is async. The value is stored to distinguish
+// revisions and is never relied on for security, deduplication or equality; a
+// stronger digest can replace it behind this function without touching callers.
+function computeContentFingerprint(content: string): string {
   let hash = 0;
   for (let i = 0; i < content.length; i++) {
     const char = content.charCodeAt(i);
