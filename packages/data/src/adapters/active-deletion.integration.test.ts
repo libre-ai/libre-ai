@@ -124,6 +124,57 @@ describe("executeActiveDeletion", () => {
     });
   });
 
+  test("an append-only owner can qualify the postgresql outcome with a reason code", async () => {
+    // Append-only stores (e.g. sessions' event log) erase by removing
+    // logical access in the accepted transaction; the receipt stays
+    // outcome=deleted (DATA-LIFECYCLE §Explicit deletion item 6) but carries
+    // the qualifier so an auditor sees compaction is deferred.
+    await seedNotes();
+    const receipt = await executeActiveDeletion(
+      tdb.db,
+      new InMemoryProjectionCache(),
+      new InMemoryBlobStore(),
+      {
+        ...deletionRequest("rcp_reason"),
+        postgresqlReasonCode: "deletion.deferred-compaction",
+      },
+    );
+    const postgresql = receipt.stores.find((s) => s.store === "postgresql");
+    expect(postgresql?.outcome).toBe("deleted");
+    expect(postgresql?.reasonCode).toBe("deletion.deferred-compaction");
+  });
+
+  test("a malformed postgresql reason code is refused BEFORE any mutation", async () => {
+    // Fail-closed at the entry: no cache purge, no blob enqueue (an external
+    // effect a SQL rollback cannot undo), no row deleted, no receipt — and
+    // the error never echoes the offending value (it may carry PII).
+    await seedNotes();
+    const cache = new InMemoryProjectionCache();
+    await cache.set(`${TENANT_A}:note:${DIGEST_1}`, "projection", 60);
+    const blobs = new InMemoryBlobStore();
+    await blobs.put(DIGEST_1, new Uint8Array([1]), { owner: "radar", tenantId: TENANT_A });
+
+    const offending = "free text with PII";
+    let caught: unknown;
+    try {
+      await executeActiveDeletion(tdb.db, cache, blobs, {
+        ...deletionRequest("rcp_badreason"),
+        postgresqlReasonCode: offending,
+      });
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(Error);
+    expect((caught as Error).message).not.toContain(offending);
+    expect(cache.get(`${TENANT_A}:note:${DIGEST_1}`)).toBe("projection");
+    expect(blobs.pendingDeletions()).toEqual([]);
+    await withTenantDbTransaction(tdb.db, TENANT_A, async (tx) => {
+      const rows = await tx.query<{ n: number }>("SELECT count(*)::int AS n FROM fixture_notes");
+      expect(rows.rows[0]?.n).toBe(2);
+      expect(await getDeletionReceipt(tx, "rcp_badreason")).toBeNull();
+    });
+  });
+
   test("no blobs for the digests yields a cellar not-applicable outcome", async () => {
     await seedNotes();
     const cache = new InMemoryProjectionCache();
