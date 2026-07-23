@@ -61,11 +61,9 @@ jobs:
             t="$(readlink "$f" || true)"
             if printf '%s' "$t" | grep -qiE -e "$banned" -e "$user_pat" -e '/Users/'; then
               hits="${hits}${f} -> ${t}
-"
+          "
             fi
-          done <<LIST
-$(git ls-files -s | awk -F'\t' '$1 ~ /^120000/ {print $2}')
-LIST
+          done < <(git ls-files -s | awk -F'\t' '$1 ~ /^120000/ {print $2}')
           if [ -n "$hits" ]; then
             printf '%s' "$hits"
             echo "::error::Symlink target carries a machine-local or private identifier."
