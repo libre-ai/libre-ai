@@ -109,6 +109,54 @@ async function isTombstoned(
   return tombstone.rows.length > 0;
 }
 
+interface SubjectExport {
+  readonly dataExport: {
+    readonly schemaVersion: "libre-ai.sessions.subject-export.v1";
+    readonly events: readonly unknown[];
+  };
+}
+
+// Shared by access (Art. 15) and portability (Art. 20): both export exactly
+// the rows the subject authored, tombstone-checked first. They differ only in
+// intent — access informs the subject, portability transfers to another
+// controller — which the result types carry (categories vs format).
+async function collectSubjectExport(
+  tx: SqlExecutor,
+  tenantId: string,
+  subjectDigest: string,
+): Promise<SubjectExport | { readonly refusal: string }> {
+  if (await isTombstoned(tx, tenantId, subjectDigest)) {
+    return { refusal: "sessions.rgpd.subject_erased" };
+  }
+  const actors = await resolveSubjectActors(tx, tenantId, subjectDigest);
+  if (actors.length === 0) {
+    return { refusal: "sessions.rgpd.subject_unknown" };
+  }
+  const events: unknown[] = [];
+  for (const actorId of actors) {
+    const rows = await tx.query(
+      `SELECT session_id, sequence, event_id, revision, type, occurred_at, data, recorded_at
+       FROM session_events
+       WHERE actor_kind = 'human' AND actor_id = $1 AND tenant_id = $2
+       ORDER BY session_id, sequence`,
+      [actorId, tenantId],
+    );
+    for (const row of rows.rows) {
+      events.push({
+        sessionId: row.session_id,
+        sequence: row.sequence,
+        eventId: row.event_id,
+        revision: row.revision,
+        type: row.type,
+        occurredAt: row.occurred_at,
+        data: row.data,
+        recordedAt: row.recorded_at,
+      });
+    }
+  }
+  return { dataExport: { schemaVersion: "libre-ai.sessions.subject-export.v1", events } };
+}
+
 export function createSessionsDataSubjectRights(deps: SessionsRgpdDeps): DataSubjectRightsPort {
   return {
     async verifySubject(tenantId, subjectIdentifier) {
@@ -135,40 +183,15 @@ export function createSessionsDataSubjectRights(deps: SessionsRgpdDeps): DataSub
     async handleAccessRequest(tenantId, subjectDigest): Promise<AccessRequestResult> {
       const requestId = deps.newRequestId();
       return withTenantDbTransaction(deps.executor, tenantId, async (tx) => {
-        if (await isTombstoned(tx, tenantId, subjectDigest)) {
-          return { status: "refused", requestId, refusal: "sessions.rgpd.subject_erased" };
-        }
-        const actors = await resolveSubjectActors(tx, tenantId, subjectDigest);
-        if (actors.length === 0) {
-          return { status: "refused", requestId, refusal: "sessions.rgpd.subject_unknown" };
-        }
-        const events: unknown[] = [];
-        for (const actorId of actors) {
-          const rows = await tx.query(
-            `SELECT session_id, sequence, event_id, revision, type, occurred_at, data, recorded_at
-             FROM session_events
-             WHERE actor_kind = 'human' AND actor_id = $1 AND tenant_id = $2
-             ORDER BY session_id, sequence`,
-            [actorId, tenantId],
-          );
-          for (const row of rows.rows) {
-            events.push({
-              sessionId: row.session_id,
-              sequence: row.sequence,
-              eventId: row.event_id,
-              revision: row.revision,
-              type: row.type,
-              occurredAt: row.occurred_at,
-              data: row.data,
-              recordedAt: row.recorded_at,
-            });
-          }
+        const collected = await collectSubjectExport(tx, tenantId, subjectDigest);
+        if ("refusal" in collected) {
+          return { status: "refused", requestId, refusal: collected.refusal };
         }
         return {
           status: "fulfilled",
           requestId,
           subjectDigest,
-          dataExport: { schemaVersion: "libre-ai.sessions.subject-export.v1", events },
+          dataExport: collected.dataExport,
           exportedAt: deps.now(),
           categories: SESSIONS_CATEGORIES.map((declaration) => declaration.category),
         };
@@ -254,12 +277,22 @@ export function createSessionsDataSubjectRights(deps: SessionsRgpdDeps): DataSub
       };
     },
 
-    async handlePortabilityRequest(): Promise<PortabilityRequestResult> {
-      return {
-        status: "refused",
-        requestId: deps.newRequestId(),
-        refusal: "sessions.rgpd.not_implemented",
-      };
+    async handlePortabilityRequest(tenantId, subjectDigest): Promise<PortabilityRequestResult> {
+      const requestId = deps.newRequestId();
+      return withTenantDbTransaction(deps.executor, tenantId, async (tx) => {
+        const collected = await collectSubjectExport(tx, tenantId, subjectDigest);
+        if ("refusal" in collected) {
+          return { status: "refused", requestId, refusal: collected.refusal };
+        }
+        return {
+          status: "fulfilled",
+          requestId,
+          dataExport: collected.dataExport,
+          // Art. 20: structured, commonly used, machine-readable.
+          format: "application/json",
+          exportedAt: deps.now(),
+        };
+      });
     },
 
     async listDataCategories(): Promise<readonly DataCategoryDeclaration[]> {

@@ -130,10 +130,15 @@ describe("executeActiveDeletion", () => {
     // outcome=deleted (DATA-LIFECYCLE §Explicit deletion item 6) but carries
     // the qualifier so an auditor sees compaction is deferred.
     await seedNotes();
-    const receipt = await executeActiveDeletion(tdb.db, new InMemoryProjectionCache(), new InMemoryBlobStore(), {
-      ...deletionRequest("rcp_reason"),
-      postgresqlReasonCode: "deletion.deferred-compaction",
-    });
+    const receipt = await executeActiveDeletion(
+      tdb.db,
+      new InMemoryProjectionCache(),
+      new InMemoryBlobStore(),
+      {
+        ...deletionRequest("rcp_reason"),
+        postgresqlReasonCode: "deletion.deferred-compaction",
+      },
+    );
     const postgresql = receipt.stores.find((s) => s.store === "postgresql");
     expect(postgresql?.outcome).toBe("deleted");
     expect(postgresql?.reasonCode).toBe("deletion.deferred-compaction");
