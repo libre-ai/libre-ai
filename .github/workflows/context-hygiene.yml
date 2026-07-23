@@ -1,13 +1,14 @@
 name: Context hygiene
 
 # Blocks private identifiers and machine-local paths from entering the public
-# tree. Two checks, both hard fail:
-#   - banned: private identifiers that must never appear in tracked files;
-#   - machine-local absolute paths (/Users/<user>/...).
-# Patterns are written with a character class around their first letter so this
-# workflow never contains the literal identifier it bans. Lines carrying the
-# `allow-local-path` marker are exempt from the path check (test fixtures,
-# documented anti-pattern examples).
+# tree. Deny patterns are stored base64-encoded so this workflow never carries
+# them in human-readable form (obfuscation, not encryption: the goal is zero
+# readable mention, plus grep-proof compliance of the tree). Text files only
+# (-I): identifiers embedded in binary evidence would escape these checks.
+# Exemptions: lines carrying the 'allow-local-path' marker, and SHA-sealed
+# Gate A evidence reports (immutable records, digest-verified by
+# check:notebook-core-v2 in the required Bun quality job) — exempted file by
+# file, never whole directories.
 on:
   push:
     branches: [main]
@@ -27,26 +28,45 @@ jobs:
       - name: Banned private identifiers (hard fail)
         run: |
           set -euo pipefail
-          banned='[d]oxallia'
+          banned="$(printf '%s' 'W2Rdb3hhbGxpYQ==' | base64 -d)"
           if git grep -I -n -i -E -e "$banned" -- .; then
-            echo "::error::Banned private identifier found in tracked files (pattern: $banned)."
+            echo "::error::Banned private identifier found in tracked files."
             exit 1
           fi
           echo "OK: no banned identifier in tracked files."
 
-      - name: Machine-local paths (hard fail)
+      - name: Machine-local identifiers and paths (hard fail)
         run: |
           set -euo pipefail
-          local_path='/Users/[i]fi6567'
-          # SHA-sealed Gate A evidence reports are immutable historical records
-          # (check:notebook-core-v2 verifies their digests): exempt file by file,
-          # never whole directories.
-          hits="$(git grep -I -n -E -e "$local_path" -- . \
+          generic='/Users/[A-Za-z0-9._-]+' # allow-local-path (pattern definition)
+          user_pat="$(printf '%s' 'W2ldZmk2NTY3' | base64 -d)"
+          hits="$(git grep -I -n -E -e "$generic" -e "$user_pat" -- . \
             | grep -v 'allow-local-path' \
             | grep -vE '^docs/reviews/notebook-core-v2/gate-a/a28e116/(ARCHITECTURE|SECURITY|CRYPTOGRAPHY)\.md:' || true)"
           if [ -n "$hits" ]; then
             printf '%s\n' "$hits"
-            echo "::error::Machine-local path found in tracked files (pattern: $local_path)."
+            echo "::error::Machine-local identifier or path found in tracked files."
             exit 1
           fi
-          echo "OK: no machine-local path in tracked files."
+          echo "OK: no machine-local identifier or path in tracked files."
+
+      - name: Symlink targets (hard fail)
+        run: |
+          set -euo pipefail
+          banned="$(printf '%s' 'W2Rdb3hhbGxpYQ==' | base64 -d)"
+          user_pat="$(printf '%s' 'W2ldZmk2NTY3' | base64 -d)"
+          hits=""
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            t="$(readlink "$f" || true)"
+            if printf '%s' "$t" | grep -qiE -e "$banned" -e "$user_pat" -e '/Users/'; then
+              hits="${hits}${f} -> ${t}
+          "
+            fi
+          done < <(git ls-files -s | awk -F'\t' '$1 ~ /^120000/ {print $2}')
+          if [ -n "$hits" ]; then
+            printf '%s' "$hits"
+            echo "::error::Symlink target carries a machine-local or private identifier."
+            exit 1
+          fi
+          echo "OK: no offending symlink target."
