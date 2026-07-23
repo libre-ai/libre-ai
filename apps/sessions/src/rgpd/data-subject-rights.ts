@@ -208,9 +208,12 @@ export function createSessionsDataSubjectRights(deps: SessionsRgpdDeps): DataSub
           tenantId,
           owner: "sessions",
           subjectDigests: [subjectDigest],
-          // Self-service request: attribution is the opaque digest itself —
-          // the caller authorized the actor before invoking the port.
-          requestedBy: subjectDigest,
+          // Self-service request: attribution is the opaque subject itself,
+          // shaped to the deletion-receipt.v1 requestedBy pattern
+          // (^usr_[a-z0-9]{16,64}$) — the digest prefix cross-references
+          // subjectDigests, never plaintext. The caller authorized the actor
+          // before invoking the port.
+          requestedBy: `usr_${subjectDigest.slice(0, 32)}`,
           requestedAt: now,
           completedAt: now,
           // Append-only authority store: the receipt's `deleted` outcome

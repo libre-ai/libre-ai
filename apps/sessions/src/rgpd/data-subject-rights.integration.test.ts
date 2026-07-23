@@ -197,6 +197,9 @@ describe("handleErasureRequest", () => {
     expect(receipt?.subjectDigests).toEqual([digest]);
     expect(receipt?.owner).toBe("sessions");
     expect(receipt?.status).toBe("complete");
+    // Contract conformance (deletion-receipt.v1 requestedBy pattern):
+    // self-service attribution as usr_ + digest prefix, no plaintext.
+    expect(receipt?.requestedBy).toBe(`usr_${digest.slice(0, 32)}`);
     // Append-only log: the receipt qualifies the accepted logical deletion
     // so an auditor sees physical compaction is deferred to retention.
     const postgresql = receipt?.stores.find((store) => store.store === "postgresql");

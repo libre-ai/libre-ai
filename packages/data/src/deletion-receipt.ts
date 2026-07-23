@@ -36,6 +36,11 @@ const CONTRACT_STORES = new Set(["postgresql", "cellar", "redis", "search", "key
 const COMPLETE_OUTCOMES = new Set(["deleted", "not-applicable"]);
 const REASON_CODE = /^deletion\.[a-z0-9_.-]+$/;
 
+/** Contract reason-code check, shared with entry-point validation (fail closed before mutation). */
+export function isDeletionReasonCode(value: string): boolean {
+  return REASON_CODE.test(value);
+}
+
 export class InvalidStoreOutcomeError extends Error {
   constructor(detail: string) {
     super(`invalid store outcome: ${detail}`);
@@ -93,8 +98,10 @@ export function buildCompletedDeletionReceipt(input: DeletionReceiptInput): Dele
       );
     }
     if (entry.reasonCode !== undefined && !REASON_CODE.test(entry.reasonCode)) {
+      // Never echo the offending value (same rule as NonOpaqueDigestError):
+      // a malformed reason code may be free text carrying PII.
       throw new InvalidStoreOutcomeError(
-        `malformed reason code ${JSON.stringify(entry.reasonCode)}`,
+        `malformed reason code (a ${entry.reasonCode.length}-char value)`,
       );
     }
   }

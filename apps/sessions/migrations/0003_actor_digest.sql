@@ -13,7 +13,21 @@ ALTER TABLE session_events
   ADD COLUMN actor_digest text
     CONSTRAINT session_events_actor_digest_format CHECK (
       actor_digest IS NULL OR actor_digest ~ '^[a-f0-9]{64}$'
-    ),
+    );
+
+-- Backfill pre-existing human rows with the EXACT derivation the RGPD read
+-- paths use (@libre-ai/rgpd-kit deriveSubjectDigest, locked by its golden
+-- vector test): sha-256 over 'libre-ai.rgpd.subject.v1:{tenant}:{actor}',
+-- lowercase hex. Idempotent and a no-op on an empty log; without it, the
+-- human floor below would refuse to apply on any deployed log.
+UPDATE session_events
+  SET actor_digest = encode(
+    sha256(convert_to('libre-ai.rgpd.subject.v1:' || tenant_id || ':' || actor_id, 'UTF8')),
+    'hex'
+  )
+  WHERE actor_kind = 'human' AND actor_digest IS NULL;
+
+ALTER TABLE session_events
   ADD CONSTRAINT session_events_human_actor_digest CHECK (
     actor_kind <> 'human' OR actor_digest IS NOT NULL
   );
