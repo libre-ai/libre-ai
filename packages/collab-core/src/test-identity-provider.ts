@@ -39,7 +39,7 @@ export class TestIdentityProvider implements CryptoProvider {
       (globalThis as Record<string, unknown>).PRODUCTION
     ) {
       throw new Error(
-        "TestIdentityProvider instantiated in production context. Use a real CryptoProvider implementation.",
+        "TestIdentityProvider must never run in production. Use a real CryptoProvider implementation.",
       );
     }
   }
