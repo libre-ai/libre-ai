@@ -148,6 +148,20 @@ jobs:
           rebuilt="$RUNNER_TEMP/notebook-core-rebuild/wasm32-unknown-unknown/release/libre_ai_notebook_core.wasm"
           cmp "$artifact" "$rebuilt"
           sha256sum "$artifact" "$rebuilt"
+      - name: Build capability-free Policy Core WASM
+        run: cargo build --locked -p policy-core --release --target wasm32-unknown-unknown
+      - name: Verify Policy Core WASM imports and exports
+        run: >-
+          cargo run --locked -p policy-core --example check_wasm_imports --
+          target/wasm32-unknown-unknown/release/policy_core.wasm
+      - name: Verify reproducible Policy Core WASM
+        run: |
+          artifact=target/wasm32-unknown-unknown/release/policy_core.wasm
+          CARGO_TARGET_DIR="$RUNNER_TEMP/policy-core-rebuild" \
+            cargo build --locked -p policy-core --release --target wasm32-unknown-unknown
+          rebuilt="$RUNNER_TEMP/policy-core-rebuild/wasm32-unknown-unknown/release/policy_core.wasm"
+          cmp "$artifact" "$rebuilt"
+          sha256sum "$artifact" "$rebuilt"
       - uses: taiki-e/install-action@e28ac56891501ddb0600608470dbe94544964ed4 # v2
         with:
           tool: cargo-deny@0.19.5
