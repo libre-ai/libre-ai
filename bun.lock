@@ -84,6 +84,9 @@
     "apps/radar": {
       "name": "@libre-ai/radar",
       "version": "0.1.0",
+      "dependencies": {
+        "@libre-ai/policy-core-ref": "workspace:*",
+      },
     },
     "apps/sessions": {
       "name": "@libre-ai/sessions",
