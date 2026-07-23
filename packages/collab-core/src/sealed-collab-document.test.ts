@@ -205,4 +205,3 @@ describe("SealedCollabDocument — Phase B crypto seam", () => {
     });
   });
 });
-

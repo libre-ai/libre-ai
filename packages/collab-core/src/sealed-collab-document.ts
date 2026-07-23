@@ -16,11 +16,7 @@
  * the sealing/unsealing is entirely orthogonal to the convergence logic.
  */
 
-import type {
-  CollabDocument,
-  CollabVersion,
-  ImportResult,
-} from "./collab-document";
+import type { CollabDocument, CollabVersion, ImportResult } from "./collab-document";
 import type { CryptoProvider, SealedFrame } from "./crypto-types";
 
 /**
