@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Manual escape hatch: GitHub occasionally fails to deliver pull_request
+  # open/synchronize events, leaving required checks unreported and a PR
+  # BLOCKED. `gh workflow run ci.yml --ref <branch>` (or the Actions UI)
+  # re-runs the same gates on demand; the checks attach to the branch head SHA
+  # and satisfy branch protection like an event-triggered run.
+  workflow_dispatch:
 
 permissions:
   contents: read
