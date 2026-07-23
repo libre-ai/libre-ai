@@ -53,7 +53,7 @@ cmp -s ...
 
 ```bash
 NODE_PATH=/tmp/libre-ai-notebook-gate-a2-remediation/node_modules \
-PATH=$(git rev-parse --show-toplevel)/.tools/bun/1.4.0-canary.1:$PATH \
+PATH=/Users/ifi6567/Documents/libre-ai/libre-ai/.tools/bun/1.4.0-canary.1:$PATH \
 bun run check:toolchain
 # OK
 

@@ -38,7 +38,12 @@ jobs:
         run: |
           set -euo pipefail
           local_path='/Users/[i]fi6567'
-          hits="$(git grep -I -n -E -e "$local_path" -- . | grep -v 'allow-local-path' || true)"
+          # SHA-sealed Gate A evidence reports are immutable historical records
+          # (check:notebook-core-v2 verifies their digests): exempt file by file,
+          # never whole directories.
+          hits="$(git grep -I -n -E -e "$local_path" -- . \
+            | grep -v 'allow-local-path' \
+            | grep -vE '^docs/reviews/notebook-core-v2/gate-a/a28e116/(ARCHITECTURE|SECURITY|CRYPTOGRAPHY)\.md:' || true)"
           if [ -n "$hits" ]; then
             printf '%s\n' "$hits"
             echo "::error::Machine-local path found in tracked files (pattern: $local_path)."

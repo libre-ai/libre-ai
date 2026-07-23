@@ -78,7 +78,7 @@ shasum -a 256 Cargo.toml Cargo.lock src/main.rs output.txt
 
 ```bash
 export NODE_PATH=/tmp/libre-ai-notebook-gate-a2-remediation/node_modules
-export PATH=$(git rev-parse --show-toplevel)/.tools/bun/1.4.0-canary.1:$PATH
+export PATH=/Users/ifi6567/Documents/libre-ai/libre-ai/.tools/bun/1.4.0-canary.1:$PATH
 
 bun tools/quality/check-notebook-core-v2-candidate.ts
 bun tools/quality/check-notebook-v2-vectors.ts
