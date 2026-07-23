@@ -2,6 +2,8 @@ import {
   buildCompletedDeletionReceipt,
   type DeletionReceipt,
   type DeletionStoreOutcome,
+  InvalidStoreOutcomeError,
+  isDeletionReasonCode,
 } from "../deletion-receipt";
 import type { BlobStorePort } from "./blob-store-port";
 import { persistDeletionReceipt } from "./deletion-receipt-store";
@@ -56,6 +58,14 @@ export interface ActiveDeletionRequest {
   readonly completedAt: string;
   /** Product-owned: delete the active rows of the subjects inside the tenant transaction. */
   readonly deleteActiveRows: (tx: SqlExecutor) => Promise<void>;
+  /**
+   * Optional qualifier on the postgresql `deleted` outcome, for owners whose
+   * authority store is append-only: the accepted transaction removes logical
+   * access and the receipt says so (DATA-LIFECYCLE §Explicit deletion item 6,
+   * "physical compaction may follow"), e.g. `deletion.deferred-compaction`.
+   * Validated against the receipt contract's reason-code pattern.
+   */
+  readonly postgresqlReasonCode?: string;
 }
 
 export async function executeActiveDeletion(
@@ -64,6 +74,17 @@ export async function executeActiveDeletion(
   blobs: BlobStorePort,
   request: ActiveDeletionRequest,
 ): Promise<DeletionReceipt> {
+  // Fail closed BEFORE any mutation: the blob enqueue below is an external
+  // effect no SQL rollback can undo, so a receipt the builder would refuse
+  // must be refused here first. Never echo the offending value (PII risk).
+  if (
+    request.postgresqlReasonCode !== undefined &&
+    !isDeletionReasonCode(request.postgresqlReasonCode)
+  ) {
+    throw new InvalidStoreOutcomeError(
+      `malformed postgresql reason code (a ${request.postgresqlReasonCode.length}-char value)`,
+    );
+  }
   let lastFailure: unknown;
   let purged = false;
   for (let attempt = 1; attempt <= CACHE_PURGE_ATTEMPTS; attempt += 1) {
@@ -95,7 +116,13 @@ export async function executeActiveDeletion(
       requestedAt: request.requestedAt,
       completedAt: request.completedAt,
       stores: [
-        { store: "postgresql", outcome: "deleted" },
+        request.postgresqlReasonCode === undefined
+          ? { store: "postgresql", outcome: "deleted" }
+          : {
+              store: "postgresql",
+              outcome: "deleted",
+              reasonCode: request.postgresqlReasonCode,
+            },
         { store: "redis", outcome: "deleted" },
         cellarOutcome,
       ],
