@@ -16,7 +16,16 @@ import { createSessionsDataSubjectRights } from "./data-subject-rights";
 // the real barrier (PGlite): RLS tenant scoping, append-only grants, the
 // tombstone written inside the accepted deletion transaction and the
 // deletion receipt persisted by @libre-ai/data.
-const DATA_MIGRATIONS = join(import.meta.dir, "..", "..", "..", "..", "packages", "data", "migrations");
+const DATA_MIGRATIONS = join(
+  import.meta.dir,
+  "..",
+  "..",
+  "..",
+  "..",
+  "packages",
+  "data",
+  "migrations",
+);
 const SESSIONS_MIGRATIONS = join(import.meta.dir, "..", "..", "migrations");
 const TENANT_A = "ten_aaaaaaaaaaaaaaaa";
 const TENANT_B = "ten_bbbbbbbbbbbbbbbb";

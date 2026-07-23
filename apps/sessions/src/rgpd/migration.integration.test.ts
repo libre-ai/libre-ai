@@ -7,7 +7,16 @@ import { createTestDatabase, type TestDatabase } from "@libre-ai/testing";
 // barrier (PGlite): FORCE RLS tenant isolation, append-only grants
 // (SELECT/INSERT — tombstones and audit rows are evidence, like
 // deletion_receipts), and the structural CHECKs on tenant and digest formats.
-const DATA_MIGRATIONS = join(import.meta.dir, "..", "..", "..", "..", "packages", "data", "migrations");
+const DATA_MIGRATIONS = join(
+  import.meta.dir,
+  "..",
+  "..",
+  "..",
+  "..",
+  "packages",
+  "data",
+  "migrations",
+);
 const SESSIONS_MIGRATIONS = join(import.meta.dir, "..", "..", "migrations");
 const TENANT_A = "ten_aaaaaaaaaaaaaaaa";
 const TENANT_B = "ten_bbbbbbbbbbbbbbbb";

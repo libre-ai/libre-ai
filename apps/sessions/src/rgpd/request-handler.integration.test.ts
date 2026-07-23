@@ -15,7 +15,16 @@ import { createDataSubjectRequestHandler } from "./request-handler";
 // handler is an exported factory, deliberately NOT mounted on the public
 // cockpit routes: the Sessions runtime boundary stays locked until
 // WP-G3-S01's sessions-authz-review human gate.
-const DATA_MIGRATIONS = join(import.meta.dir, "..", "..", "..", "..", "packages", "data", "migrations");
+const DATA_MIGRATIONS = join(
+  import.meta.dir,
+  "..",
+  "..",
+  "..",
+  "..",
+  "packages",
+  "data",
+  "migrations",
+);
 const SESSIONS_MIGRATIONS = join(import.meta.dir, "..", "..", "migrations");
 const TENANT_A = "ten_aaaaaaaaaaaaaaaa";
 const NOW = "2026-07-23T10:00:00Z";
@@ -157,9 +166,7 @@ describe("verification", () => {
     expect(body.meta.refusal).toBe("sessions.rgpd.subject_unverified");
     expect(body.data?.request.status).toBe("refused");
     const audit = await auditRows(body.data?.request.requestId ?? "");
-    expect(audit.rows).toEqual([
-      { status: "refused", detail: "sessions.rgpd.subject_unverified" },
-    ]);
+    expect(audit.rows).toEqual([{ status: "refused", detail: "sessions.rgpd.subject_unverified" }]);
   });
 });
 

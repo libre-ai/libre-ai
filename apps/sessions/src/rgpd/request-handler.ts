@@ -33,8 +33,8 @@ import {
   type RestrictionRequestResult,
   validateDataSubjectRequest,
 } from "@libre-ai/rgpd-kit";
-import { roleHasOperation, type SessionOperation } from "../authz/session-authorization";
 import type { SessionPrincipal } from "../app/execute-command";
+import { roleHasOperation, type SessionOperation } from "../authz/session-authorization";
 
 export interface DataSubjectRequestDeps {
   readonly port: DataSubjectRightsPort;
