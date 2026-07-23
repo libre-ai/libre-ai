@@ -51,7 +51,10 @@ function fixture(overrides: Record<string, unknown>): SessionEvent {
   return outcome.value;
 }
 
-function makeHandler(role: "owner" | "facilitator" | "participant" | "observer") {
+function makeHandler(
+  role: "owner" | "facilitator" | "participant" | "observer",
+  principalTenantId: string = TENANT_A,
+) {
   const port = createSessionsDataSubjectRights({
     executor: tdb.db,
     cache: new InMemoryProjectionCache(),
@@ -65,7 +68,7 @@ function makeHandler(role: "owner" | "facilitator" | "participant" | "observer")
   return createDataSubjectRequestHandler({
     port,
     executor: tdb.db,
-    principal: { role },
+    principal: { role, tenantId: principalTenantId },
     now: () => NOW,
     newRequestId: () => {
       requestCounter += 1;
@@ -84,8 +87,8 @@ function post(body: unknown): Request {
 
 async function auditRows(requestId: string) {
   return withTenantDbTransaction(tdb.db, TENANT_A, (tx) =>
-    tx.query<{ status: string; detail: string | null }>(
-      "SELECT status, detail FROM session_subject_audit WHERE request_id = $1 ORDER BY status",
+    tx.query<{ status: string; detail: string | null; receipt_id: string | null }>(
+      "SELECT status, detail, receipt_id FROM session_subject_audit WHERE request_id = $1 ORDER BY status",
       [requestId],
     ),
   );
@@ -150,6 +153,26 @@ describe("authorization is deny-by-default before any I/O", () => {
     );
     expect(response.status).toBe(403);
   });
+
+  test("the tenant in the body must be the principal's tenant: cross-tenant is 403 with zero writes", async () => {
+    // An owner authenticated for tenant B must not operate tenant A, whatever
+    // the body claims — the K2 authoritative tenant is the principal's.
+    const handler = makeHandler("owner", "ten_bbbbbbbbbbbbbbbb");
+    const response = await handler(
+      post({ rightType: "erasure", subjectIdentifier: "member-alice", tenantId: TENANT_A }),
+    );
+    expect(response.status).toBe(403);
+    const body = (await response.json()) as { data: null; meta: { refusal: string } };
+    expect(body.meta.refusal).toBe("sessions.membership_required");
+    const audit = await withTenantDbTransaction(tdb.db, TENANT_A, (tx) =>
+      tx.query("SELECT request_id FROM session_subject_audit"),
+    );
+    expect(audit.rows).toHaveLength(0);
+    const tombstones = await withTenantDbTransaction(tdb.db, TENANT_A, (tx) =>
+      tx.query("SELECT subject_digest FROM session_deleted_subjects"),
+    );
+    expect(tombstones.rows).toHaveLength(0);
+  });
 });
 
 describe("verification", () => {
@@ -166,7 +189,9 @@ describe("verification", () => {
     expect(body.meta.refusal).toBe("sessions.rgpd.subject_unverified");
     expect(body.data?.request.status).toBe("refused");
     const audit = await auditRows(body.data?.request.requestId ?? "");
-    expect(audit.rows).toEqual([{ status: "refused", detail: "sessions.rgpd.subject_unverified" }]);
+    expect(audit.rows).toEqual([
+      { status: "refused", detail: "sessions.rgpd.subject_unverified", receipt_id: null },
+    ]);
   });
 });
 
@@ -190,8 +215,8 @@ describe("fulfilled flows", () => {
     expect(body.data.result.dataExport.events).toHaveLength(1);
     const audit = await auditRows(body.data.request.requestId);
     expect(audit.rows).toEqual([
-      { status: "fulfilled", detail: null },
-      { status: "received", detail: null },
+      { status: "fulfilled", detail: null, receipt_id: null },
+      { status: "received", detail: null, receipt_id: null },
     ]);
   });
 
@@ -213,10 +238,12 @@ describe("fulfilled flows", () => {
       tx.query<{ receipt_id: string }>("SELECT receipt_id FROM session_deleted_subjects"),
     );
     expect(tombstones.rows).toEqual([{ receipt_id: body.data.result.deletionReceiptId }]);
+    // The audit trail joins the deletion evidence at the storage level: the
+    // terminal row carries the receipt id an auditor cross-references.
     const audit = await auditRows(body.data.request.requestId);
     expect(audit.rows).toEqual([
-      { status: "fulfilled", detail: null },
-      { status: "received", detail: null },
+      { status: "fulfilled", detail: null, receipt_id: body.data.result.deletionReceiptId },
+      { status: "received", detail: null, receipt_id: null },
     ]);
   });
 
@@ -233,8 +260,8 @@ describe("fulfilled flows", () => {
     expect(body.meta.refusal).toBe("sessions.rgpd.not_implemented");
     const audit = await auditRows(body.data.request.requestId);
     expect(audit.rows).toEqual([
-      { status: "received", detail: null },
-      { status: "refused", detail: "sessions.rgpd.not_implemented" },
+      { status: "received", detail: null, receipt_id: null },
+      { status: "refused", detail: "sessions.rgpd.not_implemented", receipt_id: null },
     ]);
   });
 });

@@ -85,10 +85,15 @@ async function resolveSubjectActors(
   subjectDigest: string,
 ): Promise<readonly string[]> {
   // The log stores plaintext actor ids while the port speaks digests: digest
-  // every distinct human actor of the tenant (RLS scopes the rows) and keep
-  // the matches. O(distinct actors) hashing, no plaintext in any signature.
+  // every distinct human actor of the tenant and keep the matches. The
+  // explicit tenant_id predicate is defense in depth over RLS (K4 finding:
+  // never rely on the barrier alone), and no plaintext enters any signature.
+  // TODO(rgpd-scale): O(distinct actors) sha-256 per request is fine at
+  // walking-skeleton scale but unbounded; persist an indexed actor_digest at
+  // insertion before any tenant can hold thousands of distinct actors.
   const actors = await tx.query<ActorRow>(
-    "SELECT DISTINCT actor_id FROM session_events WHERE actor_kind = 'human'",
+    "SELECT DISTINCT actor_id FROM session_events WHERE actor_kind = 'human' AND tenant_id = $1",
+    [tenantId],
   );
   const matches: string[] = [];
   for (const row of actors.rows) {
@@ -99,10 +104,15 @@ async function resolveSubjectActors(
   return matches;
 }
 
-async function isTombstoned(tx: SqlExecutor, subjectDigest: string): Promise<boolean> {
+async function isTombstoned(
+  tx: SqlExecutor,
+  tenantId: string,
+  subjectDigest: string,
+): Promise<boolean> {
+  // Explicit tenant_id over RLS, same defense in depth as above.
   const tombstone = await tx.query(
-    "SELECT 1 FROM session_deleted_subjects WHERE subject_digest = $1",
-    [subjectDigest],
+    "SELECT 1 FROM session_deleted_subjects WHERE tenant_id = $1 AND subject_digest = $2",
+    [tenantId, subjectDigest],
   );
   return tombstone.rows.length > 0;
 }
@@ -112,8 +122,8 @@ export function createSessionsDataSubjectRights(deps: SessionsRgpdDeps): DataSub
     async verifySubject(tenantId, subjectIdentifier) {
       return withTenantDbTransaction(deps.executor, tenantId, async (tx) => {
         const participant = await tx.query(
-          "SELECT 1 FROM session_events WHERE actor_kind = 'human' AND actor_id = $1 LIMIT 1",
-          [subjectIdentifier],
+          "SELECT 1 FROM session_events WHERE actor_kind = 'human' AND actor_id = $1 AND tenant_id = $2 LIMIT 1",
+          [subjectIdentifier, tenantId],
         );
         if (participant.rows.length === 0) {
           return null;
@@ -133,7 +143,7 @@ export function createSessionsDataSubjectRights(deps: SessionsRgpdDeps): DataSub
     async handleAccessRequest(tenantId, subjectDigest): Promise<AccessRequestResult> {
       const requestId = deps.newRequestId();
       return withTenantDbTransaction(deps.executor, tenantId, async (tx) => {
-        if (await isTombstoned(tx, subjectDigest)) {
+        if (await isTombstoned(tx, tenantId, subjectDigest)) {
           return { status: "refused", requestId, refusal: "sessions.rgpd.subject_erased" };
         }
         const actors = await resolveSubjectActors(tx, tenantId, subjectDigest);
@@ -145,9 +155,9 @@ export function createSessionsDataSubjectRights(deps: SessionsRgpdDeps): DataSub
           const rows = await tx.query(
             `SELECT session_id, sequence, event_id, revision, type, occurred_at, data, recorded_at
              FROM session_events
-             WHERE actor_kind = 'human' AND actor_id = $1
+             WHERE actor_kind = 'human' AND actor_id = $1 AND tenant_id = $2
              ORDER BY session_id, sequence`,
-            [actorId],
+            [actorId, tenantId],
           );
           for (const row of rows.rows) {
             events.push({
@@ -189,7 +199,7 @@ export function createSessionsDataSubjectRights(deps: SessionsRgpdDeps): DataSub
           requestedAt: now,
           completedAt: now,
           deleteActiveRows: async (tx) => {
-            if (await isTombstoned(tx, subjectDigest)) {
+            if (await isTombstoned(tx, tenantId, subjectDigest)) {
               throw new AlreadyErasedSentinel();
             }
             const actors = await resolveSubjectActors(tx, tenantId, subjectDigest);
@@ -198,14 +208,19 @@ export function createSessionsDataSubjectRights(deps: SessionsRgpdDeps): DataSub
             }
             for (const actorId of actors) {
               const counted = await tx.query<{ count: string | number }>(
-                "SELECT count(*) AS count FROM session_events WHERE actor_kind = 'human' AND actor_id = $1",
-                [actorId],
+                "SELECT count(*) AS count FROM session_events WHERE actor_kind = 'human' AND actor_id = $1 AND tenant_id = $2",
+                [actorId, tenantId],
               );
               recordsAffected += Number(counted.rows[0]?.count ?? 0);
             }
             // The tombstone IS the logical deletion: every RGPD read path
             // refuses the subject from this row on, in the same accepted
-            // transaction as the receipt.
+            // transaction as the receipt. The receipt's `postgresql:
+            // deleted` outcome attests exactly this accepted deletion
+            // (DATA-LIFECYCLE §Explicit deletion item 6: logical access
+            // removed in the transaction, physical compaction may follow on
+            // the retention path) — recordsAffected counts the rows made
+            // inaccessible, not rows physically removed.
             await tx.query(
               `INSERT INTO session_deleted_subjects (tenant_id, subject_digest, receipt_id, deleted_at)
                VALUES ($1, $2, $3, $4)`,

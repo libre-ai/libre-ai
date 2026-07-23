@@ -135,7 +135,13 @@ tombstone/audit tables, its own deletion receipts, no cross-context table.
   atomically; every RGPD read path refuses the subject from that row on.
   Physical compaction of the log follows the owner-scoped retention path
   (DATA-LIFECYCLE §Explicit deletion), which is why the declared categories
-  carry `erasureScope: "deferred"`.
+  carry `erasureScope: "deferred"`. **Receipt semantics:** the deletion
+  receipt's `postgresql: deleted` outcome attests the accepted logical
+  deletion of DATA-LIFECYCLE §Explicit deletion item 6 — access removed in
+  the transaction — not physical row removal; `recordsAffected` counts rows
+  made inaccessible. A platform follow-up (WP-G2-D01 surface) may let
+  append-only stores carry a dedicated outcome/reason code in
+  `executeActiveDeletion`.
 - **Audit trail** — `session_subject_audit` (append-only, FORCE RLS) records
   `received` and the terminal `fulfilled`/`refused` state per request;
   `detail` carries refusal codes only.
@@ -143,7 +149,12 @@ tombstone/audit tables, its own deletion receipts, no cross-context table.
   **not mounted** on the cockpit routes: the runtime boundary above stays
   locked until `WP-G3-S01`'s `sessions-authz-review` human gate. Authorization
   is deny-by-default against the locked operation matrix (access/portability
-  need `export`, every other right needs `delete`).
+  need `export`, every other right needs `delete`) AND against the
+  principal's own tenant — the body never chooses the tenant scope (K2).
+  HTTP semantics: 403/404/400/405 cover authorization, verification and
+  transport failures; a domain refusal (e.g. `already_erased`,
+  `not_implemented`) is a first-class outcome returned as 200 with
+  `meta.refusal` set.
 - **Retention and consent** — content/outcomes follow the `sessions-content`
   rule (`contracts/data/retention.v1.json`: P90D, configurable P7D–P365D).
   Consent is the organizational-tenant membership model (implicit via

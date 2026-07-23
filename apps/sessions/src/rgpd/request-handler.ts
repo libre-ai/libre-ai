@@ -15,8 +15,10 @@
 // Two request-id families coexist by design: `request.requestId` anchors the
 // API request and its audit rows; an erasure result's `deletionReceiptId` is
 // the port-generated deletion-transaction id, cross-referenced by the
-// tombstone's receipt_id. The audit `detail` column carries refusal codes
-// only — never free text, never PII.
+// tombstone's receipt_id AND persisted on the terminal audit row
+// (`receipt_id` column), so audit trail and deletion evidence stay joined at
+// the storage level. The audit `detail` column carries refusal codes only —
+// never free text, never PII.
 
 import { type SqlExecutor, withTenantDbTransaction } from "@libre-ai/data";
 import {
@@ -33,14 +35,28 @@ import {
   type RestrictionRequestResult,
   validateDataSubjectRequest,
 } from "@libre-ai/rgpd-kit";
-import type { SessionPrincipal } from "../app/execute-command";
-import { roleHasOperation, type SessionOperation } from "../authz/session-authorization";
+import {
+  roleHasOperation,
+  type SessionOperation,
+  type SessionRole,
+} from "../authz/session-authorization";
+
+/**
+ * The authenticated caller, bound to the ONE tenant its authentication is
+ * for (K2: the authoritative tenant comes from the verified principal, never
+ * from the request body). A role alone is not an authorization — the same
+ * role in another tenant grants nothing here.
+ */
+export interface RgpdPrincipal {
+  readonly role: SessionRole;
+  readonly tenantId: string;
+}
 
 export interface DataSubjectRequestDeps {
   readonly port: DataSubjectRightsPort;
   readonly executor: SqlExecutor;
   /** Pre-authenticated caller — authorization here is deny-by-default. */
-  readonly principal: SessionPrincipal;
+  readonly principal: RgpdPrincipal;
   readonly now: () => string;
   readonly newRequestId: () => string;
 }
@@ -106,12 +122,13 @@ export function createDataSubjectRequestHandler(
     request: DataSubjectRequest,
     status: "received" | "fulfilled" | "refused",
     detail: string | null,
+    receiptId: string | null = null,
   ): Promise<void> {
     await withTenantDbTransaction(deps.executor, request.tenantId, async (tx) => {
       await tx.query(
         `INSERT INTO session_subject_audit
-           (tenant_id, request_id, subject_digest, right_type, status, detail, recorded_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+           (tenant_id, request_id, subject_digest, right_type, status, detail, receipt_id, recorded_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
         [
           request.tenantId,
           request.requestId,
@@ -119,13 +136,18 @@ export function createDataSubjectRequestHandler(
           request.rightType,
           status,
           detail,
+          receiptId,
           deps.now(),
         ],
       );
     });
   }
 
-  async function dispatch(body: ParsedBody, subjectDigest: string): Promise<PortResult> {
+  async function dispatch(
+    body: ParsedBody,
+    subjectDigest: string,
+    requestId: string,
+  ): Promise<PortResult> {
     switch (body.rightType) {
       case "access":
         return deps.port.handleAccessRequest(body.tenantId, subjectDigest);
@@ -137,12 +159,9 @@ export function createDataSubjectRequestHandler(
         return deps.port.handlePortabilityRequest(body.tenantId, subjectDigest);
       case "rectification":
       case "object":
-        // No port surface yet (design §6): a typed refusal, still audited.
-        return {
-          status: "refused",
-          requestId: deps.newRequestId(),
-          refusal: "sessions.rgpd.not_implemented",
-        };
+        // No port surface yet (design §6): a typed refusal under the SAME
+        // request id as the audit trail, still audited.
+        return { status: "refused", requestId, refusal: "sessions.rgpd.not_implemented" };
     }
   }
 
@@ -162,8 +181,14 @@ export function createDataSubjectRequestHandler(
     }
 
     // Deny-by-default, before any I/O: the principal must hold the locked
-    // sessions operation the right maps to.
+    // sessions operation the right maps to, AND the body's tenant must be
+    // the principal's own tenant — the body never chooses the tenant scope
+    // (K4 finding: otherwise any authenticated owner could export or erase
+    // inside a foreign tenant, with RLS keyed on the attacker's value).
     if (!roleHasOperation(deps.principal.role, OPERATION_BY_RIGHT[body.rightType])) {
+      return envelope(null, { refusal: "sessions.membership_required" }, 403);
+    }
+    if (body.tenantId !== deps.principal.tenantId) {
       return envelope(null, { refusal: "sessions.membership_required" }, 403);
     }
 
@@ -202,7 +227,7 @@ export function createDataSubjectRequestHandler(
     const received = validateDataSubjectRequest({ ...base, status: "received" });
     await appendAudit(received, "received", null);
 
-    const result = await dispatch(body, verified);
+    const result = await dispatch(body, verified, base.requestId);
     if (result.status === "refused") {
       const refused = validateDataSubjectRequest({
         ...base,
@@ -213,7 +238,8 @@ export function createDataSubjectRequestHandler(
       return envelope({ request: refused, result }, { refusal: result.refusal }, 200);
     }
     const fulfilled = validateDataSubjectRequest({ ...base, status: "fulfilled" });
-    await appendAudit(fulfilled, "fulfilled", null);
+    const receiptId = "deletionReceiptId" in result ? result.deletionReceiptId : null;
+    await appendAudit(fulfilled, "fulfilled", null, receiptId);
     return envelope({ request: fulfilled, result }, {}, 200);
   };
 }

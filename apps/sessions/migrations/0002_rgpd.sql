@@ -50,6 +50,10 @@ CREATE TABLE session_subject_audit (
   -- Refusal reason codes only (e.g. 'sessions.rgpd.subject_unknown'):
   -- never free text, never PII.
   detail text,
+  -- On the terminal row of a fulfilled erasure: the deletion-receipt id,
+  -- joining the audit trail to the deletion evidence at the storage level
+  -- (an auditor goes audit row -> receipt without the ephemeral HTTP body).
+  receipt_id text,
   recorded_at timestamptz NOT NULL,
   -- One row per request state: a request is `received` once and reaches one
   -- terminal state once; replays conflict instead of forking the trail.
