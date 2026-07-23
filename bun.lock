@@ -93,6 +93,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@libre-ai/data": "workspace:*",
+        "@libre-ai/rgpd-kit": "workspace:*",
         "@libre-ai/web-platform": "workspace:*",
         "react": "catalog:",
         "react-dom": "catalog:",
@@ -208,6 +209,10 @@
     },
     "packages/provenance": {
       "name": "@libre-ai/provenance",
+      "version": "0.1.0",
+    },
+    "packages/rgpd-kit": {
+      "name": "@libre-ai/rgpd-kit",
       "version": "0.1.0",
     },
     "packages/testing": {
@@ -362,6 +367,8 @@
     "@libre-ai/radar": ["@libre-ai/radar@workspace:apps/radar"],
 
     "@libre-ai/review-tools": ["@libre-ai/review-tools@workspace:tools/review"],
+
+    "@libre-ai/rgpd-kit": ["@libre-ai/rgpd-kit@workspace:packages/rgpd-kit"],
 
     "@libre-ai/sessions": ["@libre-ai/sessions@workspace:apps/sessions"],
 
