@@ -191,7 +191,7 @@ Retour sur votre machine de développement (connectée, post-cérémonial) :
          "activatedAt": "2026-07-22T00:00:00.000Z",
          "revokedAt": null,
          "witness": {
-           "signatory": "constantin.jais@doxallia.com",
+           "signatory": "owner@libre-ai.example",
            "attestedAt": "2026-07-22T12:00:00.000Z",
            "comment": "Initial key ceremony, air-gapped generation, HSM-backed"
          }
@@ -249,7 +249,7 @@ Si vous découvrez un accès non autorisé à la clé privée :
    "revokedAt": "2026-07-23T14:32:00.000Z",
    "revocationReason": "suspected compromise — machine breach",
    "revocationWitness": {
-     "signatory": "constantin.jais@doxallia.com",
+     "signatory": "owner@libre-ai.example",
      "discoveredAt": "2026-07-23T14:30:00.000Z"
    }
    ```
