@@ -56,6 +56,14 @@ export interface ActiveDeletionRequest {
   readonly completedAt: string;
   /** Product-owned: delete the active rows of the subjects inside the tenant transaction. */
   readonly deleteActiveRows: (tx: SqlExecutor) => Promise<void>;
+  /**
+   * Optional qualifier on the postgresql `deleted` outcome, for owners whose
+   * authority store is append-only: the accepted transaction removes logical
+   * access and the receipt says so (DATA-LIFECYCLE §Explicit deletion item 6,
+   * "physical compaction may follow"), e.g. `deletion.deferred-compaction`.
+   * Validated against the receipt contract's reason-code pattern.
+   */
+  readonly postgresqlReasonCode?: string;
 }
 
 export async function executeActiveDeletion(
@@ -95,7 +103,13 @@ export async function executeActiveDeletion(
       requestedAt: request.requestedAt,
       completedAt: request.completedAt,
       stores: [
-        { store: "postgresql", outcome: "deleted" },
+        request.postgresqlReasonCode === undefined
+          ? { store: "postgresql", outcome: "deleted" }
+          : {
+              store: "postgresql",
+              outcome: "deleted",
+              reasonCode: request.postgresqlReasonCode,
+            },
         { store: "redis", outcome: "deleted" },
         cellarOutcome,
       ],

@@ -198,6 +198,10 @@ export function createSessionsDataSubjectRights(deps: SessionsRgpdDeps): DataSub
           requestedBy: subjectDigest,
           requestedAt: now,
           completedAt: now,
+          // Append-only authority store: the receipt's `deleted` outcome
+          // attests the accepted logical deletion; the qualifier tells the
+          // auditor physical compaction follows the retention path.
+          postgresqlReasonCode: "deletion.deferred-compaction",
           deleteActiveRows: async (tx) => {
             if (await isTombstoned(tx, tenantId, subjectDigest)) {
               throw new AlreadyErasedSentinel();
