@@ -118,6 +118,41 @@ Verified against the real PostgreSQL barrier (PGlite): round-trip, reduction,
 replay conflict, append-only grant (UPDATE/DELETE denied), and cross-tenant RLS
 isolation.
 
+## RGPD — data-subject rights (rgpd-kit adoption)
+
+Sessions is the first adopter of `@libre-ai/rgpd-kit`
+(`packages/rgpd-kit/README.md`), entirely inside its bounded context: its own
+tombstone/audit tables, its own deletion receipts, no cross-context table.
+
+- **Port implementation** — `src/rgpd/data-subject-rights.ts` implements
+  `DataSubjectRightsPort`: access (Art. 15) and erasure (Art. 17) fulfilled;
+  restriction and portability refuse `sessions.rgpd.not_implemented`
+  (deferred, typed). All surfaces past verification speak opaque
+  tenant-scoped sha-256 digests — never plaintext identifiers.
+- **Erasure semantics** — `session_events` is append-only, so Art. 17 removes
+  **logical access in the accepted transaction**: `executeActiveDeletion`
+  writes the `session_deleted_subjects` tombstone and the deletion receipt
+  atomically; every RGPD read path refuses the subject from that row on.
+  Physical compaction of the log follows the owner-scoped retention path
+  (DATA-LIFECYCLE §Explicit deletion), which is why the declared categories
+  carry `erasureScope: "deferred"`.
+- **Audit trail** — `session_subject_audit` (append-only, FORCE RLS) records
+  `received` and the terminal `fulfilled`/`refused` state per request;
+  `detail` carries refusal codes only.
+- **Request handler** — `src/rgpd/request-handler.ts` is an exported factory,
+  **not mounted** on the cockpit routes: the runtime boundary above stays
+  locked until `WP-G3-S01`'s `sessions-authz-review` human gate. Authorization
+  is deny-by-default against the locked operation matrix (access/portability
+  need `export`, every other right needs `delete`).
+- **Retention and consent** — content/outcomes follow the `sessions-content`
+  rule (`contracts/data/retention.v1.json`: P90D, configurable P7D–P365D).
+  Consent is the organizational-tenant membership model (implicit via
+  membership, `legalBasis: "contract"`); per-purpose Art. 7(4) evaluation is
+  available through rgpd-kit's consent module when Sessions needs finer
+  grants.
+- **Art. 30 declaration** — `art30-register.json`, contract-tested against
+  the shared validator (`src/rgpd/art30-entry.test.ts`).
+
 ## License
 
 EUPL-1.2.
