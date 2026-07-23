@@ -84,24 +84,16 @@ async function resolveSubjectActors(
   tenantId: string,
   subjectDigest: string,
 ): Promise<readonly string[]> {
-  // The log stores plaintext actor ids while the port speaks digests: digest
-  // every distinct human actor of the tenant and keep the matches. The
-  // explicit tenant_id predicate is defense in depth over RLS (K4 finding:
-  // never rely on the barrier alone), and no plaintext enters any signature.
-  // TODO(rgpd-scale): O(distinct actors) sha-256 per request is fine at
-  // walking-skeleton scale but unbounded; persist an indexed actor_digest at
-  // insertion before any tenant can hold thousands of distinct actors.
+  // The append path persists the opaque actor_digest (0003_actor_digest.sql,
+  // enforced structurally for human actors), so resolving a subject is one
+  // indexed equality — no plaintext in any signature, no per-request
+  // hashing. The explicit tenant_id predicate is defense in depth over RLS
+  // (K4 finding: never rely on the barrier alone).
   const actors = await tx.query<ActorRow>(
-    "SELECT DISTINCT actor_id FROM session_events WHERE actor_kind = 'human' AND tenant_id = $1",
-    [tenantId],
+    "SELECT DISTINCT actor_id FROM session_events WHERE actor_digest = $1 AND tenant_id = $2",
+    [subjectDigest, tenantId],
   );
-  const matches: string[] = [];
-  for (const row of actors.rows) {
-    if ((await deriveSubjectDigest(tenantId, row.actor_id)) === subjectDigest) {
-      matches.push(row.actor_id);
-    }
-  }
-  return matches;
+  return actors.rows.map((row) => row.actor_id);
 }
 
 async function isTombstoned(

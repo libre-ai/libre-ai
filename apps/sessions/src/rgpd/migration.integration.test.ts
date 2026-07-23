@@ -81,6 +81,39 @@ describe("session_deleted_subjects", () => {
   });
 });
 
+describe("session_events.actor_digest (0003)", () => {
+  test("a human event without its digest is structurally rejected", async () => {
+    await expect(
+      tdb.db.query(
+        `INSERT INTO session_events
+           (tenant_id, session_id, sequence, event_id, revision, type, actor_kind, actor_id, actor_digest, occurred_at, data, recorded_at)
+         VALUES ($1, 'urn:libre-ai:session:s-floor', 1, 'urn:libre-ai:event:e-floor', 0,
+                 'session-created', 'human', 'owner-alpha', NULL, $2, '{}', $2)`,
+        [TENANT_A, NOW],
+      ),
+    ).rejects.toThrow();
+  });
+
+  test("a malformed digest is rejected, a system actor carries none", async () => {
+    await expect(
+      tdb.db.query(
+        `INSERT INTO session_events
+           (tenant_id, session_id, sequence, event_id, revision, type, actor_kind, actor_id, actor_digest, occurred_at, data, recorded_at)
+         VALUES ($1, 'urn:libre-ai:session:s-floor', 1, 'urn:libre-ai:event:e-floor', 0,
+                 'session-created', 'human', 'owner-alpha', 'user@example.com', $2, '{}', $2)`,
+        [TENANT_A, NOW],
+      ),
+    ).rejects.toThrow();
+    await tdb.db.query(
+      `INSERT INTO session_events
+         (tenant_id, session_id, sequence, event_id, revision, type, actor_kind, actor_id, actor_digest, occurred_at, data, recorded_at)
+       VALUES ($1, 'urn:libre-ai:session:s-floor-sys', 1, 'urn:libre-ai:event:e-floor-sys', 0,
+               'session-created', 'system', 'scheduler', NULL, $2, '{}', $2)`,
+      [TENANT_A, NOW],
+    );
+  });
+});
+
 describe("session_subject_audit", () => {
   test("audit rows are tenant-isolated and append-only", async () => {
     await withTenantDbTransaction(tdb.db, TENANT_A, async (tx) => {
