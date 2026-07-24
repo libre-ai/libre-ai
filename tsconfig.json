@@ -25,6 +25,7 @@
     "packages/**/*.tsx",
     "tools/**/*.ts",
     "verification/**/*.ts",
+    "distribution/*.ts",
     "distribution/templates/**/*.ts",
     "distribution/templates/**/*.tsx"
   ],

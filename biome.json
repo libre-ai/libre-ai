@@ -9,6 +9,8 @@
     "includes": [
       "**",
       "!distribution/index/repositories.v1.json",
+      "!distribution/feeds/evidence.json",
+      "!distribution/fixtures/evidence-feed",
       "!ecosystem/fixtures/repository-index/expected.json",
       "!ecosystem/projections/public.v1.json",
       "!contracts/fixtures/radar-engine-v2",
