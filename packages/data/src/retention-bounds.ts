@@ -55,6 +55,16 @@ function toDays(iso: string): number {
   return years * 365 + days;
 }
 
+/**
+ * ISO-8601 retention window (`P<n>D` or `P<n>Y`) as an integer day count. The
+ * single parser the sweep orchestrator reuses to turn a stored or
+ * contract-default window into the days a selection query needs — day/year
+ * normalization stays defined once, here, never reimplemented at the call site.
+ */
+export function retentionDurationDays(iso: string): number {
+  return toDays(iso);
+}
+
 export function resolveConfiguredRetention(rule: RetentionRule, requested: string): string {
   if (rule.configurable === undefined) {
     throw new NotConfigurableError(rule.id);

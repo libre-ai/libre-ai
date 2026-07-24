@@ -13,6 +13,23 @@ During the Big Bang reconstruction:
 
 Historical sibling repositories are read-only evidence. Do not submit new architecture there.
 
+## Contributing from outside, today
+
+Three paths are practicable right now, without joining the work-package flow. Each is executable by a human or by a mandated agent, and each produces a verifiable artifact.
+
+1. **Reproduce the reference chain and attest the result.** From a clean checkout (prerequisites: Bun >= 1.4.0, a Rust toolchain, Playwright browsers), run:
+
+   ```console
+   bun install --frozen-lockfile
+   bun verification/harness/reference-chain.ts
+   ```
+
+   Open an issue with the JSON report the harness prints. When all ten steps pass, the digest is `f45dfad03581f3d56ea53ca74a7b9ac3034ef7ce7013eebe6eac71cc3959a89f` (see [`verification/harness/wp-g2-q01-reference-chain-evidence.md`](verification/harness/wp-g2-q01-reference-chain-evidence.md)). A friction is a contribution too: a missing prerequisite, an unclear step or a failing step, reported with the same JSON report and the surrounding log, improves the chain for everyone.
+
+2. **Qualify a Notebook device.** This is the existing device-qualification path described in the next section: owners of modest Apple Silicon Macs can optionally contribute public-fixture Notebook performance evidence without sharing the device or any personal data. Procedures, expected artifacts and acceptance criteria: [`tools/qualification/notebook-core-v2/CONTRIBUTING-DEVICE-QUALIFICATION.md`](tools/qualification/notebook-core-v2/CONTRIBUTING-DEVICE-QUALIFICATION.md).
+
+3. **Report a parity gap.** The audits in [`docs/parity/audits/`](docs/parity/audits) classify each trait of a named best-in-class benchmark as covered, absent or out of scope, with real numbers. If a trait is misclassified, missing from the map, or a covered claim does not hold when you test it, open an issue citing the audit file and the trait. The audits are drafts pending owner review; corrections are exactly what that status is for.
+
 ## Device qualification contributions
 
 Owners of modest Apple Silicon Macs can optionally contribute public-fixture Notebook performance evidence without sharing the device or any personal data. Physical and VM procedures, expected artifacts and acceptance criteria are documented in [`tools/qualification/notebook-core-v2/CONTRIBUTING-DEVICE-QUALIFICATION.md`](tools/qualification/notebook-core-v2/CONTRIBUTING-DEVICE-QUALIFICATION.md). The absence of 8 Gio or 16–24 Gio contributions cannot block the current Gate B, and those classes remain unsupported until independently qualified. VM results are diagnostic-only and can never promote a supported hardware class.

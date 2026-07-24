@@ -8,6 +8,8 @@
   "files": {
     "includes": [
       "**",
+      "!distribution/index/repositories.v1.json",
+      "!ecosystem/fixtures/repository-index/expected.json",
       "!ecosystem/projections/public.v1.json",
       "!contracts/fixtures/radar-engine-v2",
       "!docs/reviews/**/evidence",
