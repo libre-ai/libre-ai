@@ -265,3 +265,68 @@ describe("fulfilled flows", () => {
     ]);
   });
 });
+
+describe("restriction ground intake (plumbing only, still refused)", () => {
+  test("restriction without a ground is 400 request_invalid", async () => {
+    const handler = makeHandler("owner");
+    const response = await handler(
+      post({ rightType: "restriction", subjectIdentifier: "owner-alpha", tenantId: TENANT_A }),
+    );
+    expect(response.status).toBe(400);
+    const body = (await response.json()) as { data: null; meta: { refusal: string } };
+    expect(body.meta.refusal).toBe("sessions.rgpd.request_invalid");
+  });
+
+  test("restriction with an invalid ground value is 400 request_invalid", async () => {
+    const handler = makeHandler("owner");
+    const response = await handler(
+      post({
+        rightType: "restriction",
+        subjectIdentifier: "owner-alpha",
+        tenantId: TENANT_A,
+        ground: "not-a-real-ground",
+      }),
+    );
+    expect(response.status).toBe(400);
+    const body = (await response.json()) as { data: null; meta: { refusal: string } };
+    expect(body.meta.refusal).toBe("sessions.rgpd.request_invalid");
+  });
+
+  test("a non-restriction body carrying a ground is 400 request_invalid", async () => {
+    const handler = makeHandler("owner");
+    const response = await handler(
+      post({
+        rightType: "access",
+        subjectIdentifier: "owner-alpha",
+        tenantId: TENANT_A,
+        ground: "accuracy-contested",
+      }),
+    );
+    expect(response.status).toBe(400);
+    const body = (await response.json()) as { data: null; meta: { refusal: string } };
+    expect(body.meta.refusal).toBe("sessions.rgpd.request_invalid");
+  });
+
+  test("restriction with a valid ground still refuses sessions.rgpd.not_implemented", async () => {
+    const handler = makeHandler("owner");
+    const response = await handler(
+      post({
+        rightType: "restriction",
+        subjectIdentifier: "owner-alpha",
+        tenantId: TENANT_A,
+        ground: "accuracy-contested",
+      }),
+    );
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      data: { request: { requestId: string; status: string } };
+      meta: { refusal: string };
+    };
+    expect(body.meta.refusal).toBe("sessions.rgpd.not_implemented");
+    const audit = await auditRows(body.data.request.requestId);
+    expect(audit.rows).toEqual([
+      { status: "received", detail: null, receipt_id: null },
+      { status: "refused", detail: "sessions.rgpd.not_implemented", receipt_id: null },
+    ]);
+  });
+});

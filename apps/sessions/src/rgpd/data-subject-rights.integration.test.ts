@@ -277,7 +277,9 @@ describe("portability, deferred rights and categories", () => {
   test("restriction refuses sessions.rgpd.not_implemented (deferred)", async () => {
     const port = makePort();
     const digest = await deriveSubjectDigest(TENANT_B, "member-alice");
-    expect(await port.handleRestrictionRequest(TENANT_B, digest)).toMatchObject({
+    expect(
+      await port.handleRestrictionRequest(TENANT_B, digest, "accuracy-contested"),
+    ).toMatchObject({
       status: "refused",
       refusal: "sessions.rgpd.not_implemented",
     });

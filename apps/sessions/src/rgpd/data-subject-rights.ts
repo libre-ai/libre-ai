@@ -270,9 +270,15 @@ export function createSessionsDataSubjectRights(deps: SessionsRgpdDeps): DataSub
       }
     },
 
-    async handleRestrictionRequest(): Promise<RestrictionRequestResult> {
+    async handleRestrictionRequest(
+      _tenantId,
+      _subjectDigest,
+      _ground,
+    ): Promise<RestrictionRequestResult> {
       // Deferred (README, design §6): restriction needs a flag store and a
-      // read-path contract of its own; refusing typed beats pretending.
+      // read-path contract of its own; refusing typed beats pretending. The
+      // ground now types through the port (WP-G3-S01) but storage and
+      // fulfillment are the next increment.
       return {
         status: "refused",
         requestId: deps.newRequestId(),
