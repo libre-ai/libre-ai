@@ -91,6 +91,9 @@ function createInMemoryAdopter(): {
       ground,
     ): Promise<RestrictionRequestResult> {
       const requestId = nextRequestId();
+      if (erased.has(subjectDigest)) {
+        return { status: "refused", requestId, refusal: "test-product.rgpd.subject_erased" };
+      }
       if (restricted.has(subjectDigest)) {
         return { status: "refused", requestId, refusal: "test-product.rgpd.already_restricted" };
       }
@@ -190,6 +193,19 @@ describe("DataSubjectRightsPort contract", () => {
       status: "refused",
       refusal: "test-product.rgpd.subject_unknown",
     });
+  });
+
+  test("restriction: an erased subject refuses subject_erased", async () => {
+    const { port, seed } = createInMemoryAdopter();
+    seed("member-alice", ["row-1"]);
+    const digest = (await port.verifySubject(TENANT, "member-alice")) as string;
+    await port.handleErasureRequest(TENANT, digest);
+    expect(await port.handleRestrictionRequest(TENANT, digest, "accuracy-contested")).toMatchObject(
+      {
+        status: "refused",
+        refusal: "test-product.rgpd.subject_erased",
+      },
+    );
   });
 
   test("restriction: first request fulfills and echoes the ground", async () => {

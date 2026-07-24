@@ -195,10 +195,10 @@ describe("tenant isolation and append-only floor", () => {
       inTenant(TENANT_A, (tx) =>
         tx.query("UPDATE session_restricted_subjects SET state = 'lifted'"),
       ),
-    ).rejects.toThrow();
+    ).rejects.toThrow(/permission denied/);
     await expect(
       inTenant(TENANT_A, (tx) => tx.query("DELETE FROM session_restricted_subjects")),
-    ).rejects.toThrow();
+    ).rejects.toThrow(/permission denied/);
   });
 
   test("the ground-iff-restricted CHECK rejects a restricted row without a ground", async () => {

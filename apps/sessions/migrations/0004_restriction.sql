@@ -1,5 +1,5 @@
 -- Sessions Art. 18 restriction store (WP-G3-S01; restriction increment design
--- §5). A third per-context, tenant-scoped, append-only evidence table, owned
+-- §3 (Option A)/§4). A third per-context, tenant-scoped, append-only evidence table, owned
 -- entirely inside the Sessions bounded context — no cross-context table, same
 -- hard rule as session_deleted_subjects / session_subject_audit (0002_rgpd.sql).
 --
