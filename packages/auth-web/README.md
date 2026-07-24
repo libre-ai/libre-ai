@@ -57,3 +57,9 @@ stays an owner-gated external action; see
 `docs/transformation/WAVE1-PUBLICATION-RUNBOOK.md`). **Bun-first package:** it
 ships TypeScript source (no dist build) — consumers need a TS-aware toolchain
 (bun natively; vite/esbuild-based bundlers otherwise).
+
+**License — EUPL-1.2 (reciprocal).** Unlike the Apache-2.0 satellites, this
+package is copyleft (ADR-0004: the EUPL protects first-party network runtimes).
+A derivative work distributed to third parties must be released under the
+EUPL-1.2 or a compatible licence; internal use imposes no such obligation. See
+the bundled `LICENSE`.
