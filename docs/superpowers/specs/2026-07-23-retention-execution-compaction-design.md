@@ -1,7 +1,14 @@
 # Retention execution and physical compaction: design for the missing half of deletion
 
 **Date:** 2026-07-23 (v2 — reworked after adversarial review: the compaction-granularity decision comes FIRST, and the role-model security property is restated as what is actually verifiable)
-**Status:** design (ready for owner decision — contains a security decision on the append-only floor)
+**Status:** ACCEPTED — owner arbitrage 2026-07-24: all five decision points
+approved as recommended (§7: granularity G-A session-lifecycle; erasure-
+compaction latency accepted **with a named vigilance** — decision 2 is
+re-evaluated when Sessions carries real load, and a per-event ceiling
+would reopen G-C; age column `recorded_at`; role model Option A with its
+honest property; v1 owner-run CLI without Biscuit until G4). Execution
+order: AFTER the restriction increment (this sweep's §5 exclusion reads
+`session_restricted_subjects`).
 **Scope:** the owner-scoped retention job of DATA-LIFECYCLE §Retention execution, and the physical compaction that `deletion.deferred-compaction` receipts (#229) promise
 **Depends on:** rgpd-kit first increment (#226) + follow-ups (#229); WP-G2-D01 assets
 **Cross-invariant:** binds the Sessions restriction design (same date, v2 §5) — a restricted subject is NEVER swept.

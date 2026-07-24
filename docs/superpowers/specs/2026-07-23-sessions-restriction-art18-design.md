@@ -1,7 +1,12 @@
 # Sessions restriction (Art. 18): design for the deferred right
 
 **Date:** 2026-07-23 (v2 — adversarial review findings integrated)
-**Status:** design (ready for owner decision)
+**Status:** ACCEPTED — owner arbitrage 2026-07-24: all five decision points
+approved as recommended (§7: Option A `entry_seq`; `ground` through the
+port as a named breaking change; lift via the `delete` operation, no
+datalog amendment in v1; notice v1 = owner attestation in audit; Art. 19
+recipients registry binds the future export increment). Execution order:
+this increment FIRST, then retention (its §5 exclusion reads this table).
 **Scope:** the one data-subject right rgpd-kit's first adopter still refuses (`sessions.rgpd.not_implemented`)
 **Depends on:** rgpd-kit first increment (#226) + follow-ups (#229)
 **Cross-invariant:** binds the retention/compaction design (same date, v2 §5) — a restricted subject is NEVER swept.
