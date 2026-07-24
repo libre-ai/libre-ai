@@ -55,6 +55,11 @@ jobs:
     # The owner-created environment gates this job: it holds NPM_TOKEN and can
     # require a manual approval before the job starts.
     environment: npm-publish
+    # id-token: write mints the OIDC token npm needs to attach a provenance
+    # attestation; scoped to this job only, contents stays read.
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Install archived Bun toolchain
@@ -66,12 +71,26 @@ jobs:
           echo "$BUN_ARCHIVE_SHA256  $RUNNER_TEMP/bun.zip" | sha256sum --check --strict
           unzip -q "$RUNNER_TEMP/bun.zip" -d "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/bun-linux-x64" >> "$GITHUB_PATH"
+      # npm CLI is the battle-tested auth + provenance path; setup-node writes
+      # the registry .npmrc and provides npm >= 9.5 (required for --provenance).
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
       - run: bun install --frozen-lockfile
       - name: Publish the four satellites in dependency order
         env:
-          NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           for package in packages/contracts packages/web-platform packages/ui packages/auth-web; do
             echo "Publishing $package"
-            (cd "$package" && bun publish --access public)
+            # A satellite that ships a compiled dist (only @libre-ai/ui today)
+            # declares a build script; build it just-in-time before packing. A
+            # build failure aborts the job (run steps use bash -eo pipefail).
+            if [ "$package" = "packages/ui" ]; then
+              bun run --cwd "$package" build
+            fi
+            packdir="$(mktemp -d "$RUNNER_TEMP/pack.XXXXXX")"
+            ( cd "$package" && bun pm pack --destination "$packdir" --quiet )
+            npm publish "$packdir"/*.tgz --access public --provenance
           done

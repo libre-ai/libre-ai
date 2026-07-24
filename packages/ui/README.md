@@ -40,6 +40,10 @@ reduced-motion, security headers) is exercised by the reference chain.
 reserved (owner, 2026-07-22) and the `private` guard is lifted; publication is
 the owner-run `Release satellites` workflow (LEXICON §7.4 — the release itself
 stays an owner-gated external action; see
-`docs/transformation/WAVE1-PUBLICATION-RUNBOOK.md`). **Bun-first package:** it
-ships TypeScript source (no dist build) — consumers need a TS-aware toolchain
-(bun natively; vite/esbuild-based bundlers otherwise).
+`docs/transformation/WAVE1-PUBLICATION-RUNBOOK.md`). **Dual runtime:** the
+package ships a compiled `dist/` (ESM, React automatic runtime, `react`/
+`react-dom`/`react-aria-components` external) so Node, Vite and Next consumers
+resolve real JavaScript with no extra toolchain; Bun keeps running the
+TypeScript source directly (the `bun` export condition points at `src/`), and
+types resolve from the shipped source. The `dist/` is a release-time artifact
+(built during the publish workflow, never committed).
