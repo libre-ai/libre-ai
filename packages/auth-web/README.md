@@ -60,6 +60,10 @@ ships TypeScript source (no dist build) — consumers need a TS-aware toolchain
 
 **License — EUPL-1.2 (reciprocal).** Unlike the Apache-2.0 satellites, this
 package is copyleft (ADR-0004: the EUPL protects first-party network runtimes).
-A derivative work distributed to third parties must be released under the
-EUPL-1.2 or a compatible licence; internal use imposes no such obligation. See
-the bundled `LICENSE`.
+Distributing a derivative work to third parties — including operating a modified
+version as a network service for them (the EUPL treats that communication as
+distribution) — obliges you to release the source under the EUPL-1.2. A
+compatible copyleft licence (art. 5's listed set: GPL/AGPL/MPL…) is only an
+option when the derivative combines this code with a work already under that
+licence. Purely internal use imposes no such obligation. The bundled `LICENSE`
+governs.
