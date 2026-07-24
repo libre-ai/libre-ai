@@ -8,6 +8,7 @@
     "src",
     "!src/**/*.test.ts",
     "!src/**/*.test.tsx",
+    "dist",
     "README.md",
     "LICENSE"
   ],
@@ -32,12 +33,24 @@
     "bun": ">=1.4.0"
   },
   "exports": {
-    ".": "./src/index.ts",
+    ".": {
+      "types": "./src/index.ts",
+      "bun": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
     "./styles.css": "./src/styles.css",
-    "./tailwind": "./src/tailwind.ts"
+    "./tailwind": {
+      "types": "./src/tailwind.ts",
+      "bun": "./src/tailwind.ts",
+      "import": "./dist/tailwind.js",
+      "default": "./dist/tailwind.js"
+    }
   },
   "scripts": {
     "check:bun": "bun ../../tools/quality/check-bun-minimum.ts",
+    "prebuild": "bun run check:bun",
+    "build": "bun build src/index.ts src/tailwind.ts --outdir dist --target browser --format esm --production --external react --external react-dom --external react-aria-components --external 'react-aria-components/*' --external tailwindcss",
     "pretest": "bun run check:bun",
     "test": "bun test"
   },
