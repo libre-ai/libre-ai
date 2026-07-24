@@ -193,7 +193,9 @@ tombstone/audit tables, its own deletion receipts, no cross-context table.
   `session_deleted_subjects` (`0005_retention_grants.sql`) so the phase-2
   re-check and receipt collection can run under the retention barrier — no write
   grant, so both evidence tables stay unsweepable by grant. The sweep runs from
-  an owner-run CLI (next task); no scheduler until G4.
+  the owner-run CLI:
+  `bun tools/ops/run-retention.ts --pgdata <dir> --tenant <ten_...>`; no
+  scheduler until G4.
 - **Erasure semantics** — `session_events` is append-only, so Art. 17 removes
   **logical access in the accepted transaction**: `executeActiveDeletion`
   writes the `session_deleted_subjects` tombstone and the deletion receipt
