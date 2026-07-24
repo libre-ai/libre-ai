@@ -266,7 +266,7 @@ describe("fulfilled flows", () => {
   });
 });
 
-describe("restriction ground intake (plumbing only, still refused)", () => {
+describe("restriction ground intake and fulfillment", () => {
   test("restriction without a ground is 400 request_invalid", async () => {
     const handler = makeHandler("owner");
     const response = await handler(
@@ -307,7 +307,7 @@ describe("restriction ground intake (plumbing only, still refused)", () => {
     expect(body.meta.refusal).toBe("sessions.rgpd.request_invalid");
   });
 
-  test("restriction with a valid ground still refuses sessions.rgpd.not_implemented", async () => {
+  test("restriction with a valid ground restricts and returns fulfilled with a full audit trail", async () => {
     const handler = makeHandler("owner");
     const response = await handler(
       post({
@@ -319,14 +319,20 @@ describe("restriction ground intake (plumbing only, still refused)", () => {
     );
     expect(response.status).toBe(200);
     const body = (await response.json()) as {
-      data: { request: { requestId: string; status: string } };
-      meta: { refusal: string };
+      data: {
+        request: { requestId: string; status: string };
+        result: { status: string; ground: string; affectedRecords: number };
+      };
+      meta: Record<string, never>;
     };
-    expect(body.meta.refusal).toBe("sessions.rgpd.not_implemented");
+    expect(body.data.request.status).toBe("fulfilled");
+    expect(body.data.result.status).toBe("fulfilled");
+    // The Art. 18(1) ground rides back on the fulfillment, unchanged.
+    expect(body.data.result.ground).toBe("accuracy-contested");
     const audit = await auditRows(body.data.request.requestId);
     expect(audit.rows).toEqual([
+      { status: "fulfilled", detail: null, receipt_id: null },
       { status: "received", detail: null, receipt_id: null },
-      { status: "refused", detail: "sessions.rgpd.not_implemented", receipt_id: null },
     ]);
   });
 });

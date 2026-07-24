@@ -125,12 +125,19 @@ Sessions is the first adopter of `@libre-ai/rgpd-kit`
 tombstone/audit tables, its own deletion receipts, no cross-context table.
 
 - **Port implementation** — `src/rgpd/data-subject-rights.ts` implements
-  `DataSubjectRightsPort`: access (Art. 15), erasure (Art. 17) and
-  portability (Art. 20, `application/json` export) fulfilled; restriction
-  refuses `sessions.rgpd.not_implemented` (deferred, typed). All surfaces
-  past verification speak opaque tenant-scoped sha-256 digests — never
-  plaintext identifiers; subjects resolve through the indexed `actor_digest`
-  column computed at append time (`0003_actor_digest.sql`).
+  `DataSubjectRightsPort`: access (Art. 15), erasure (Art. 17), portability
+  (Art. 20, `application/json` export) and restriction (Art. 18) fulfilled.
+  Restriction pauses processing while keeping the data: it records the
+  subject-supplied Art. 18(1) ground on an append-only state row in
+  `session_restricted_subjects` (`0004_restriction.sql`, current state = the
+  highest `entry_seq`), refusing a subject that is erased, unknown or already
+  restricted. The two-step Art. 18(3) lift (`src/rgpd/restriction.ts`,
+  `requestLift` → `confirmLift`) is an owner-attested notice → attestation
+  pair joined by a synthetic `lift_<entry_seq>` id, and pausing processing
+  never blocks the subject's own Art. 15/17/20 rights. All surfaces past
+  verification speak opaque tenant-scoped sha-256 digests — never plaintext
+  identifiers; subjects resolve through the indexed `actor_digest` column
+  computed at append time (`0003_actor_digest.sql`).
 - **Erasure semantics** — `session_events` is append-only, so Art. 17 removes
   **logical access in the accepted transaction**: `executeActiveDeletion`
   writes the `session_deleted_subjects` tombstone and the deletion receipt
@@ -145,8 +152,10 @@ tombstone/audit tables, its own deletion receipts, no cross-context table.
   append-only stores carry a dedicated outcome/reason code in
   `executeActiveDeletion`.
 - **Audit trail** — `session_subject_audit` (append-only, FORCE RLS) records
-  `received` and the terminal `fulfilled`/`refused` state per request;
-  `detail` carries refusal codes only.
+  `received` and the terminal `fulfilled`/`refused` state per request, plus
+  the Art. 18(3) lift's `in-progress`/`fulfilled` notice pair; `detail`
+  carries reason codes only (refusal codes and the lift-notice codes
+  `sessions.rgpd.notice_required`/`notice_attested`), never free text.
 - **Request handler** — `src/rgpd/request-handler.ts` is an exported factory,
   **not mounted** on the cockpit routes: the runtime boundary above stays
   locked until `WP-G3-S01`'s `sessions-authz-review` human gate. Authorization
