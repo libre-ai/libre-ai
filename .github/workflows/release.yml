@@ -4,9 +4,10 @@
 # the `npm-publish` GitHub environment — created by the owner, holding the
 # NPM_TOKEN secret (granular token scoped to the @libre-ai packages) — so no
 # autonomous run can publish. Publication order follows the dependency closure:
-# contracts -> web-platform -> ui -> auth-web. bun publish materializes
-# workspace:/catalog: refs at pack time; the preflight proves it before any
-# publish and fails closed otherwise.
+# contracts -> web-platform -> ui -> auth-web. Each package is packed with
+# `bun pm pack` (which materializes workspace:/catalog: refs at pack time) and
+# published with `npm publish <tgz> --provenance`; the preflight proves the
+# pack before any publish and fails closed otherwise.
 name: Release satellites
 
 on:

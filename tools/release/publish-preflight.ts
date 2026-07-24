@@ -181,9 +181,14 @@ async function packAndInspect(
   packageDirectory: string,
 ): Promise<{ manifest: TarballManifest; issues: string[] }> {
   const packagePath = resolve(repositoryRoot, packageDirectory);
-  const workDirectory = await mkdtemp(join(tmpdir(), "publish-preflight-"));
+  // Build before creating the temp dir, so a build failure leaks nothing; clean
+  // any partial dist the failed build may have left.
   const built = await buildIfNeeded(packagePath);
-  if (built.issues.length > 0) return { manifest: {}, issues: built.issues };
+  if (built.issues.length > 0) {
+    await rm(join(packagePath, "dist"), { recursive: true, force: true });
+    return { manifest: {}, issues: built.issues };
+  }
+  const workDirectory = await mkdtemp(join(tmpdir(), "publish-preflight-"));
   try {
     const packed = Bun.spawnSync(["bun", "pm", "pack", "--destination", workDirectory, "--quiet"], {
       cwd: packagePath,
