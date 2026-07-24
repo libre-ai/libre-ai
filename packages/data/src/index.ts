@@ -30,6 +30,7 @@ export {
   type UpsertRetentionRuleInput,
   upsertRetentionRule,
 } from "./adapters/retention-rules-store";
+export { withTenantRetentionTransaction } from "./adapters/retention-transaction";
 export {
   clearPooledSession,
   withTenantDbTransaction,
@@ -63,7 +64,14 @@ export {
   NotConfigurableError,
   type RetentionRule,
   resolveConfiguredRetention,
+  retentionDurationDays,
 } from "./retention-bounds";
+export {
+  type CompactionSpec,
+  type RetentionEvidenceReport,
+  RetentionWindowUnresolvedError,
+  runRetentionSweep,
+} from "./retention-sweep";
 export {
   MissingTenantContextError,
   requireTenantContext,
