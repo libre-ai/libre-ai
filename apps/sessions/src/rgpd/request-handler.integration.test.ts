@@ -173,6 +173,28 @@ describe("authorization is deny-by-default before any I/O", () => {
     );
     expect(tombstones.rows).toHaveLength(0);
   });
+
+  test("a facilitator requesting restriction is 403 (restriction maps to delete, owner-only)", async () => {
+    // Restriction is OPERATION_BY_RIGHT-mapped to "delete": the facilitator
+    // role holds "export" but not "delete" (ROLE_OPERATIONS), same
+    // deny-by-default gate as erasure above, before any I/O.
+    const handler = makeHandler("facilitator");
+    const response = await handler(
+      post({
+        rightType: "restriction",
+        subjectIdentifier: "member-alice",
+        tenantId: TENANT_A,
+        ground: "accuracy-contested",
+      }),
+    );
+    expect(response.status).toBe(403);
+    const body = (await response.json()) as { data: null; meta: { refusal: string } };
+    expect(body.meta.refusal).toBe("sessions.membership_required");
+    const audit = await withTenantDbTransaction(tdb.db, TENANT_A, (tx) =>
+      tx.query("SELECT request_id FROM session_subject_audit"),
+    );
+    expect(audit.rows).toHaveLength(0);
+  });
 });
 
 describe("verification", () => {
@@ -334,5 +356,79 @@ describe("restriction ground intake and fulfillment", () => {
       { status: "fulfilled", detail: null, receipt_id: null },
       { status: "received", detail: null, receipt_id: null },
     ]);
+  });
+
+  test("restricting an already-restricted subject is refused, with a received+refused audit trail", async () => {
+    // owner-alpha is restricted by the test above (state = highest entry_seq
+    // in session_restricted_subjects) — a second restriction request through
+    // the SAME handler hits the ladder's already_restricted rung.
+    const handler = makeHandler("owner");
+    const response = await handler(
+      post({
+        rightType: "restriction",
+        subjectIdentifier: "owner-alpha",
+        tenantId: TENANT_A,
+        ground: "objection-pending",
+      }),
+    );
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      data: { request: { requestId: string; status: string } };
+      meta: { refusal: string };
+    };
+    expect(body.meta.refusal).toBe("sessions.rgpd.already_restricted");
+    expect(body.data.request.status).toBe("refused");
+    const audit = await auditRows(body.data.request.requestId);
+    expect(audit.rows).toEqual([
+      { status: "received", detail: null, receipt_id: null },
+      { status: "refused", detail: "sessions.rgpd.already_restricted", receipt_id: null },
+    ]);
+  });
+});
+
+describe("§6.3: restriction pauses disclosure, never the subject's own rights", () => {
+  // owner-alpha is still restricted here (the describe block above leaves it
+  // so). Art. 18(2): the subject's own access (Art. 15), portability
+  // (Art. 20) and erasure (Art. 17) requests are NOT gated by isRestricted —
+  // only serving contributions to OTHERS, exports, synthesis and retention
+  // sweeps pause. Exercised end to end through the SAME handler used for the
+  // restriction request above, not just at the port level.
+  test("access is still fulfilled for a restricted subject", async () => {
+    const handler = makeHandler("owner");
+    const response = await handler(
+      post({ rightType: "access", subjectIdentifier: "owner-alpha", tenantId: TENANT_A }),
+    );
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      data: { result: { status: string } };
+      meta: Record<string, never>;
+    };
+    expect(body.data.result.status).toBe("fulfilled");
+  });
+
+  test("portability is still fulfilled for a restricted subject", async () => {
+    const handler = makeHandler("owner");
+    const response = await handler(
+      post({ rightType: "portability", subjectIdentifier: "owner-alpha", tenantId: TENANT_A }),
+    );
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      data: { result: { status: string } };
+      meta: Record<string, never>;
+    };
+    expect(body.data.result.status).toBe("fulfilled");
+  });
+
+  test("erasure is still fulfilled for a restricted subject (erasure supersedes restriction)", async () => {
+    const handler = makeHandler("owner");
+    const response = await handler(
+      post({ rightType: "erasure", subjectIdentifier: "owner-alpha", tenantId: TENANT_A }),
+    );
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      data: { result: { status: string; deletionReceiptId: string } };
+    };
+    expect(body.data.result.status).toBe("fulfilled");
+    expect(body.data.result.deletionReceiptId).toBeTruthy();
   });
 });
