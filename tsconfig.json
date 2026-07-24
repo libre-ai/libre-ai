@@ -20,9 +20,11 @@
   "include": [
     "apps/**/*.ts",
     "apps/**/*.tsx",
+    "ecosystem/**/*.ts",
     "packages/**/*.ts",
     "packages/**/*.tsx",
     "tools/**/*.ts",
+    "verification/**/*.ts",
     "distribution/templates/**/*.ts",
     "distribution/templates/**/*.tsx"
   ],
