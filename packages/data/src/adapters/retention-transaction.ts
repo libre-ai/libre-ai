@@ -20,8 +20,8 @@ import type { SqlExecutor } from "./executor";
  * passes through here, and nowhere else in the repo issues
  * `SET LOCAL ROLE libre_ai_retention`. The separation from the app role is
  * honest, not a SQL impossibility — SET ROLE is evaluated against the session
- * user (in PGlite the session is superuser; in production the connecting owner
- * is a member of the role). The structural guarantees are the role's grants,
+ * user (in PGlite the session is superuser; on the deployed database — none
+ * exists until G4 — the connecting owner is a member of the role). The structural guarantees are the role's grants,
  * the `pg_roles` probe (NOLOGIN/NOSUPERUSER/NOBYPASSRLS), FORCE RLS (policies
  * bind this role too), and — at G4 — the Biscuit attenuated token. Keep this
  * the single greppable seam.
