@@ -20,6 +20,7 @@
   "include": [
     "apps/**/*.ts",
     "apps/**/*.tsx",
+    "ecosystem/**/*.ts",
     "packages/**/*.ts",
     "packages/**/*.tsx",
     "tools/**/*.ts",
