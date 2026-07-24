@@ -135,14 +135,19 @@ tombstone/audit tables, its own deletion receipts, no cross-context table.
   verification speak opaque tenant-scoped sha-256 digests — never plaintext
   identifiers; subjects resolve through the indexed `actor_digest` column
   computed at append time (`0003_actor_digest.sql`).
-- **The restriction invariant** — any surface that discloses, transmits,
-  derives from or destroys the subject's contributions MUST consult
-  `isRestricted` (`src/rgpd/restriction.ts`) first — not just export and
-  provider synthesis. The ONE named exception is the state fold
-  (`loadSessionState` + the domain reducer): rebuilding `SessionState` from
-  the event log is storage-integrity mechanics, it discloses nothing by
-  itself, and carving it out is an explicit, reviewable stance rather than a
-  silent gap.
+- **The restriction invariant** — this is the binding read-path contract, not
+  a description of wiring that exists today: any surface that discloses,
+  transmits, derives from or destroys the subject's contributions MUST
+  consult `isRestricted` (`src/rgpd/restriction.ts`) first — not just export
+  and provider synthesis. That is why `isRestricted` is exported: v1 has no
+  participant-facing transport that serves contributions to other
+  participants, no export pipeline, and no synthesis/provider surface yet, so
+  the invariant currently binds only their FUTURE implementations; it is
+  consulted today only by the restriction flow itself. The ONE named
+  exception, decided in the design, is the state fold (`loadSessionState` +
+  the domain reducer): rebuilding `SessionState` from the event log is
+  storage-integrity mechanics, it discloses nothing by itself, and carving it
+  out is an explicit, reviewable stance rather than a silent gap.
 - **What Art. 18(2) actually pauses** — restriction is neither erasure nor a
   read block on the subject: storage, the subject's own access/portability/
   erasure (Art. 15/17/20), and the subject's new contributions all stay
@@ -165,12 +170,16 @@ tombstone/audit tables, its own deletion receipts, no cross-context table.
   invariant BINDS the future export increment: it must record recipients per
   disclosure, so that a later restriction/erasure/rectification can trigger
   per-recipient notification, and the subject can ask for the list.
-- **Cross-invariant with retention** — a subject in `restricted` or
-  `lift-pending` state is NEVER swept by the retention/compaction path
-  (`packages/data`'s expired-record selection). A restricted-then-erased
-  subject remains compactable: the erasure request IS the subject's own
-  Art. 18(2) consent to that one processing (deletion), so it supersedes the
-  restriction on everything else.
+- **Cross-invariant with retention** — the rule the companion
+  retention/compaction increment must implement and acceptance-test: a
+  subject in `restricted` or `lift-pending` state is NEVER swept by the
+  retention/compaction path (`packages/data`'s expired-record selection); the
+  sweep's exclusion reads `session_restricted_subjects`. No sweep exists in
+  `packages/data` yet, so nothing enforces this today — it binds that
+  increment's future implementation. A restricted-then-erased subject remains
+  compactable: the erasure request IS the subject's own Art. 18(2) consent to
+  that one processing (deletion), so it supersedes the restriction on
+  everything else.
 - **Erasure semantics** — `session_events` is append-only, so Art. 17 removes
   **logical access in the accepted transaction**: `executeActiveDeletion`
   writes the `session_deleted_subjects` tombstone and the deletion receipt

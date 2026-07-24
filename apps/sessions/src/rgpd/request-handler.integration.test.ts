@@ -393,6 +393,11 @@ describe("§6.3: restriction pauses disclosure, never the subject's own rights",
   // only serving contributions to OTHERS, exports, synthesis and retention
   // sweeps pause. Exercised end to end through the SAME handler used for the
   // restriction request above, not just at the port level.
+  //
+  // Ordering dependency: the last test below erases owner-alpha, the shared
+  // fixture actor, and erasure is irreversible. This MUST stay the LAST
+  // describe block in the file — any new, non-destructive test belongs
+  // ABOVE it, never appended after.
   test("access is still fulfilled for a restricted subject", async () => {
     const handler = makeHandler("owner");
     const response = await handler(
