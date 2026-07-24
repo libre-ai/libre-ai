@@ -290,6 +290,40 @@ describe("§6.3 — G-A window sweep", () => {
   });
 });
 
+describe("§7.3 — recorded_at is the sole age column", () => {
+  test("a FRESH occurred_at cannot keep an OLD-recorded_at session alive: the sweep deletes it", async () => {
+    // Every other fixture in this file ties occurred_at to the same injected
+    // recordedAt (buildEvent), so a regression that swapped the sweep's age
+    // column to the client-forgeable occurred_at would pass the whole suite.
+    // The log is append-only (no UPDATE can retrofit a discriminating row
+    // onto a normal seedSession() stream), so seed the raw row directly, the
+    // way the migration test does (migration.integration.test.ts) via the
+    // superuser oracle, matching 0001/0003's columns exactly. occurred_at and
+    // recorded_at sit at OPPOSITE ends of the window: occurred_at = FRESH
+    // (inside it) but recorded_at = OLD (past it). Sequence 1 keeps the
+    // stream causally valid (session-created, the only legal opener).
+    const sessionId = "urn:libre-ai:session:s-age-column";
+    await tdb.db.query(
+      `INSERT INTO session_events
+         (tenant_id, session_id, sequence, event_id, revision, type,
+          actor_kind, actor_id, actor_digest, occurred_at, data, recorded_at)
+       VALUES ($1, $2, 1, 'urn:libre-ai:event:e-age-column', 0,
+               'session-created', 'system', 'scheduler', NULL, $3, '{}', $4)`,
+      [TENANT_A, sessionId, FRESH, OLD],
+    );
+
+    const report = await sweep(TENANT_A);
+    expect(report.sessionsSelected).toBe(1);
+    expect(report.sessionsDeleted).toBe(1);
+    expect(report.eventsDeleted).toBe(1);
+
+    // A regression measuring age on occurred_at would have kept this session
+    // alive (occurred_at is FRESH); recorded_at (server-set) is OLD, so the
+    // sweep must physically delete it.
+    expect(await eventCount(TENANT_A, sessionId)).toBe(0);
+  });
+});
+
 describe("§6.4 — erasure compaction (deferred-compaction evidenced)", () => {
   test("once the containing session expires it is swept; tombstone/audit/receipt REMAIN and the report names the receipt", async () => {
     const port = makePort();

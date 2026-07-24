@@ -181,8 +181,14 @@ tombstone/audit tables, its own deletion receipts, no cross-context table.
   or `lift-pending` state is NEVER swept: the sweep excludes the whole session,
   first in the advisory selection and again in an in-transaction phase-2
   re-check (the guard against a restriction or a fresh event landing between the
-  two phases). A restricted-then-erased subject remains compactable: the erasure
-  request IS the subject's own Art. 18(2) consent to that one processing
+  two phases) — named deferral, not silent: that re-check holds only absent a
+  concurrent append under a real multi-connection Postgres (unreachable in v1's
+  single-connection PGlite/owner-run CLI, no server write path wired yet); the
+  G4 closure plan is a single-statement `DELETE` with the predicates embedded
+  plus an advisory lock shared with the append path, or `SERIALIZABLE` with
+  retry (see the comment at `compactUnit`'s guard). A restricted-then-erased
+  subject remains compactable: the erasure request IS the subject's own Art.
+  18(2) consent to that one processing
   (deletion), so it supersedes the restriction on everything else. Erasure is
   evidenced physically through the sweep's report `compactedReceiptIds` (the
   deferred-compaction receipts of tombstoned subjects whose rows a compaction

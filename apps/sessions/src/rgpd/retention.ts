@@ -131,6 +131,23 @@ export const sessionsCompactionSpec: CompactionSpec = {
     // A single read is the authoritative guard: expiry (aggregate) AND the
     // restriction exclusion (scalar EXISTS). An empty stream (already
     // compacted) yields expired = NULL ⇒ not deletable, handled below.
+    //
+    // NAMED LIMIT (review Important #1, deferred, not silent): this guard
+    // holds only ABSENT a concurrent append landing between this SELECT and
+    // the DELETE below (or during the DELETE itself). Under v1 (PGlite,
+    // effectively one connection; the owner-run CLI is the only writer; no
+    // server write path is wired) that race is unreachable. Under READ
+    // COMMITTED on a real multi-connection Postgres it is not closed: an
+    // append committed in that window could still be deleted by the DELETE
+    // below, or — if the DELETE commits first — the append could land right
+    // after and be silently orphaned (a session row with no session-created
+    // predecessor). G4 closure plan (either replaces this two-statement
+    // re-check + DELETE): a single DELETE with the expiry/exclusion predicates
+    // embedded directly in its WHERE clause PLUS an advisory lock keyed on
+    // (tenant_id, session_id) shared with the append path (session-event-store
+    // appendEvent), or SERIALIZABLE isolation with retry on the append
+    // transaction. Until G4, the two-phase design here (advisory select, then
+    // this re-check) is the mitigation, not a proof of exclusion.
     const recheck = await tx.query<RecheckRow>(
       `WITH ${EXCLUDED_SUBJECTS_CTE}
        SELECT
