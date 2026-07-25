@@ -717,7 +717,7 @@
       "id": "WP-G3-H01",
       "phase": "G3",
       "name": "Agent harness — attested execution confinement",
-      "objective": "Realize the confinement boundary a worker cannot argue its way out of: profile resolution and digesting, filesystem canonicalization with symlink policy, bounded outputs with a fail-closed scan, and a signed attestation binding requested profile, effective controls, worker manifests and kernel capabilities. Local process confinement only; network, secrets and providers stay closed.",
+      "objective": "Realize the confinement boundary a worker cannot argue its way out of: profile resolution and digesting, filesystem canonicalization with symlink policy, bounded outputs with a fail-closed scan, and a signed attestation binding the requested and effective profile digests, the effective controls, the worker manifests, the sandbox engine manifest and the network posture. Local process confinement only; network, secrets and providers stay closed.",
       "owners": ["security", "platform"],
       "integrator": "security",
       "writePaths": ["crates/agent-harness/**"],

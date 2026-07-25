@@ -6,13 +6,16 @@
 //! read as. It holds no OS capability: filesystem enforcement and process
 //! spawning are later increments with their own reviews (ADR-0018 D2).
 //!
-//! **Formats come from the contract, not from this crate.** Field validation
-//! goes through the newtypes `libre-ai-contract-types` generates from the JSON
-//! Schema, whose regexes are the schema's own. An earlier version hand-wrote
-//! those checks and three reviews proved them divergent in both directions —
-//! accepting `APPLICATION/OCTET-STREAM` and `9999-99-99T99:99:99Z`, refusing
-//! `application/x_thing` and legitimate RFC 3339 offsets. Generating them away
-//! is also what keeps one implementation of the domain (AGENTS.md).
+//! **Formats come from the contract wherever the contract can generate them.**
+//! Every patterned field validates through the newtypes
+//! `libre-ai-contract-types` derives from the JSON Schema, whose regexes are the
+//! schema's own; an earlier version hand-wrote those checks and reviews proved
+//! them divergent in both directions. Three things typify does not project, and
+//! which are therefore transcribed here under [`check_binding`]: the collection
+//! bounds, the `const` on `schemaVersion` — stamped rather than accepted — and
+//! `format: date-time`, which has no newtype at all. That last one is the field
+//! every round of review has found a defect in; [`is_canonical_timestamp`]
+//! states exactly what it accepts and why.
 //!
 //! **The digest is computed over the contract document.** camelCase names,
 //! `schemaVersion` stamped, everything except the two fields the contract
@@ -134,7 +137,7 @@ pub struct AttestationInput {
     pub platform: Platform,
     pub effective_controls: Vec<String>,
     pub network_mode: NetworkMode,
-    pub generated_at: chrono::DateTime<chrono::Utc>,
+    pub generated_at: String,
     pub signing_key_id: String,
 }
 
@@ -157,7 +160,7 @@ struct CanonicalDocument<'a> {
     platform: &'a Platform,
     effective_controls: &'a [String],
     network_mode: &'a NetworkMode,
-    generated_at: &'a chrono::DateTime<chrono::Utc>,
+    generated_at: &'a str,
     signing_key_id: &'a str,
 }
 
@@ -335,6 +338,29 @@ impl VerifiedAttestation {
     }
 }
 
+/// Whether an instant is *already* in the one canonical form.
+///
+/// `SEMANTICS.md` is explicit for this contract: an implementation must reject
+/// non-canonical input before computing a digest, and must never parse and
+/// silently reserialize it. Normalising — which the previous version did by
+/// typing this field — made the digest a function of the parsed value instead of
+/// the bytes received: six valid spellings of one instant produced six contract
+/// digests but a single crate digest.
+///
+/// Rejecting instead keeps normalisation an identity on the accepted set, so the
+/// bytes received, hashed and emitted are the same. The four-digit year bound is
+/// the other half: `chrono` spans ±262143, `format: date-time` does not, and an
+/// instant eight thousand years out defeats any freshness window just as an
+/// impossible one would.
+fn is_canonical_timestamp(value: &str) -> bool {
+    let Ok(parsed) = value.parse::<chrono::DateTime<chrono::Utc>>() else {
+        return false;
+    };
+    use chrono::Datelike as _;
+    (1..=9999).contains(&parsed.year())
+        && value == parsed.to_rfc3339_opts(chrono::SecondsFormat::AutoSi, true)
+}
+
 /// Whether a value satisfies the contract type generated for its field.
 fn valid<T: FromStr>(value: &str) -> bool {
     value.parse::<T>().is_ok()
@@ -390,6 +416,7 @@ fn check_binding(input: &AttestationInput) -> Result<(), HarnessRefusal> {
         && bounded::<contract::LibreAiHarnessAttestationV1EffectiveControlsItem>(
             &input.effective_controls,
         )
+        && is_canonical_timestamp(&input.generated_at)
         && valid::<contract::LibreAiHarnessAttestationV1SigningKeyId>(&input.signing_key_id);
 
     if ok {
@@ -508,7 +535,7 @@ mod tests {
             platform: Platform::MacosAarch64,
             effective_controls: vec!["filesystem_mounts".to_owned()],
             network_mode: NetworkMode::None,
-            generated_at: "2026-07-25T10:00:00Z".parse().expect("a canonical instant"),
+            generated_at: "2026-07-25T10:00:00Z".to_owned(),
             signing_key_id: "harness_key_1".to_owned(),
         };
         let tampered = HarnessAttestation {

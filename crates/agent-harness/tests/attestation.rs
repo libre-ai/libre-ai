@@ -72,7 +72,7 @@ fn input() -> AttestationInput {
         platform: Platform::MacosAarch64,
         effective_controls: vec!["filesystem_mounts".to_owned()],
         network_mode: NetworkMode::None,
-        generated_at: "2026-07-25T10:00:00Z".parse().expect("canonical"),
+        generated_at: "2026-07-25T10:00:00Z".to_owned(),
         signing_key_id: "harness_key_1".to_owned(),
     }
 }
@@ -138,9 +138,7 @@ fn reproduces_the_locked_golden_vector() {
         platform: Platform::LinuxX8664,
         effective_controls: strings("effectiveControls"),
         network_mode: NetworkMode::PrivateGatewayOnly,
-        generated_at: text("generatedAt")
-            .parse()
-            .expect("the vector carries an instant"),
+        generated_at: text("generatedAt"),
         signing_key_id: text("signingKeyId"),
     };
 
@@ -457,7 +455,7 @@ fn digest_is_deterministic_and_covers_every_bound_field() {
         Box::new(|i| i.platform = Platform::LinuxX8664),
         Box::new(|i| i.effective_controls = vec!["process_isolation".to_owned()]),
         Box::new(|i| i.network_mode = NetworkMode::PrivateGatewayOnly),
-        Box::new(|i| i.generated_at = "2026-07-25T11:00:00Z".parse().expect("canonical")),
+        Box::new(|i| i.generated_at = "2026-07-25T11:00:00Z".to_owned()),
         Box::new(|i| i.signing_key_id = "harness_key_2".to_owned()),
     ];
     for mutate in mutations {
@@ -503,59 +501,85 @@ fn refusals_carry_stable_namespaced_codes() {
 }
 
 #[test]
-fn every_accepted_instant_round_trips_to_its_own_digest() {
-    // The regression the third review caught, turned into a gate. The emitted
-    // document must hash to the digest it carries, for EVERY instant the API
-    // accepts — not only for the `Z` form that every fixture in the repository
-    // happens to use, which is why the whole suite was blind to it.
-    let instants = [
+fn every_accepted_instant_round_trips_and_satisfies_the_schema() {
+    // The two checks are crossed on purpose. The previous version kept them
+    // orthogonal — one iterated over instants without validating the schema, the
+    // other validated the schema on a single instant — and the defect lived
+    // exactly at the intersection neither covered.
+    let registry = libre_ai_contract_types::ContractRegistry::embedded().expect("registry loads");
+    let canonical = [
         "2026-07-25T10:00:00Z",
-        "2026-07-25T12:00:00+02:00",
-        "2026-07-25T08:00:00-02:00",
-        "2026-07-25T10:00:00+00:00",
         "2026-07-25T10:00:00.123Z",
-        "2026-07-25T10:00:00.000Z",
-        "2026-07-25t10:00:00z",
+        "2026-07-25T10:00:00.123456789Z",
+        "0001-01-01T00:00:00Z",
+        "9999-12-31T23:59:59Z",
     ];
-    for text in instants {
+    for text in canonical {
         let mut candidate = input();
-        candidate.generated_at = text.parse().expect("RFC 3339 is accepted at the boundary");
-        let attestation = assemble_attestation(candidate, &StubSigner).expect("signs");
+        candidate.generated_at = text.to_owned();
+        let attestation = assemble_attestation(candidate, &StubSigner)
+            .unwrap_or_else(|_| panic!("a canonical instant is accepted: {text}"));
         let document = attestation.to_contract_document().expect("emits");
         let mut json = serde_json::to_value(&document).expect("serializes");
 
-        // An operator recomputes over the published document, minus the two
-        // fields the contract excludes from the digest.
+        let issues = registry
+            .validate("harness-attestation.v1.schema.json", &json)
+            .expect("schema is registered");
+        assert!(
+            issues.is_empty(),
+            "{text}: emitted document invalid: {issues:?}"
+        );
+
         let object = json.as_object_mut().expect("object");
         object.remove("attestationDigest");
         object.remove("signature");
-        let canonical = serde_jcs::to_string(&json).expect("canonicalizes");
-        let recomputed: String = <sha2::Sha256 as sha2::Digest>::digest(canonical.as_bytes())
+        let canonical_json = serde_jcs::to_string(&json).expect("canonicalizes");
+        let recomputed: String = <sha2::Sha256 as sha2::Digest>::digest(canonical_json.as_bytes())
             .iter()
             .map(|byte| format!("{byte:02x}"))
             .collect();
-
         assert_eq!(
             recomputed,
             attestation.attestation_digest(),
-            "an operator cannot reproduce the digest for {text}"
+            "{text}: an operator cannot reproduce the digest"
         );
     }
 }
 
 #[test]
-fn the_emitted_document_satisfies_the_locked_schema() {
-    // Checked against the canonical registry rather than by asserting key
-    // presence by hand: the generated projection is explicitly disposable, and
-    // runtime validation is what the contract calls authoritative.
-    let registry = libre_ai_contract_types::ContractRegistry::embedded().expect("registry loads");
-    let attestation = assemble_attestation(input(), &StubSigner).expect("signs");
-    let document = attestation.to_contract_document().expect("emits");
-    let json = serde_json::to_value(&document).expect("serializes");
-    let issues = registry
-        .validate("harness-attestation.v1.schema.json", &json)
-        .expect("the schema is registered");
-    assert!(issues.is_empty(), "emitted document is invalid: {issues:?}");
+fn refuses_every_non_canonical_instant() {
+    // SEMANTICS.md is explicit for this contract: reject non-canonical input
+    // before digesting, never parse and silently reserialize it. Normalising
+    // made the digest a function of the parsed value rather than the bytes
+    // received — six spellings of one instant, six contract digests, one crate
+    // digest. Each entry below was measured as accepted by the previous version.
+    let non_canonical = [
+        "2026-07-25T12:00:00+02:00", // offset, normalised away
+        "2026-07-25T08:00:00-02:00",
+        "2026-07-25T10:00:00+00:00",
+        "2026-07-25T10:00:00-00:00",
+        "2026-07-25T10:00:00.000Z",        // trailing zeros dropped
+        "2026-07-25t10:00:00z",            // lowercase
+        "2026-07-25 10:00:00Z",            // space separator: the tour-3 witness
+        "2026-07-25T10:00:00+0200",        // offset without colon
+        " 2026-07-25T10:00:00Z",           // leading space
+        "2026-07-25T10:00:00Z ",           // trailing space
+        "2026-7-25T10:00:00Z",             // unpadded month
+        "2026-07-25T10:00:00.1234567891Z", // beyond nanosecond, truncated
+        "+10000-01-01T00:00:00Z",          // chrono spans ±262143; the contract does not
+        "-0001-01-01T00:00:00Z",
+        "yesterday",
+        "9999-99-99T99:99:99Z",
+    ];
+    for text in non_canonical {
+        let mut candidate = input();
+        candidate.generated_at = text.to_owned();
+        assert_eq!(
+            attestation_digest(&candidate),
+            Err(HarnessRefusal::AttestationBindingIncomplete),
+            "accepted a non-canonical instant: {text}"
+        );
+    }
 }
 
 #[test]
