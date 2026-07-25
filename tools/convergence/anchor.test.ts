@@ -108,6 +108,29 @@ describe("verifyAnchor", () => {
     expect(verdict).toEqual({ anchored: false, refusal: "anchor.assertion_not_in_quote" });
   });
 
+  test("refuses an assertion too short to assert anything", () => {
+    // The five-word floor guards the quote; without a floor of its own, a
+    // one-word assertion rides on a valid quote and states nothing.
+    // "concernées" is inside the quote, so containment alone would accept it.
+    const verdict = verifyAnchor(SOURCE, claim({ assertions: ["concernées"] }), ARTEFACTS);
+    expect(verdict).toEqual({ anchored: false, refusal: "anchor.assertion_too_short" });
+  });
+
+  test("refuses an oversized source or quote before scanning it", () => {
+    // Every ingesting component of the socle bounds its input; this one consumes
+    // external text and must do the same. Checked before the containment scan,
+    // so an oversized input is never walked.
+    const huge = "x".repeat(300_000);
+    expect(verifyAnchor({ id: SOURCE.id, text: huge }, claim(), ARTEFACTS)).toEqual({
+      anchored: false,
+      refusal: "anchor.source_too_large",
+    });
+    expect(verifyAnchor(SOURCE, claim({ quote: "y".repeat(5000) }), ARTEFACTS)).toEqual({
+      anchored: false,
+      refusal: "anchor.quote_too_large",
+    });
+  });
+
   test("refuses an artefact that does not resolve in the corpus", () => {
     const verdict = verifyAnchor(
       SOURCE,

@@ -40,11 +40,14 @@ export interface ConvergenceClaim {
 
 export type AnchorRefusal =
   | "anchor.source_mismatch"
+  | "anchor.source_too_large"
   | "anchor.quote_empty"
+  | "anchor.quote_too_large"
   | "anchor.quote_forges_delimiter"
   | "anchor.quote_too_short"
   | "anchor.quote_not_in_source"
   | "anchor.assertions_empty"
+  | "anchor.assertion_too_short"
   | "anchor.assertion_not_in_quote"
   | "anchor.artefact_unresolved";
 
@@ -72,6 +75,21 @@ const GUARD_MARKERS: readonly string[] = ["⟦LAI-UNTRUSTED", "⟦/LAI-UNTRUSTED
 // has no floor because its quotes come from a controlled question/answer flow;
 // here the source is an arbitrary public item, so the floor is added.
 const MINIMUM_QUOTE_WORDS = 5;
+
+// The quote's floor does not protect the assertions: a one-word assertion rides
+// on a perfectly valid quote and states nothing, while satisfying containment.
+// Three words is lower than the quote's floor on purpose — an assertion must fit
+// inside the quote, so demanding five would make the two nearly equal and reject
+// legitimate narrower claims.
+const MINIMUM_ASSERTION_WORDS = 3;
+
+// Input bounds. Every ingesting component of the socle caps what it accepts —
+// the rule evaluator caps an item, the provider seam caps a response — and this
+// one consumes external text, so it does the same. Counted in code units rather
+// than bytes: the cap exists to bound work, and claiming byte precision here
+// would be false precision.
+const MAX_SOURCE_CHARS = 262_144;
+const MAX_QUOTE_CHARS = 4_096;
 
 // Module-private seal. A structurally identical object — a spread copy, a JSON
 // round-trip, a hand-built literal — is not evidence, because membership lives
@@ -104,7 +122,10 @@ export function verifyAnchor(
 
   // The quote must come from the source it is attributed to, not from any source.
   if (claim.sourceId !== source.id) return refuse("anchor.source_mismatch");
+  // Size caps come before any scan, so an oversized input is never walked.
+  if (source.text.length > MAX_SOURCE_CHARS) return refuse("anchor.source_too_large");
   if (claim.quote.trim().length === 0) return refuse("anchor.quote_empty");
+  if (claim.quote.length > MAX_QUOTE_CHARS) return refuse("anchor.quote_too_large");
   if (GUARD_MARKERS.some((marker) => claim.quote.includes(marker))) {
     return refuse("anchor.quote_forges_delimiter");
   }
@@ -116,9 +137,10 @@ export function verifyAnchor(
   // one passage and asserting something the source happens to say elsewhere is
   // the failure this component exists to stop.
   for (const assertion of claim.assertions) {
-    if (assertion.trim().length === 0 || !claim.quote.includes(assertion)) {
-      return refuse("anchor.assertion_not_in_quote");
+    if (wordCount(assertion) < MINIMUM_ASSERTION_WORDS) {
+      return refuse("anchor.assertion_too_short");
     }
+    if (!claim.quote.includes(assertion)) return refuse("anchor.assertion_not_in_quote");
   }
 
   if (!artefacts.has(claim.artefactId)) return refuse("anchor.artefact_unresolved");
