@@ -22,13 +22,19 @@ function firstObject(projection: KnowledgeProjection) {
 describe("public knowledge projection", () => {
   test("validates the checked projection and verifies its digest", () => {
     expect(canonical.projection.schemaVersion).toBe("libre-ai.knowledge-projection.v1");
-    expect(canonical.projection.objects).toHaveLength(2);
     expect(Object.isFrozen(canonical.projection)).toBeTrue();
     expect(Object.isFrozen(firstObject(canonical.projection))).toBeTrue();
-    expect(canonical.index.all().map((object) => object.id)).toEqual([
-      "urn:libre-ai:bet:bun-fullstack",
-      "urn:libre-ai:decision:bun-react-rust-big-bang",
-    ]);
+    // The corpus grows with what the socle actually proves (I-16), so this
+    // asserts the properties that must hold at any size — non-empty, no
+    // duplicate id, and the founding objects still projected — rather than a
+    // frozen count that would turn every new declaration into a red build.
+    // Byte-identical output for any input order is proved separately, by the
+    // engine's own `public_projection` test.
+    const ids = canonical.index.all().map((object) => object.id);
+    expect(ids.length).toBeGreaterThan(0);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toContain("urn:libre-ai:bet:bun-fullstack");
+    expect(ids).toContain("urn:libre-ai:decision:bun-react-rust-big-bang");
   });
 
   test("returns deterministic accepted relationships", () => {
