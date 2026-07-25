@@ -72,7 +72,7 @@ fn input() -> AttestationInput {
         platform: Platform::MacosAarch64,
         effective_controls: vec!["filesystem_mounts".to_owned()],
         network_mode: NetworkMode::None,
-        generated_at: "2026-07-25T10:00:00Z".to_owned(),
+        generated_at: "2026-07-25T10:00:00Z".parse().expect("canonical"),
         signing_key_id: "harness_key_1".to_owned(),
     }
 }
@@ -138,7 +138,9 @@ fn reproduces_the_locked_golden_vector() {
         platform: Platform::LinuxX8664,
         effective_controls: strings("effectiveControls"),
         network_mode: NetworkMode::PrivateGatewayOnly,
-        generated_at: text("generatedAt"),
+        generated_at: text("generatedAt")
+            .parse()
+            .expect("the vector carries an instant"),
         signing_key_id: text("signingKeyId"),
     };
 
@@ -258,10 +260,6 @@ fn refuses_every_contract_pattern_violation() {
             Box::new(|i: &mut AttestationInput| i.tenant_id = "nope".to_owned()),
         ),
         (
-            "timestamp",
-            Box::new(|i: &mut AttestationInput| i.generated_at = "yesterday".to_owned()),
-        ),
-        (
             "signing key id",
             Box::new(|i: &mut AttestationInput| i.signing_key_id = " ".to_owned()),
         ),
@@ -340,18 +338,6 @@ fn accepts_what_the_contract_accepts_and_refuses_what_it_refuses() {
                 i.sandbox_engine_manifest.media_type = "application/vnd.foo!bar".to_owned()
             }),
         ),
-        (
-            "fractional seconds",
-            Box::new(|i: &mut AttestationInput| {
-                i.generated_at = "2026-07-25T10:00:00.123Z".to_owned()
-            }),
-        ),
-        (
-            "numeric offset",
-            Box::new(|i: &mut AttestationInput| {
-                i.generated_at = "2026-07-25T12:00:00+02:00".to_owned()
-            }),
-        ),
     ];
     for (name, mutate) in accepted {
         let mut valid = input();
@@ -375,20 +361,11 @@ fn accepts_what_the_contract_accepts_and_refuses_what_it_refuses() {
                 i.sandbox_engine_manifest.media_type = "application/json/evil".to_owned()
             }),
         ),
-        (
-            "impossible instant",
-            Box::new(|i: &mut AttestationInput| {
-                // Accepted before: it sorts above every real instant under the
-                // lexicographic comparison an ISO-8601 consumer reaches for,
-                // neutralising any freshness or replay window.
-                i.generated_at = "9999-99-99T99:99:99Z".to_owned()
-            }),
-        ),
-        (
-            "out-of-range month and day",
-            Box::new(|i: &mut AttestationInput| i.generated_at = "2026-02-31T25:61:61Z".to_owned()),
-        ),
     ];
+    // Impossible instants no longer appear in this table because they are no
+    // longer expressible: `generated_at` is a typed instant, so `9999-99-99…`
+    // and `2026-02-31T25:61:61Z` are refused at the API boundary rather than
+    // deep inside a hand-written validator.
     for (name, mutate) in refused {
         let mut invalid = input();
         mutate(&mut invalid);
@@ -480,7 +457,7 @@ fn digest_is_deterministic_and_covers_every_bound_field() {
         Box::new(|i| i.platform = Platform::LinuxX8664),
         Box::new(|i| i.effective_controls = vec!["process_isolation".to_owned()]),
         Box::new(|i| i.network_mode = NetworkMode::PrivateGatewayOnly),
-        Box::new(|i| i.generated_at = "2026-07-25T11:00:00Z".to_owned()),
+        Box::new(|i| i.generated_at = "2026-07-25T11:00:00Z".parse().expect("canonical")),
         Box::new(|i| i.signing_key_id = "harness_key_2".to_owned()),
     ];
     for mutate in mutations {
@@ -523,4 +500,76 @@ fn refusals_carry_stable_namespaced_codes() {
         HarnessRefusal::AttestationBindingIncomplete.code(),
         "harness.attestation_binding_incomplete"
     );
+}
+
+#[test]
+fn every_accepted_instant_round_trips_to_its_own_digest() {
+    // The regression the third review caught, turned into a gate. The emitted
+    // document must hash to the digest it carries, for EVERY instant the API
+    // accepts — not only for the `Z` form that every fixture in the repository
+    // happens to use, which is why the whole suite was blind to it.
+    let instants = [
+        "2026-07-25T10:00:00Z",
+        "2026-07-25T12:00:00+02:00",
+        "2026-07-25T08:00:00-02:00",
+        "2026-07-25T10:00:00+00:00",
+        "2026-07-25T10:00:00.123Z",
+        "2026-07-25T10:00:00.000Z",
+        "2026-07-25t10:00:00z",
+    ];
+    for text in instants {
+        let mut candidate = input();
+        candidate.generated_at = text.parse().expect("RFC 3339 is accepted at the boundary");
+        let attestation = assemble_attestation(candidate, &StubSigner).expect("signs");
+        let document = attestation.to_contract_document().expect("emits");
+        let mut json = serde_json::to_value(&document).expect("serializes");
+
+        // An operator recomputes over the published document, minus the two
+        // fields the contract excludes from the digest.
+        let object = json.as_object_mut().expect("object");
+        object.remove("attestationDigest");
+        object.remove("signature");
+        let canonical = serde_jcs::to_string(&json).expect("canonicalizes");
+        let recomputed: String = <sha2::Sha256 as sha2::Digest>::digest(canonical.as_bytes())
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect();
+
+        assert_eq!(
+            recomputed,
+            attestation.attestation_digest(),
+            "an operator cannot reproduce the digest for {text}"
+        );
+    }
+}
+
+#[test]
+fn the_emitted_document_satisfies_the_locked_schema() {
+    // Checked against the canonical registry rather than by asserting key
+    // presence by hand: the generated projection is explicitly disposable, and
+    // runtime validation is what the contract calls authoritative.
+    let registry = libre_ai_contract_types::ContractRegistry::embedded().expect("registry loads");
+    let attestation = assemble_attestation(input(), &StubSigner).expect("signs");
+    let document = attestation.to_contract_document().expect("emits");
+    let json = serde_json::to_value(&document).expect("serializes");
+    let issues = registry
+        .validate("harness-attestation.v1.schema.json", &json)
+        .expect("the schema is registered");
+    assert!(issues.is_empty(), "emitted document is invalid: {issues:?}");
+}
+
+#[test]
+fn every_refusal_code_is_namespaced_and_distinct() {
+    let codes = [
+        HarnessRefusal::AttestationBindingIncomplete.code(),
+        HarnessRefusal::CapabilityNotEnabled.code(),
+        HarnessRefusal::AttestationUnsigned.code(),
+        HarnessRefusal::AttestationDigestMismatch.code(),
+        HarnessRefusal::CanonicalizationFailed.code(),
+    ];
+    for code in codes {
+        assert!(code.starts_with("harness."), "{code} is not namespaced");
+    }
+    let unique: std::collections::BTreeSet<_> = codes.iter().collect();
+    assert_eq!(unique.len(), codes.len(), "two refusals share a code");
 }

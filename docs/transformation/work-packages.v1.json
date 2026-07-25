@@ -736,7 +736,7 @@
       "acceptance": [
         "Every refusal code of the specification is reachable by an adversarial test written before the control it attacks.",
         "A symlink and a path traversal escaping the workspace root are both refused after canonicalization, on the host's real semantics.",
-        "No attestation is emitted with an incomplete binding or without a signature; requested and effective controls are recorded as distinct fields.",
+        "No attestation is emitted with an incomplete binding or without a signature; requested and effective profile digests are recorded as distinct fields.",
         "An attestation verifies independently from the run that produced it, given only the profile digest and the public key.",
         "A capability closed by ADR-0018 D2 is refused even when the profile declares it."
       ],

@@ -36,10 +36,24 @@
 //!    to digest a document it will then refuse — which is also why the golden
 //!    vector, carrying a closed capability, stays reproducible.
 //!
+//! **What this increment does not yet carry**, named rather than left silent:
+//! of the fifteen refusals in the specification's matrix, four are implemented
+//! here and one is defensive. `profile_unresolved`, `profile_digest_mismatch`
+//! and `platform_unsupported` belong to this same increment and await the
+//! digest-to-profile resolver; `control_not_enforceable`,
+//! `path_escapes_workspace`, `symlink_policy_violation`,
+//! `write_outside_writable_set` and `denied_path_touched` await filesystem
+//! confinement; `output_limit_exceeded` and `output_scan_incomplete` await
+//! bounded process execution. The capability gate also covers `networkMode`
+//! only — a caller can still name `network_egress` in `effectiveControls`,
+//! because no locked vocabulary exists to check that field against.
+//!
 //! What it does not establish: that the signature is cryptographically valid.
 //! Signing is a deferred owner ceremony, so this crate takes an
 //! [`AttestationSigner`], refuses to emit anything it cannot get signed, and
 //! leaves digest-to-signature verification to the ceremony increment.
+
+#![forbid(unsafe_code)]
 
 use std::str::FromStr;
 
@@ -120,7 +134,7 @@ pub struct AttestationInput {
     pub platform: Platform,
     pub effective_controls: Vec<String>,
     pub network_mode: NetworkMode,
-    pub generated_at: String,
+    pub generated_at: chrono::DateTime<chrono::Utc>,
     pub signing_key_id: String,
 }
 
@@ -143,7 +157,7 @@ struct CanonicalDocument<'a> {
     platform: &'a Platform,
     effective_controls: &'a [String],
     network_mode: &'a NetworkMode,
-    generated_at: &'a str,
+    generated_at: &'a chrono::DateTime<chrono::Utc>,
     signing_key_id: &'a str,
 }
 
@@ -230,18 +244,15 @@ impl HarnessAttestation {
     pub fn to_contract_document(
         &self,
     ) -> Result<contract::LibreAiHarnessAttestationV1, HarnessRefusal> {
-        let parse = |value: &str| -> Result<serde_json::Value, HarnessRefusal> {
-            Ok(serde_json::Value::String(value.to_owned()))
-        };
         let document = serde_json::json!({
             "schemaVersion": SCHEMA_VERSION,
-            "id": parse(&self.input.id)?,
-            "tenantId": parse(&self.input.tenant_id)?,
-            "missionId": parse(&self.input.mission_id)?,
-            "runId": parse(&self.input.run_id)?,
-            "planDigest": parse(&self.input.plan_digest)?,
-            "requestedProfileDigest": parse(&self.input.requested_profile_digest)?,
-            "effectiveProfileDigest": parse(&self.input.effective_profile_digest)?,
+            "id": self.input.id,
+            "tenantId": self.input.tenant_id,
+            "missionId": self.input.mission_id,
+            "runId": self.input.run_id,
+            "planDigest": self.input.plan_digest,
+            "requestedProfileDigest": self.input.requested_profile_digest,
+            "effectiveProfileDigest": self.input.effective_profile_digest,
             "workerManifestDigests": self.input.worker_manifest_digests,
             "sandboxEngineManifest": {
                 "id": self.input.sandbox_engine_manifest.id,
@@ -271,6 +282,7 @@ pub struct VerifiedAttestation {
     run_id: String,
     mission_id: String,
     tenant_id: String,
+    requested_profile_digest: String,
     effective_profile_digest: String,
     signing_key_id: String,
     attestation_digest: String,
@@ -292,6 +304,12 @@ impl VerifiedAttestation {
     #[must_use]
     pub fn tenant_id(&self) -> &str {
         &self.tenant_id
+    }
+
+    /// The confinement that was asked for, read from the digested document.
+    #[must_use]
+    pub fn requested_profile_digest(&self) -> &str {
+        &self.requested_profile_digest
     }
 
     /// The confinement actually applied, read from the digested document.
@@ -338,8 +356,13 @@ fn bounded<T: FromStr>(values: &[String]) -> bool {
 /// Every binding checked before anything is hashed: hashing an incomplete
 /// document would yield a digest that looks authoritative over nothing.
 ///
-/// Each check delegates to the type generated from the schema, so the accepted
-/// set is the contract's by construction rather than by transcription.
+/// Each pattern check delegates to the type generated from the schema, so those
+/// accepted sets are the contract's rather than a transcription. Two things are
+/// NOT generated and stay transcribed here, because typify drops them: the
+/// collection bounds below, and the `const` on `schemaVersion` — which is why
+/// that value is stamped from [`SCHEMA_VERSION`] rather than accepted from a
+/// caller. `generatedAt` has no generated newtype either; it is a typed instant,
+/// so its canonical form is the one both hashed and emitted.
 fn check_binding(input: &AttestationInput) -> Result<(), HarnessRefusal> {
     let ok = valid::<contract::LibreAiHarnessAttestationV1Id>(&input.id)
         && valid::<contract::LibreAiHarnessAttestationV1TenantId>(&input.tenant_id)
@@ -367,9 +390,6 @@ fn check_binding(input: &AttestationInput) -> Result<(), HarnessRefusal> {
         && bounded::<contract::LibreAiHarnessAttestationV1EffectiveControlsItem>(
             &input.effective_controls,
         )
-        // `generatedAt` is `format: date-time`, which the schema expresses as a
-        // chrono timestamp rather than a pattern: parsing it is the validation.
-        && valid::<chrono::DateTime<chrono::Utc>>(&input.generated_at)
         && valid::<contract::LibreAiHarnessAttestationV1SigningKeyId>(&input.signing_key_id);
 
     if ok {
@@ -452,6 +472,7 @@ pub fn verify_binding(
         run_id: attestation.input.run_id.clone(),
         mission_id: attestation.input.mission_id.clone(),
         tenant_id: attestation.input.tenant_id.clone(),
+        requested_profile_digest: attestation.input.requested_profile_digest.clone(),
         effective_profile_digest: attestation.input.effective_profile_digest.clone(),
         signing_key_id: attestation.input.signing_key_id.clone(),
         attestation_digest: attestation.attestation_digest.clone(),
@@ -487,7 +508,7 @@ mod tests {
             platform: Platform::MacosAarch64,
             effective_controls: vec!["filesystem_mounts".to_owned()],
             network_mode: NetworkMode::None,
-            generated_at: "2026-07-25T10:00:00Z".to_owned(),
+            generated_at: "2026-07-25T10:00:00Z".parse().expect("a canonical instant"),
             signing_key_id: "harness_key_1".to_owned(),
         };
         let tampered = HarnessAttestation {

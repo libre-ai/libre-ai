@@ -16,7 +16,7 @@ The harness is the boundary a worker cannot talk its way out of. It takes a requ
 - **Operators** (auditors): verify an attestation against the profile digest and the effective controls, independently of the run that produced it.
 - **Owner** (nominative acts): pronounces the bootstrap hard stop of the first confinement merge.
 
-**Doctrine constraints.** Everything a worker emits is `operational` and never authority (K2). Anything a worker produces that will reach a model is enveloped and signed (K3). The attestation binds requested profile, effective controls, worker manifests and kernel capabilities — an attestation that binds less than it claims is invalid, not partial.
+**Doctrine constraints.** Everything a worker emits is `operational` and never authority (K2). Anything a worker produces that will reach a model is enveloped and signed (K3). The attestation binds the requested and effective profile digests, the effective controls, the worker manifests and the sandbox engine manifest, plus the network posture (`networkMode`) — the only kernel capability the locked contract models. An attestation that binds less than it claims is invalid, not partial.
 
 ## Journeys
 
@@ -28,7 +28,9 @@ The harness is the boundary a worker cannot talk its way out of. It takes a requ
 
 4. **Scan outputs fail-closed.** Outputs are scanned before leaving the boundary. A scan that cannot complete refuses the result — an unscanned output is treated as a failed one, never as a clean one.
 
-5. **Attest.** The harness emits a signed attestation binding the requested profile digest, the effective controls actually applied, the worker manifests and the kernel capabilities present. Requested and effective are both recorded, so a divergence is visible rather than smoothed over.
+5. **Attest.** The harness emits a signed attestation binding the requested profile digest, the effective controls actually applied, the worker manifests, the sandbox engine manifest and the network posture. Requested and effective profile digests are both recorded, so a divergence is visible rather than smoothed over.
+
+   `harness-profile.v1` requires `bindKernelCapabilities`, and `networkMode` is how the attestation discharges it: it is the only kernel capability the attestation contract models. Naming a broader set here would promise a binding `additionalProperties: false` forbids — the same over-promise A-1 corrected above.
 
 6. **Verify independently.** An operator, holding only the attestation and the profile, re-verifies the binding without access to the run, the worker or the harness that produced it.
 
@@ -51,7 +53,7 @@ The harness is the boundary a worker cannot talk its way out of. It takes a requ
 
 Requested and effective **profile digests** are distinct fields throughout. Collapsing them into one would make a silently degraded confinement indistinguishable from an honoured one.
 
-Amended 2026-07-25 (ADR-0018 lineage): an earlier wording promised distinct requested and effective _controls_. The locked contract carries a single `effectiveControls` and is `additionalProperties: false`, so that promise was unreachable — the specification over-promised against its own contract. Nothing is lost: a profile is content-addressed, so `requestedProfileDigest` resolves the profile that was asked for and its controls can be compared to those actually applied. Adding a `requestedControls` field would have meant reopening ADR-0004's fourteen locked entries.
+Amended 2026-07-25 (ADR-0018 lineage): an earlier wording promised distinct requested and effective _controls_. The locked contract carries a single `effectiveControls` and is `additionalProperties: false`, so that promise was unreachable — the specification over-promised against its own contract. Nothing is lost in principle: a profile is content-addressed, so `requestedProfileDigest` resolves the profile that was asked for and its controls can be compared to those actually applied. That comparison needs a digest-to-profile resolver, which the first work package below covers (`profile_unresolved`, `profile_digest_mismatch`) and which no increment has delivered yet — a **deferred** promise, named here rather than assumed discharged. Adding a `requestedControls` field would have meant reopening ADR-0004's fourteen locked entries.
 
 ## Refusal matrix
 
@@ -66,7 +68,7 @@ Amended 2026-07-25 (ADR-0018 lineage): an earlier wording promised distinct requ
 - `harness.output_limit_exceeded` — per-tool or total output bytes exceeded.
 - `harness.output_scan_incomplete` — the fail-closed output scan could not complete.
 - `harness.capability_not_enabled` — the profile requests a capability closed at this stage.
-- `harness.attestation_binding_incomplete` — profile, effective controls, worker manifests or kernel capabilities are not all bound.
+- `harness.attestation_binding_incomplete` — profile digests, effective controls, worker manifests, sandbox engine manifest or network posture are not all bound.
 - `harness.attestation_unsigned` — the attestation carries no valid signature.
 - `harness.attestation_digest_mismatch` — the recorded digest does not match the bound fields.
 - `harness.canonicalization_failed` — **defensive**: canonical serialization failed. Unreachable for the document shape the contract defines today, and kept so a future field type that JCS can reject fails closed rather than panicking. Exempt from the release gate requiring every code to be reachable, precisely because reaching it would mean the document shape had changed.
