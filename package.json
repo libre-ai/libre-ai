@@ -56,6 +56,7 @@
     "check:generated-contracts": "bun run check:bun:runtime && bun run --cwd packages/contracts generate:check",
     "check:work-packages": "bun run check:bun:runtime && bun tools/quality/check-work-packages.ts",
     "check:licenses": "bun run check:bun:runtime && bun tools/quality/check-js-licenses.ts",
+    "check:dead-code": "bun run check:bun:runtime && bun tools/quality/check-dead-code.ts",
     "review:fanout": "bun run check:bun:runtime && bun tools/review/fanout.ts",
     "audit": "bun run check:bun:runtime && bun audit",
     "typecheck": "bun run check:bun:runtime && tsc --noEmit -p tsconfig.json",
@@ -72,7 +73,7 @@
     "qualify:notebook-core-v2:performance": "bun run check:bun:runtime && NOTEBOOK_QUALIFICATION_REQUIRE_ARCHIVES=1 bun run qualify:notebook-core-v2:toolchain && bun run qualify:notebook-core-v2:resource-class && bun run qualify:notebook-core-v2:build && playwright test --config tools/qualification/notebook-core-v2/performance.config.ts && bun tools/qualification/notebook-core-v2/summarize-performance.ts",
     "diagnose:notebook-core-v2:performance:vm": "bun run check:bun:runtime && NOTEBOOK_QUALIFICATION_EVIDENCE_MODE=vm-diagnostic bun run qualify:notebook-core-v2:performance",
     "build": "bun run check:bun && bun run check:toolchain && bun run typecheck",
-    "check": "bun run check:bun && bun run check:toolchain && bun run check:source && bun run check:objects && bun run check:objectives && bun run check:specifications && bun run check:contracts && bun run check:notebook-core-v2 && bun run check:generated-contracts && bun run check:work-packages && bun run check:licenses && bun run lint && bun run typecheck && bun test"
+    "check": "bun run check:bun && bun run check:toolchain && bun run check:source && bun run check:objects && bun run check:objectives && bun run check:specifications && bun run check:contracts && bun run check:notebook-core-v2 && bun run check:generated-contracts && bun run check:work-packages && bun run check:licenses && bun run check:dead-code && bun run lint && bun run typecheck && bun test"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.3",

@@ -45,12 +45,6 @@ interface WorkspaceDigestRow {
   readonly digest: string;
 }
 
-// PGlite returns jsonb already parsed; a text-typed driver would hand back a
-// string. Accept both so the adapter is driver-agnostic.
-function asJson(value: unknown): unknown {
-  return typeof value === "string" ? JSON.parse(value) : value;
-}
-
 function asIsoString(value: string | Date): string {
   return value instanceof Date ? value.toISOString() : value;
 }
@@ -120,21 +114,4 @@ export async function loadAcceptedPackage(
     workspaceId: row.workspace_id,
     acceptedAt: asIsoString(row.accepted_at),
   };
-}
-
-/**
- * Load the full accepted package by digest (for validation/inspection).
- */
-export async function loadAcceptedPackageBody(
-  executor: SqlExecutor,
-  digest: string,
-): Promise<SpecPackage | null> {
-  const { rows } = await executor.query<PackageRow>(
-    `SELECT package_data FROM spec_packages WHERE digest = $1`,
-    [digest],
-  );
-  const row = rows[0];
-  if (row === undefined) return null;
-
-  return asJson(row.package_data) as SpecPackage;
 }

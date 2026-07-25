@@ -129,6 +129,11 @@ jobs:
       # code, never instance data. Curated organisation records belong to a
       # private tenant, anything about a natural person stays on-device.
       - run: bun tools/quality/check-personal-data-boundary.ts
+      # Reachability: a source no entry point can reach, an export nothing ever
+      # names, a dependency nothing imports. Reports how many entries it
+      # examined and fails on zero, so a moved directory turns this red instead
+      # of passing on an empty set.
+      - run: bun tools/quality/check-dead-code.ts
       - run: bun audit
 
   rust-quality:
