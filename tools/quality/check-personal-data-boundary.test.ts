@@ -176,12 +176,15 @@ describe("scanPersonalIdentifiers", () => {
   });
 
   test("does not flag the userinfo of a connection URL", () => {
-    // Found on the real tree: `user:pw@host` in a Clever Cloud scanner fixture is
-    // URL userinfo, not a contact address.
+    // Found on the real tree: a sibling scanner's fixture holds a database URL
+    // whose `user:pw@host` is userinfo, not a contact address. The host here is
+    // deliberately neutral — reproducing the real one would trip
+    // check-no-clever-production.ts — and deliberately NOT on the domain
+    // allowlist, so the test exercises the userinfo rule and nothing else.
     expect(
       identifiersFor(
-        "tools/quality/check-no-clever-production.test.ts",
-        'const db = "postgresql://user:pw@bXXXX-postgresql.services.clever-cloud.com:5432/db";',
+        "tools/quality/some-scanner.test.ts",
+        'const db = "postgresql://user:pw@b0000-postgresql.services.hebergeur-fictif.fr:5432/db";',
       ),
     ).toHaveLength(0);
   });
