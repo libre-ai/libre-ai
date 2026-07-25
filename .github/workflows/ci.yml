@@ -125,6 +125,10 @@ jobs:
       # user data never leaves the device — no outbound transmission primitive in
       # those apps' source.
       - run: bun tools/quality/check-no-transmission.ts
+      # Personal-data boundary (ADR-0012, I-21/I-22): this repository publishes
+      # code, never instance data. Curated organisation records belong to a
+      # private tenant, anything about a natural person stays on-device.
+      - run: bun tools/quality/check-personal-data-boundary.ts
       - run: bun audit
 
   rust-quality:
