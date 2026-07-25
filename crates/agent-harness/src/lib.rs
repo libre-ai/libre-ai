@@ -6,37 +6,44 @@
 //! read as. It holds no OS capability: filesystem enforcement and process
 //! spawning are later increments with their own reviews (ADR-0018 D2).
 //!
-//! **The digest is computed over the contract document, not over a private
-//! projection.** Fields are camelCase, `schemaVersion` is bound, and the two
-//! fields the contract excludes — `attestationDigest` and `signature` — are the
-//! only ones left out. That is what makes the golden vector in
-//! `contracts/fixtures/agent-orchestration-v1/digest-vectors.v1.json`
+//! **Formats come from the contract, not from this crate.** Field validation
+//! goes through the newtypes `libre-ai-contract-types` generates from the JSON
+//! Schema, whose regexes are the schema's own. An earlier version hand-wrote
+//! those checks and three reviews proved them divergent in both directions —
+//! accepting `APPLICATION/OCTET-STREAM` and `9999-99-99T99:99:99Z`, refusing
+//! `application/x_thing` and legitimate RFC 3339 offsets. Generating them away
+//! is also what keeps one implementation of the domain (AGENTS.md).
+//!
+//! **The digest is computed over the contract document.** camelCase names,
+//! `schemaVersion` stamped, everything except the two fields the contract
+//! excludes — `attestationDigest` and `signature`. That is what makes the golden
+//! vector in `contracts/fixtures/agent-orchestration-v1/digest-vectors.v1.json`
 //! reproducible here, and therefore what lets an operator holding only
-//! `contracts/` re-verify an attestation without any harness-specific rule.
-//! The first version of this crate hashed a snake_case projection without
-//! `schemaVersion`; three independent reviews rejected it, and the vector below
-//! is the test that would have caught it.
+//! `contracts/` re-verify an attestation with no harness-specific rule.
 //!
 //! Three properties carry the rest, each locked by an adversarial test:
 //!
 //! 1. **Requested and effective stay distinct, and both are bound.** A degraded
 //!    sandbox must remain visible, so a divergence is recorded rather than
 //!    refused — refusing it would push the caller to report the requested
-//!    profile and lose the truth. Both live inside the digested document; there
-//!    is no unbound copy a holder could rewrite to hide the divergence.
+//!    profile and lose the truth. Both live inside the digested document.
 //! 2. **Verification is not forgeable by shape.** [`VerifiedAttestation`] and
 //!    [`HarnessAttestation`] carry a private witness, so neither can be built
-//!    outside this module. Holding one means the checks ran, in the same way
-//!    `AuthorizationDecision` does in `crates/authz-biscuit`.
+//!    outside this module, and functional-update syntax cannot inherit it.
 //! 3. **A closed capability is refused on both gates that grant.** Assembly and
-//!    verification refuse a capability ADR-0018 D2 keeps shut. [`attestation_digest`]
+//!    verification refuse what ADR-0018 D2 keeps shut. [`attestation_digest`]
 //!    deliberately does not: hashing is arithmetic, and a verifier must be able
-//!    to digest a document it will then refuse.
+//!    to digest a document it will then refuse — which is also why the golden
+//!    vector, carrying a closed capability, stays reproducible.
 //!
 //! What it does not establish: that the signature is cryptographically valid.
 //! Signing is a deferred owner ceremony, so this crate takes an
-//! [`AttestationSigner`] and refuses to emit anything it cannot get signed.
+//! [`AttestationSigner`], refuses to emit anything it cannot get signed, and
+//! leaves digest-to-signature verification to the ceremony increment.
 
+use std::str::FromStr;
+
+use libre_ai_contract_types::generated::harness_attestation_v1 as contract;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
@@ -45,13 +52,13 @@ pub const SCHEMA_VERSION: &str = "libre-ai.harness-attestation.v1";
 
 const MAX_COLLECTION_ITEMS: usize = 128;
 
+/// Re-exported from the generated contract types rather than redefined: their
+/// serialized spellings are the schema's, so `linux-x86_64` cannot drift.
+pub use contract::LibreAiHarnessAttestationV1NetworkMode as NetworkMode;
+pub use contract::LibreAiHarnessAttestationV1Platform as Platform;
+
 /// Refusals of the attestation core. Each names the failing invariant and never
 /// echoes the offending value.
-///
-/// `AttestationDigestMismatch` and `CanonicalizationFailed` have no entry in the
-/// refusal matrix of `docs/apps/harness.md`; their codes are namespaced like the
-/// others, and adding them to the locked matrix is a specification amendment for
-/// the owner, not something this crate decides.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HarnessRefusal {
     /// A binding the attestation claims to carry is absent or malformed.
@@ -63,6 +70,8 @@ pub enum HarnessRefusal {
     /// The recorded digest does not match the bound fields.
     AttestationDigestMismatch,
     /// Canonical serialization failed; nothing is hashed on a partial document.
+    /// Defensive: unreachable for the current document shape, kept so a future
+    /// field type that JCS can reject fails closed instead of panicking.
     CanonicalizationFailed,
 }
 
@@ -80,31 +89,6 @@ impl HarnessRefusal {
     }
 }
 
-/// Serialized values are spelled out rather than derived: a kebab-case rule
-/// cannot produce `x86_64`, because it inserts a separator only before an
-/// uppercase letter and then rewrites the underscore. Deriving them silently
-/// emitted `linux-x8664`, outside the locked enum.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-pub enum Platform {
-    #[serde(rename = "linux-x86_64")]
-    LinuxX8664,
-    #[serde(rename = "linux-aarch64")]
-    LinuxAarch64,
-    #[serde(rename = "macos-x86_64")]
-    MacosX8664,
-    #[serde(rename = "macos-aarch64")]
-    MacosAarch64,
-}
-
-/// Network posture of the run. The contract can express a gateway; ADR-0018 D2
-/// keeps it shut, so only [`NetworkMode::None`] is granted at this stage.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum NetworkMode {
-    None,
-    PrivateGatewayOnly,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ArtifactReference {
@@ -114,6 +98,10 @@ pub struct ArtifactReference {
 }
 
 /// Everything an attestation binds, as the caller supplies it.
+///
+/// Strings rather than the generated newtypes, so a caller is not forced to
+/// thread contract types through its own code; every one of them is validated
+/// against the generated type before anything is hashed.
 ///
 /// `schemaVersion` is deliberately absent: it is stamped from [`SCHEMA_VERSION`]
 /// when the canonical document is built, so a caller cannot claim a version it
@@ -137,8 +125,8 @@ pub struct AttestationInput {
 }
 
 /// The document the contract defines, minus the two fields it excludes from the
-/// digest. Field order is irrelevant — JCS sorts keys — but the names and the
-/// casing are the contract's.
+/// digest. Field order is irrelevant — JCS sorts keys — but names and casing are
+/// the contract's.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct CanonicalDocument<'a> {
@@ -152,9 +140,9 @@ struct CanonicalDocument<'a> {
     effective_profile_digest: &'a str,
     worker_manifest_digests: &'a [String],
     sandbox_engine_manifest: &'a ArtifactReference,
-    platform: Platform,
+    platform: &'a Platform,
     effective_controls: &'a [String],
-    network_mode: NetworkMode,
+    network_mode: &'a NetworkMode,
     generated_at: &'a str,
     signing_key_id: &'a str,
 }
@@ -172,9 +160,9 @@ impl<'a> From<&'a AttestationInput> for CanonicalDocument<'a> {
             effective_profile_digest: &input.effective_profile_digest,
             worker_manifest_digests: &input.worker_manifest_digests,
             sandbox_engine_manifest: &input.sandbox_engine_manifest,
-            platform: input.platform,
+            platform: &input.platform,
             effective_controls: &input.effective_controls,
-            network_mode: input.network_mode,
+            network_mode: &input.network_mode,
             generated_at: &input.generated_at,
             signing_key_id: &input.signing_key_id,
         }
@@ -182,19 +170,22 @@ impl<'a> From<&'a AttestationInput> for CanonicalDocument<'a> {
 }
 
 /// Private witness. Its only purpose is to stop a downstream crate from writing
-/// a struct literal and calling it a verified result.
+/// a struct literal — or a functional update of a legitimate value — and calling
+/// it a verified result.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Sealed;
 
 /// Produces the signature over an attestation digest.
 ///
 /// The production key is an owner ceremony, deferred and separate; this crate
-/// therefore holds no key material and refuses to emit anything a signer will
-/// not sign.
+/// holds no key material and refuses to emit anything a signer will not sign.
 pub trait AttestationSigner {
     /// Signature of `digest`, or `None` when the key is unavailable.
     fn sign(&self, digest: &str) -> Option<String>;
-    /// Identifier of the key that will sign, bound into the document.
+    /// Identifier the signer declares. Bound into the document, and required to
+    /// match the one the caller named — note that this ties the document to a
+    /// *declared* identity, not to the key that produced the bytes. Verifying
+    /// digest against signature belongs to the ceremony increment.
     fn key_id(&self) -> &str;
 }
 
@@ -230,15 +221,59 @@ impl HarnessAttestation {
     pub fn diverged(&self) -> bool {
         self.input.requested_profile_digest != self.input.effective_profile_digest
     }
+
+    /// The contract document, ready to serialize and hand to a consumer.
+    ///
+    /// Without this a consumer would recompose the JSON by hand, re-deriving
+    /// camelCase and the enum spellings — the very private projection that made
+    /// the first version of this crate unverifiable.
+    pub fn to_contract_document(
+        &self,
+    ) -> Result<contract::LibreAiHarnessAttestationV1, HarnessRefusal> {
+        let parse = |value: &str| -> Result<serde_json::Value, HarnessRefusal> {
+            Ok(serde_json::Value::String(value.to_owned()))
+        };
+        let document = serde_json::json!({
+            "schemaVersion": SCHEMA_VERSION,
+            "id": parse(&self.input.id)?,
+            "tenantId": parse(&self.input.tenant_id)?,
+            "missionId": parse(&self.input.mission_id)?,
+            "runId": parse(&self.input.run_id)?,
+            "planDigest": parse(&self.input.plan_digest)?,
+            "requestedProfileDigest": parse(&self.input.requested_profile_digest)?,
+            "effectiveProfileDigest": parse(&self.input.effective_profile_digest)?,
+            "workerManifestDigests": self.input.worker_manifest_digests,
+            "sandboxEngineManifest": {
+                "id": self.input.sandbox_engine_manifest.id,
+                "digest": self.input.sandbox_engine_manifest.digest,
+                "mediaType": self.input.sandbox_engine_manifest.media_type,
+            },
+            "platform": self.input.platform,
+            "effectiveControls": self.input.effective_controls,
+            "networkMode": self.input.network_mode,
+            "generatedAt": self.input.generated_at,
+            "signingKeyId": self.input.signing_key_id,
+            "attestationDigest": self.attestation_digest,
+            "signature": self.signature,
+        });
+        serde_json::from_value(document).map_err(|_| HarnessRefusal::AttestationBindingIncomplete)
+    }
 }
 
 /// An attestation whose digest, signature shape and capability posture were
 /// checked. Cannot be built outside this module.
+///
+/// It carries the tenant, key and digest as well as the run: a consumer that had
+/// to reach back into the input for them would be reading fields outside the
+/// verified result, which is the reflex the first review sanctioned.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct VerifiedAttestation {
     run_id: String,
     mission_id: String,
+    tenant_id: String,
     effective_profile_digest: String,
+    signing_key_id: String,
+    attestation_digest: String,
     diverged: bool,
     sealed: Sealed,
 }
@@ -254,10 +289,26 @@ impl VerifiedAttestation {
         &self.mission_id
     }
 
+    #[must_use]
+    pub fn tenant_id(&self) -> &str {
+        &self.tenant_id
+    }
+
     /// The confinement actually applied, read from the digested document.
     #[must_use]
     pub fn effective_profile_digest(&self) -> &str {
         &self.effective_profile_digest
+    }
+
+    /// Retained so the deferred cryptographic check can run downstream.
+    #[must_use]
+    pub fn signing_key_id(&self) -> &str {
+        &self.signing_key_id
+    }
+
+    #[must_use]
+    pub fn attestation_digest(&self) -> &str {
+        &self.attestation_digest
     }
 
     #[must_use]
@@ -266,129 +317,60 @@ impl VerifiedAttestation {
     }
 }
 
-/// 64 lowercase hex characters — `common.v1#/$defs/sha256`.
-fn is_sha256(value: &str) -> bool {
-    value.len() == 64
-        && value
-            .bytes()
-            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+/// Whether a value satisfies the contract type generated for its field.
+fn valid<T: FromStr>(value: &str) -> bool {
+    value.parse::<T>().is_ok()
 }
 
-/// `common.v1#/$defs/urn`: `urn:libre-ai:<kind>:<name>`.
-fn is_urn(value: &str) -> bool {
-    let Some(rest) = value.strip_prefix("urn:libre-ai:") else {
-        return false;
-    };
-    let Some((kind, name)) = rest.split_once(':') else {
-        return false;
-    };
-    let kind_ok = kind.starts_with(|c: char| c.is_ascii_lowercase())
-        && kind
-            .bytes()
-            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-');
-    let name_ok = !name.is_empty()
-        && name
-            .bytes()
-            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'_' | b'~' | b'-'));
-    kind_ok && name_ok
-}
-
-/// `common.v1#/$defs/tenantId`: `^ten_[a-z0-9]{16,64}$`.
-fn is_tenant_id(value: &str) -> bool {
-    let Some(rest) = value.strip_prefix("ten_") else {
-        return false;
-    };
-    (16..=64).contains(&rest.len())
-        && rest
-            .bytes()
-            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit())
-}
-
-/// `common.v1#/$defs/identifier`: `^[a-z][a-z0-9_-]{2,127}$`.
-fn is_identifier(value: &str) -> bool {
-    (3..=128).contains(&value.len())
-        && value.starts_with(|c: char| c.is_ascii_lowercase())
-        && value
-            .bytes()
-            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || matches!(b, b'_' | b'-'))
-}
-
-/// `common.v1#/$defs/timestamp` is `format: date-time`. Checked structurally
-/// rather than parsed: this crate has no clock and no date dependency, and an
-/// ill-formed instant must not reach the digest.
-fn is_timestamp(value: &str) -> bool {
-    let bytes = value.as_bytes();
-    value.len() == 20
-        && bytes[4] == b'-'
-        && bytes[7] == b'-'
-        && bytes[10] == b'T'
-        && bytes[13] == b':'
-        && bytes[16] == b':'
-        && bytes[19] == b'Z'
-        && [0, 1, 2, 3, 5, 6, 8, 9, 11, 12, 14, 15, 17, 18]
-            .iter()
-            .all(|&i| bytes[i].is_ascii_digit())
-}
-
-/// `type/subtype`, enough to reject prose without embedding a media-type registry.
-fn is_media_type(value: &str) -> bool {
-    match value.split_once('/') {
-        Some((kind, subtype)) => {
-            !kind.is_empty()
-                && !subtype.is_empty()
-                && !value.contains(' ')
-                && value
-                    .bytes()
-                    .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'/' | b'.' | b'+' | b'-'))
-        }
-        None => false,
-    }
-}
-
-/// Ed25519 in unpadded base64url: 64 bytes are 86 characters. Shape only — a
-/// well-shaped string that decodes to something else is caught by the real
-/// signature check, which belongs to the key-ceremony increment.
-fn is_signature_shaped(value: &str) -> bool {
-    value.len() == 86
-        && value
-            .bytes()
-            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_'))
-}
-
-/// `uniqueItems: true`. Order is preserved rather than sorted: two orders are
-/// two documents, and silently reordering would make this crate's digest differ
-/// from the one an operator computes over the document it holds.
-fn all_unique(values: &[String]) -> bool {
-    values
-        .iter()
-        .enumerate()
-        .all(|(index, value)| !values[..index].contains(value))
-}
-
-fn bounded<F: Fn(&str) -> bool>(values: &[String], valid: F) -> bool {
+/// `uniqueItems: true` with the schema's bounds. Order is preserved rather than
+/// sorted: two orders are two documents, and silently reordering would make this
+/// crate's digest differ from the one an operator computes over the bytes held.
+fn bounded<T: FromStr>(values: &[String]) -> bool {
     !values.is_empty()
         && values.len() <= MAX_COLLECTION_ITEMS
-        && all_unique(values)
-        && values.iter().all(|value| valid(value))
+        && values
+            .iter()
+            .enumerate()
+            .all(|(index, value)| !values[..index].contains(value))
+        && values.iter().all(|value| valid::<T>(value))
 }
 
 /// Every binding checked before anything is hashed: hashing an incomplete
 /// document would yield a digest that looks authoritative over nothing.
+///
+/// Each check delegates to the type generated from the schema, so the accepted
+/// set is the contract's by construction rather than by transcription.
 fn check_binding(input: &AttestationInput) -> Result<(), HarnessRefusal> {
-    let ok = is_urn(&input.id)
-        && is_tenant_id(&input.tenant_id)
-        && is_urn(&input.mission_id)
-        && is_urn(&input.run_id)
-        && is_sha256(&input.plan_digest)
-        && is_sha256(&input.requested_profile_digest)
-        && is_sha256(&input.effective_profile_digest)
-        && bounded(&input.worker_manifest_digests, is_sha256)
-        && is_urn(&input.sandbox_engine_manifest.id)
-        && is_sha256(&input.sandbox_engine_manifest.digest)
-        && is_media_type(&input.sandbox_engine_manifest.media_type)
-        && bounded(&input.effective_controls, is_identifier)
-        && is_timestamp(&input.generated_at)
-        && is_identifier(&input.signing_key_id);
+    let ok = valid::<contract::LibreAiHarnessAttestationV1Id>(&input.id)
+        && valid::<contract::LibreAiHarnessAttestationV1TenantId>(&input.tenant_id)
+        && valid::<contract::LibreAiHarnessAttestationV1MissionId>(&input.mission_id)
+        && valid::<contract::LibreAiHarnessAttestationV1RunId>(&input.run_id)
+        && valid::<contract::LibreAiHarnessAttestationV1PlanDigest>(&input.plan_digest)
+        && valid::<contract::LibreAiHarnessAttestationV1RequestedProfileDigest>(
+            &input.requested_profile_digest,
+        )
+        && valid::<contract::LibreAiHarnessAttestationV1EffectiveProfileDigest>(
+            &input.effective_profile_digest,
+        )
+        && bounded::<contract::LibreAiHarnessAttestationV1WorkerManifestDigestsItem>(
+            &input.worker_manifest_digests,
+        )
+        && valid::<contract::LibreAiHarnessAttestationV1SandboxEngineManifestId>(
+            &input.sandbox_engine_manifest.id,
+        )
+        && valid::<contract::LibreAiHarnessAttestationV1SandboxEngineManifestDigest>(
+            &input.sandbox_engine_manifest.digest,
+        )
+        && valid::<contract::LibreAiHarnessAttestationV1SandboxEngineManifestMediaType>(
+            &input.sandbox_engine_manifest.media_type,
+        )
+        && bounded::<contract::LibreAiHarnessAttestationV1EffectiveControlsItem>(
+            &input.effective_controls,
+        )
+        // `generatedAt` is `format: date-time`, which the schema expresses as a
+        // chrono timestamp rather than a pattern: parsing it is the validation.
+        && valid::<chrono::DateTime<chrono::Utc>>(&input.generated_at)
+        && valid::<contract::LibreAiHarnessAttestationV1SigningKeyId>(&input.signing_key_id);
 
     if ok {
         Ok(())
@@ -433,15 +415,17 @@ pub fn assemble_attestation(
     signer: &dyn AttestationSigner,
 ) -> Result<HarnessAttestation, HarnessRefusal> {
     check_capability(&input)?;
-    // The document names the key it was signed with; signing it with another
-    // would make that field a claim rather than a binding.
+    // The document names the key it was signed with; signing it under another
+    // declared identity would make that field a claim rather than a binding.
     if input.signing_key_id != signer.key_id() {
         return Err(HarnessRefusal::AttestationBindingIncomplete);
     }
     let attestation_digest = attestation_digest(&input)?;
     let signature = signer
         .sign(&attestation_digest)
-        .filter(|candidate| is_signature_shaped(candidate))
+        .filter(|candidate| {
+            valid::<contract::LibreAiHarnessAttestationV1Signature>(candidate.as_str())
+        })
         .ok_or(HarnessRefusal::AttestationUnsigned)?;
     Ok(HarnessAttestation {
         input,
@@ -453,14 +437,10 @@ pub fn assemble_attestation(
 
 /// Verify that an attestation still binds its fields and claims no capability
 /// this stage withholds.
-///
-/// Signature *validity* against a public key belongs to the key-ceremony
-/// increment; what is checked here is shape, capability posture, and that
-/// nothing was rewritten after the digest was produced.
 pub fn verify_binding(
     attestation: &HarnessAttestation,
 ) -> Result<VerifiedAttestation, HarnessRefusal> {
-    if !is_signature_shaped(&attestation.signature) {
+    if !valid::<contract::LibreAiHarnessAttestationV1Signature>(&attestation.signature) {
         return Err(HarnessRefusal::AttestationUnsigned);
     }
     check_capability(&attestation.input)?;
@@ -471,7 +451,10 @@ pub fn verify_binding(
     Ok(VerifiedAttestation {
         run_id: attestation.input.run_id.clone(),
         mission_id: attestation.input.mission_id.clone(),
+        tenant_id: attestation.input.tenant_id.clone(),
         effective_profile_digest: attestation.input.effective_profile_digest.clone(),
+        signing_key_id: attestation.input.signing_key_id.clone(),
+        attestation_digest: attestation.attestation_digest.clone(),
         diverged: attestation.diverged(),
         sealed: Sealed,
     })

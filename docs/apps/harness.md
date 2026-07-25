@@ -49,7 +49,9 @@ The harness is the boundary a worker cannot talk its way out of. It takes a requ
 
 **Events:** `ProfileResolved`, `ControlsApplied`, `RunStarted`, `OutputTruncated`, `RunCompleted`, `RunRefused`, `AttestationEmitted`.
 
-Requested and effective controls are distinct fields throughout. Collapsing them into one would make a silently degraded confinement indistinguishable from an honoured one.
+Requested and effective **profile digests** are distinct fields throughout. Collapsing them into one would make a silently degraded confinement indistinguishable from an honoured one.
+
+Amended 2026-07-25 (ADR-0018 lineage): an earlier wording promised distinct requested and effective _controls_. The locked contract carries a single `effectiveControls` and is `additionalProperties: false`, so that promise was unreachable — the specification over-promised against its own contract. Nothing is lost: a profile is content-addressed, so `requestedProfileDigest` resolves the profile that was asked for and its controls can be compared to those actually applied. Adding a `requestedControls` field would have meant reopening ADR-0004's fourteen locked entries.
 
 ## Refusal matrix
 
@@ -66,6 +68,8 @@ Requested and effective controls are distinct fields throughout. Collapsing them
 - `harness.capability_not_enabled` — the profile requests a capability closed at this stage.
 - `harness.attestation_binding_incomplete` — profile, effective controls, worker manifests or kernel capabilities are not all bound.
 - `harness.attestation_unsigned` — the attestation carries no valid signature.
+- `harness.attestation_digest_mismatch` — the recorded digest does not match the bound fields.
+- `harness.canonicalization_failed` — **defensive**: canonical serialization failed. Unreachable for the document shape the contract defines today, and kept so a future field type that JCS can reject fails closed rather than panicking. Exempt from the release gate requiring every code to be reachable, precisely because reaching it would mean the document shape had changed.
 
 ## Data
 
@@ -110,7 +114,7 @@ Locked by ADR-0004; no implementation package amends them.
 
 Adversarial tests are the evidence that matters here, and they are written before the confinement they attack: a symlink escaping the workspace root; a path traversal surviving naive normalization; a write to a denied path; an output exceeding its per-tool bound; a scan interrupted mid-way; an attestation with one binding removed; a tampered profile digest. Each must produce its refusal code, not a warning.
 
-Plus: an attestation verified independently from the run that produced it, and a proof that requested and effective controls are recorded separately.
+Plus: an attestation verified independently from the run that produced it, and a proof that requested and effective profile digests are recorded separately.
 
 Published under `distribution/evidence/` with coverage metrics (I-20).
 
@@ -124,6 +128,6 @@ Each declares exclusive write paths and carries the ADR-0004 §6 criteria.
 
 ## Release and rollback
 
-**Release gates.** Every refusal code reachable by an adversarial test. No path escape on the platform's canonicalization semantics. No attestation emitted with an incomplete binding or without a signature. Requested and effective controls distinguishable in every attestation. Independent review by reviewers distinct from the implementer (K4).
+**Release gates.** Every refusal code reachable by an adversarial test, except those marked defensive in the matrix above. No path escape on the platform's canonicalization semantics. No attestation emitted with an incomplete binding or without a signature. Requested and effective profile digests distinguishable in every attestation. Independent review by reviewers distinct from the implementer (K4).
 
 **Rollback.** Reverting the deployable is sufficient: profiles are content-addressed and immutable, attestations are append-only. An attestation emitted by a rolled-back version stays valid and verifiable — it records what was enforced at the time, which does not become false because the code changed.

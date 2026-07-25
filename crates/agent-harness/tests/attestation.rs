@@ -321,6 +321,140 @@ fn refuses_every_contract_pattern_violation() {
     }
 }
 
+#[test]
+fn accepts_what_the_contract_accepts_and_refuses_what_it_refuses() {
+    // The exact counter-examples three reviews measured against hand-written
+    // validators. Each was wrong in one direction; validation now goes through
+    // the types generated from the schema, so the accepted set is the
+    // contract's by construction.
+    let accepted: Vec<NamedMutation> = vec![
+        (
+            "media type with underscore",
+            Box::new(|i: &mut AttestationInput| {
+                i.sandbox_engine_manifest.media_type = "application/x_thing".to_owned()
+            }),
+        ),
+        (
+            "media type with vendor punctuation",
+            Box::new(|i: &mut AttestationInput| {
+                i.sandbox_engine_manifest.media_type = "application/vnd.foo!bar".to_owned()
+            }),
+        ),
+        (
+            "fractional seconds",
+            Box::new(|i: &mut AttestationInput| {
+                i.generated_at = "2026-07-25T10:00:00.123Z".to_owned()
+            }),
+        ),
+        (
+            "numeric offset",
+            Box::new(|i: &mut AttestationInput| {
+                i.generated_at = "2026-07-25T12:00:00+02:00".to_owned()
+            }),
+        ),
+    ];
+    for (name, mutate) in accepted {
+        let mut valid = input();
+        mutate(&mut valid);
+        assert!(
+            attestation_digest(&valid).is_ok(),
+            "refused a contract-valid {name}"
+        );
+    }
+
+    let refused: Vec<NamedMutation> = vec![
+        (
+            "uppercase media type",
+            Box::new(|i: &mut AttestationInput| {
+                i.sandbox_engine_manifest.media_type = "APPLICATION/OCTET-STREAM".to_owned()
+            }),
+        ),
+        (
+            "media type with two slashes",
+            Box::new(|i: &mut AttestationInput| {
+                i.sandbox_engine_manifest.media_type = "application/json/evil".to_owned()
+            }),
+        ),
+        (
+            "impossible instant",
+            Box::new(|i: &mut AttestationInput| {
+                // Accepted before: it sorts above every real instant under the
+                // lexicographic comparison an ISO-8601 consumer reaches for,
+                // neutralising any freshness or replay window.
+                i.generated_at = "9999-99-99T99:99:99Z".to_owned()
+            }),
+        ),
+        (
+            "out-of-range month and day",
+            Box::new(|i: &mut AttestationInput| i.generated_at = "2026-02-31T25:61:61Z".to_owned()),
+        ),
+    ];
+    for (name, mutate) in refused {
+        let mut invalid = input();
+        mutate(&mut invalid);
+        assert_eq!(
+            attestation_digest(&invalid),
+            Err(HarnessRefusal::AttestationBindingIncomplete),
+            "accepted a contract-invalid {name}"
+        );
+    }
+}
+
+#[test]
+fn emits_the_contract_document_a_consumer_can_read() {
+    // Without this a consumer recomposes the JSON by hand, re-deriving camelCase
+    // and the enum spellings — the private projection that made the first
+    // version unverifiable, displaced onto the caller.
+    let attestation = assemble_attestation(input(), &StubSigner).expect("signs");
+    let document = attestation
+        .to_contract_document()
+        .expect("a verified attestation is a valid contract document");
+    let json = serde_json::to_value(&document).expect("serializes");
+
+    assert_eq!(json["schemaVersion"], SCHEMA_VERSION);
+    assert_eq!(json["attestationDigest"], attestation.attestation_digest());
+    assert_eq!(json["signature"], attestation.signature());
+    assert_eq!(json["platform"], "macos-aarch64");
+    assert_eq!(json["networkMode"], "none");
+    // Every required property of the contract is present, spelled the
+    // contract's way.
+    for key in [
+        "id",
+        "tenantId",
+        "missionId",
+        "runId",
+        "planDigest",
+        "requestedProfileDigest",
+        "effectiveProfileDigest",
+        "workerManifestDigests",
+        "sandboxEngineManifest",
+        "effectiveControls",
+        "generatedAt",
+        "signingKeyId",
+    ] {
+        assert!(json.get(key).is_some(), "missing contract field {key}");
+    }
+    assert_eq!(
+        json["sandboxEngineManifest"]["mediaType"],
+        "application/json"
+    );
+}
+
+#[test]
+fn the_verified_result_carries_the_tenant_key_and_digest() {
+    // A consumer reaching back into the input for the tenant would be reading a
+    // field outside the verified result — the reflex the first review sanctioned.
+    let attestation = assemble_attestation(input(), &StubSigner).expect("signs");
+    let verified = verify_binding(&attestation).expect("verifies");
+    assert_eq!(verified.tenant_id(), format!("ten_{}", "a".repeat(16)));
+    assert_eq!(verified.signing_key_id(), "harness_key_1");
+    assert_eq!(
+        verified.attestation_digest(),
+        attestation.attestation_digest()
+    );
+    assert_eq!(verified.mission_id(), "urn:libre-ai:mission:m1");
+}
+
 /// One field mutation, boxed so the coverage table can hold them all.
 type Mutation = Box<dyn Fn(&mut AttestationInput)>;
 
