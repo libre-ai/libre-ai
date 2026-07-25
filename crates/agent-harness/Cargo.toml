@@ -13,5 +13,9 @@ path = "src/lib.rs"
 [dependencies]
 serde.workspace = true
 serde_jcs.workspace = true
-serde_json.workspace = true
 sha2.workspace = true
+
+# Only the tests read the locked digest vector; the library itself never parses
+# JSON, it only canonicalizes what a caller already holds.
+[dev-dependencies]
+serde_json.workspace = true
