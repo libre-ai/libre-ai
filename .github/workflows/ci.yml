@@ -96,6 +96,24 @@ jobs:
         run: python -m pip install --disable-pip-version-check --requirement tools/licensing/requirements.txt
       - name: Verify REUSE compliance
         run: reuse lint
+      # `reuse lint` proves every file has an unambiguous licence; it never
+      # compares that licence to what a package manifest promises consumers.
+      # That gap let packages/ui ship "license": "Apache-2.0" to npm while REUSE
+      # attributed it EUPL-1.2, with this required check green throughout. The
+      # comparison is wired here rather than in a new workflow because a check
+      # that is not required is mergeable red, and here `reuse` is already
+      # installed — the gate reads its resolution instead of re-deriving it.
+      - name: Install archived Bun toolchain
+        env:
+          BUN_ARCHIVE_URL: https://github.com/libre-ai/libre-ai/releases/download/toolchain-bun-1.4.0-canary.1-57f349f63/bun-linux-x64.zip
+          BUN_ARCHIVE_SHA256: 83144e2542c33aaae541cf16b42f8cf1c55c3b94c5395fc776417fa27e95bcbf
+        run: |
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/bun.zip" "$BUN_ARCHIVE_URL"
+          echo "$BUN_ARCHIVE_SHA256  $RUNNER_TEMP/bun.zip" | sha256sum --check --strict
+          unzip -q "$RUNNER_TEMP/bun.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/bun-linux-x64" >> "$GITHUB_PATH"
+      - name: Verify declared package licences match REUSE attribution
+        run: bun tools/quality/check-declared-licenses.ts
 
   bun-quality:
     name: Bun quality
