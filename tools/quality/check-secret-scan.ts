@@ -36,6 +36,14 @@ const IGNORED_SUFFIXES = [
   // Scanner test-vector corpus: intentional credential anti-patterns, exercised
   // as positive detection cases by check-contracts / public-source-scanner.
   "contracts/fixtures/schema-fixtures.v1.json",
+  // Sibling detectors that carry their own anti-patterns, same rationale as the
+  // detector source above: each documents or exercises a credentialled
+  // connection URI on a non-reserved host, and each is validated in its own
+  // test context. Reserved-host examples (RFC 2606, localhost) need no entry —
+  // the detector excludes them by construction.
+  "check-no-clever-production.test.ts",
+  "check-personal-data-boundary.ts",
+  "check-personal-data-boundary.test.ts",
 ];
 
 function isIgnored(path: string): boolean {

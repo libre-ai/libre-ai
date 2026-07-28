@@ -5,6 +5,30 @@ import { DecodingMode, decodeHTML } from "entities";
 
 const credentialMarker =
   /(?:sk_live_[A-Za-z0-9_-]{8,}|sk-(?:proj|svcacct)-[A-Za-z0-9_-]{16,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|-----BEGIN (?:(?:(?:RSA|DSA|EC|OPENSSH|ENCRYPTED) )?PRIVATE KEY|PGP PRIVATE KEY BLOCK)-----)/;
+
+/**
+ * The markers above match a credential by its issuer-specific SHAPE. A
+ * provisioned connection string has no such shape: `postgresql://user:pw@host`
+ * is a secret by POSITION — whatever sits between `//` and `@`, past a colon,
+ * is a password. No vendor pattern covers it, which is why a credentialled
+ * connection URI crossed every per-PR gate.
+ *
+ * Two deliberate exclusions keep this from firing on documentation:
+ * - userinfo WITHOUT a password (`git://git@host`) is an identifier, not a
+ *   credential; it stays on the sensitive/PII path, which already detects it;
+ * - RFC 2606 reserved hosts and localhost cannot name a provisioned service, so
+ *   a credential pointing at one is an example by construction. This is what
+ *   lets the gates keep their own detection canaries in-tree.
+ */
+const uriUserinfoCredential = /[A-Za-z][A-Za-z0-9+.-]*:\/\/[^\s:@/]+:[^\s@/]+@([^\s/:?#]+)/;
+const documentationHost =
+  /^(?:localhost|(?:[^\s.]+\.)*example\.(?:com|org|net)|(?:[^\s.]+\.)*(?:test|invalid|localhost))$/i;
+
+function hasUriUserinfoCredential(value: string): boolean {
+  const match = uriUserinfoCredential.exec(value);
+  if (match === null) return false;
+  return !documentationHost.test(match[1] ?? "");
+}
 const asciiAtext = /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]$/;
 const asciiLetter = /^[A-Za-z]$/;
 const uriSchemeCharacter = /^[A-Za-z0-9+.-]$/;
@@ -592,6 +616,7 @@ export function containsCredentialMarker(value: string): boolean {
   const { variants } = sensitiveVariants(value);
   for (const variant of variants) {
     if (credentialMarker.test(variant)) return true;
+    if (hasUriUserinfoCredential(variant)) return true;
   }
   return false;
 }

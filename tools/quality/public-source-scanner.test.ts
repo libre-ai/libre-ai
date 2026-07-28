@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  containsCredentialMarker,
   containsSensitivePublicMarker,
   decodeSensitiveMarkers,
   publicSourceScannerSelfTestFailures,
@@ -16,6 +17,33 @@ describe("specialized-vector public-source scanner", () => {
 
   test("keeps the executable gate self-tests coherent", () => {
     expect(publicSourceScannerSelfTestFailures()).toEqual([]);
+  });
+
+  describe("credential marker — provisioned connection URIs", () => {
+    // A provisioned connection string matches no vendor token shape, so the
+    // credential path used to let `postgresql://user:pw@host/db` through every
+    // per-PR gate while catching a GitHub token on the same line.
+    const cases: ReadonlyArray<readonly [label: string, value: string, expected: boolean]> = [
+      ["postgres URI with password", "postgresql://u:pw@db.internal.acme.fr:5432/mydb", true],
+      ["redis URI with password", "redis://default:pw@cache-prod.acme.fr:6379", true],
+      [
+        "addon-host URI with password",
+        "postgresql://u:pw@bXXX-postgresql.example-cloud.fr/db",
+        true,
+      ],
+      ["vendor token still caught", "ghp_0000000000000000000000000000000000", true],
+      // RFC 2606 and localhost cannot name a provisioned service: an example.
+      ["reserved-host example", "https://user:secret@example.org/feed.xml", false],
+      ["localhost example", "amqp://u:pw@localhost:5672", false],
+      // Userinfo without a password is an identifier, handled by the PII path.
+      ["userinfo without password", "git://git@acme.fr/repo.git", false],
+      ["plain URL", "https://github.com/libre-ai/libre-ai.git", false],
+    ];
+    for (const [label, value, expected] of cases) {
+      test(label, () => {
+        expect(containsCredentialMarker(value)).toBe(expected);
+      });
+    }
   });
 
   test("uses exact case-sensitive HTML5 names", () => {
