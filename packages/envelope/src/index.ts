@@ -180,6 +180,15 @@ export function verifyEnvelope(envelope: UntrustedEnvelope, key: EnvelopeKey): V
   if (envelope.trusted !== false || envelope.schemaVersion !== ENVELOPE_SCHEMA_VERSION) {
     throw new EnvelopeIntegrityError();
   }
+  // The source enum is what lets renderGuarded interpolate `source` into the
+  // guard header unescaped. wrapUntrusted checks it at construction, but a
+  // hand-MAC'd envelope reaches this function without passing through
+  // wrapUntrusted: re-check it fail-closed on the verify path too (K4 review
+  // of f49fc18 — a delimiter-bearing source rendered a broken guard header,
+  // the exact class the label escaping closed).
+  if (!isUntrustedSource(envelope.source)) {
+    throw new EnvelopeIntegrityError();
+  }
   const expected = computeMac(
     key,
     envelope.source,
@@ -219,7 +228,18 @@ function escapeDelimiters(content: string): string {
 export function renderGuarded(envelope: UntrustedEnvelope, key: EnvelopeKey): string {
   const verified = verifyEnvelope(envelope, key);
   const escaped = escapeDelimiters(verified.content);
-  const labelPart = verified.label === undefined ? "" : ` label=${JSON.stringify(verified.label)}`;
+  // The label is caller-supplied and lands INSIDE the opening marker, so it must
+  // be escaped like the content. JSON.stringify escapes quotes and control
+  // characters but leaves U+27E6/U+27E7 untouched: a label carrying the closing
+  // delimiter terminated the guard header early and rendered the remainder of
+  // the label outside the guarded block, with a valid MAC. `source` needs no
+  // escaping — it is a closed enum (UNTRUSTED_SOURCES), and verifyEnvelope
+  // re-checks that enum on this path, so a hand-MAC'd out-of-enum source
+  // fails closed before rendering.
+  const labelPart =
+    verified.label === undefined
+      ? ""
+      : ` label=${escapeDelimiters(JSON.stringify(verified.label))}`;
   const open = `${GUARD_OPEN_PREFIX} source=${verified.source} trusted=false${labelPart}${GUARD_OPEN_SUFFIX}`;
   return `${open}\n${escaped}\n${GUARD_CLOSE}`;
 }
