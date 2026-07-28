@@ -68,28 +68,34 @@ Le contaminant n'est pas le libellé, c'est la présence dans l'arbre de travail
 'refs/pull/*/head:…'` les restaure. Contre la contamination de contexte, l'éviction
    simple produit exactement le même effet, sans aucun de ces coûts.
 
-6. **Deux garde-fous rendent la primitive opposable**, câblés dans `bun run check` :
-   - `check:forgotten` — anti-résurrection (un chemin évincé qui réapparaît),
-     anti-citation (un fichier vivant qui le nomme, hors allow-list déclarée dans le
-     registre), anti-oubli-sauvage (une entrée sans récupérabilité prouvée) ;
-   - `check:anchors` — tout ancrage de commit cité dans un document de doctrine doit
-     résoudre, ou être une révision externe gelée déclarée dans
-     `ecosystem/LEGACY-MANIFEST.yaml`.
+6. **Un garde-fou rend la primitive opposable**, câblé dans `bun run check` :
+   `check:forgotten` — anti-résurrection (un chemin évincé qui réapparaît),
+   anti-citation (un fichier vivant qui le nomme, hors allow-list déclarée dans le
+   registre), anti-oubli-sauvage (une entrée sans récupérabilité prouvée). Cette
+   troisième règle exige l'historique complet : le job CI passe en `fetch-depth: 0`.
 
-## Portée du garde-fou d'ancrage, et sa limite assumée
+## Un second garde-fou a été construit, puis retiré — le constat vaut d'être gardé
 
-`check:anchors` couvre la doctrine — ADR, registres de décisions, `AGENTS.md`,
-`STATUS.md`, `GOALS.md`, `vision.md` — et **exclut `docs/reviews/**`**. La politique de
-merge du dépôt est le squash : une revue nommée d'après son commit de branche est
-ancrée sur un SHA que le squash détruit par construction. 24 ancrages de ce type ne
-résolvent déjà plus. Les gater reviendrait à faire échouer la CI contre la politique de
-merge, et un gate qui combat la politique finit désactivé. Les revues sont ancrées par
-digest de contenu (ADR-0016), que le squash ne touche pas.
+Un `check:anchors` exigeant que tout ancrage de commit cité en doctrine résolve a été
+écrit, testé, et **retiré après échec en CI**. Le motif est structurel et généralisable.
 
-Limite documentée du second garde-fou : un SHA court entièrement numérique (ainsi
-`6218654` dans `STATUS.md`) est ignoré plutôt que vérifié, faute de pouvoir le
-distinguer d'un nombre. Le garde-fou préfère un faux négatif à l'échec d'un document sur
-une valeur qui ressemble à de l'hexadécimal.
+La politique de merge du dépôt est le squash. Un squash crée un commit neuf et
+n'attache pas les commits de la branche : ceux-ci ne sont ancêtres d'aucun ref et
+disparaissent de tout clone frais. Or la doctrine cite couramment ces commits comme
+preuve d'arbitrage — `STATUS.md`, ADR-0003, ADR-0004 et ADR-0006 en citent une
+vingtaine. Ils ne résolvent pas en CI.
+
+Le piège de vérification mérite d'être nommé : le garde-fou **passait en local**, parce
+qu'un clone de travail conserve les objets fetchés au fil des branches de pull request.
+Le vert local était un faux positif produit par des objets surnuméraires que le dépôt
+publié n'a pas. Une vérification locale ne prouve rien sur la résolution d'un SHA ; seul
+un clone frais le prouve.
+
+Conclusion retenue : **dans un dépôt qui merge par squash, un SHA de commit n'est pas un
+ancrage durable ; seul un digest de contenu l'est.** C'est exactement le choix
+qu'ADR-0016 avait fait pour la chaîne de revue, et ce constat le confirme. Le seul
+ancrage de commit que ce dépôt peut gater est celui qu'il contrôle : le `recoverable_at`
+du registre d'oubli, vérifié par `check:forgotten`, qui pointe sur un commit de `main`.
 
 ## Conséquences
 
