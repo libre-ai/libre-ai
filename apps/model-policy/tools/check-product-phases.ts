@@ -163,10 +163,16 @@ interface ProjectionUpdate {
 
 type RenameFile = (oldPath: string, newPath: string) => Promise<void>;
 
+export interface ProductPhaseSummary {
+  readonly phaseCount: number;
+  readonly gateCount: number;
+}
+
 export interface CheckProductPhaseFilesOptions {
   readonly repoRoot?: string;
   readonly write?: boolean;
   readonly projectionRename?: RenameFile;
+  readonly onValidatedSummary?: (summary: ProductPhaseSummary) => void;
 }
 
 const APP_START_MARKER = "<!-- model-policy-phases:start -->";
@@ -291,6 +297,29 @@ function sensitiveMarkerFailures(bytes: Uint8Array, context: string): string[] {
     }
   }
   return failures;
+}
+
+function decodedJsonSensitiveMarkerFailures(value: unknown, context: string): string[] {
+  const pending: unknown[] = [value];
+  while (pending.length > 0) {
+    const candidate = pending.pop();
+    if (typeof candidate === "string") {
+      if (containsSensitivePublicMarker(candidate)) {
+        return [`${context} contains a sensitive marker after JSON decoding`];
+      }
+      continue;
+    }
+    if (Array.isArray(candidate)) {
+      pending.push(...candidate);
+      continue;
+    }
+    if (candidate !== null && typeof candidate === "object") {
+      for (const [key, child] of Object.entries(candidate)) {
+        pending.push(key, child);
+      }
+    }
+  }
+  return [];
 }
 
 async function commitExists(repoRoot: string, commit: string): Promise<boolean> {
@@ -576,6 +605,12 @@ async function validateOperationalEvidenceReference(
     failures.push(`${expectation.context}: operational evidence is not valid JSON`);
     return failures;
   }
+  const decodedMarkerFailures = decodedJsonSensitiveMarkerFailures(
+    unknownArtifact,
+    expectation.context,
+  );
+  failures.push(...decodedMarkerFailures);
+  if (decodedMarkerFailures.length > 0) return failures;
   if (!validateOperationalEvidence(unknownArtifact)) {
     failures.push(
       `${expectation.context}: operational evidence schema rejected: ` +
@@ -618,7 +653,7 @@ async function validateOperationalEvidenceReference(
   }
   if (artifact.kind === "deployment_authorization") {
     const windowStartedAt = Date.parse(artifact.windowStartedAt);
-    if (artifactRecordedAt > windowStartedAt) {
+    if (artifactRecordedAt >= windowStartedAt) {
       failures.push(`${expectation.context}: authorization must predate the observed window`);
     }
   } else if (artifact.observedAt) {
@@ -676,6 +711,12 @@ async function validateEvidenceReference(
     failures.push(`${gate.id}: evidence record is not valid JSON`);
     return failures;
   }
+  const decodedRecordMarkerFailures = decodedJsonSensitiveMarkerFailures(
+    unknownRecord,
+    `${gate.id}: evidence`,
+  );
+  failures.push(...decodedRecordMarkerFailures);
+  if (decodedRecordMarkerFailures.length > 0) return failures;
   if (!validateEvidenceRecord(unknownRecord)) {
     failures.push(
       `${gate.id}: evidence schema rejected ${reference.record}: ` +
@@ -803,6 +844,12 @@ async function validateEvidenceReference(
       failures.push(`${attestationContext}: record is not valid JSON`);
       continue;
     }
+    const decodedAttestationMarkerFailures = decodedJsonSensitiveMarkerFailures(
+      unknownAttestation,
+      attestationContext,
+    );
+    failures.push(...decodedAttestationMarkerFailures);
+    if (decodedAttestationMarkerFailures.length > 0) continue;
     if (!validateReviewAttestation(unknownAttestation)) {
       failures.push(
         `${attestationContext}: schema rejected: ` +
@@ -1170,23 +1217,35 @@ export async function checkProductPhaseFiles(
       ];
     }
   }
+  options.onValidatedSummary?.({
+    phaseCount: roadmap.phases.length,
+    gateCount: roadmap.phases.flatMap((phase) => phase.gates).length,
+  });
   return [];
 }
 
 async function run(): Promise<void> {
   const write = Bun.argv.includes("--write");
-  const failures = await checkProductPhaseFiles({ write });
+  const summary: { value: ProductPhaseSummary | null } = { value: null };
+  const failures = await checkProductPhaseFiles({
+    write,
+    onValidatedSummary: (validatedSummary) => {
+      summary.value = validatedSummary;
+    },
+  });
   if (failures.length > 0) {
     for (const failure of failures) console.error(failure);
     process.exitCode = 1;
     return;
   }
-  const roadmap = (await Bun.file(
-    resolve(DEFAULT_REPO_ROOT, "docs/apps/model-policy/phases.v1.json"),
-  ).json()) as ProductPhaseRoadmap;
+  if (!summary.value) {
+    console.error("Model Policy phase plan validated without a summary");
+    process.exitCode = 1;
+    return;
+  }
   console.log(
-    `Model Policy phase plan verified: ${roadmap.phases.length} phases, ` +
-      `${roadmap.phases.flatMap((phase) => phase.gates).length} gates`,
+    `Model Policy phase plan verified: ${summary.value.phaseCount} phases, ` +
+      `${summary.value.gateCount} gates`,
   );
 }
 

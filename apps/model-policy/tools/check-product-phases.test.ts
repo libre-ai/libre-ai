@@ -20,6 +20,7 @@ const FIXTURE_EVIDENCE_PATH = "distribution/evidence/model-policy/mp-p0-g01-fixt
 
 interface MutableEvidenceFixture {
   assertion: string;
+  reviewBindings: Array<{ role: ReviewRole; sha256: string }>;
   serviceObservation?: {
     deploymentIdentity: string;
     windowStartedAt: string;
@@ -228,6 +229,19 @@ async function rewriteEvidenceFixture(
   const evidenceText = `${JSON.stringify(record, null, 2)}\n`;
   await writeFile(evidencePath, evidenceText);
 
+  const roadmapPath = join(repoRoot, "docs/apps/model-policy/phases.v1.json");
+  const roadmap = JSON.parse(await readFile(roadmapPath, "utf8")) as ProductPhaseRoadmap;
+  const evidenceReference = roadmap.phases[0]?.gates[0]?.evidence[0] as
+    | { sha256: string }
+    | undefined;
+  if (!evidenceReference) throw new Error("fixture evidence reference is missing");
+  evidenceReference.sha256 = sha256(evidenceText);
+  await writeFile(roadmapPath, `${JSON.stringify(roadmap, null, 2)}\n`);
+  await runGit(repoRoot, ["add", "."]);
+}
+
+async function writeRawEvidenceFixture(repoRoot: string, evidenceText: string): Promise<void> {
+  await writeFile(join(repoRoot, FIXTURE_EVIDENCE_PATH), evidenceText);
   const roadmapPath = join(repoRoot, "docs/apps/model-policy/phases.v1.json");
   const roadmap = JSON.parse(await readFile(roadmapPath, "utf8")) as ProductPhaseRoadmap;
   const evidenceReference = roadmap.phases[0]?.gates[0]?.evidence[0] as
@@ -589,6 +603,26 @@ describe("checkProductPhaseFiles", () => {
     expect(await checkProductPhaseFiles({ repoRoot })).toEqual([]);
   });
 
+  test("reports counts from the validated indexed roadmap, not a mutable worktree reread", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    const roadmapPath = join(repoRoot, "docs/apps/model-policy/phases.v1.json");
+    await writeFile(roadmapPath, `${JSON.stringify({ ...validRoadmap(), phases: [] }, null, 2)}\n`);
+    const summary: { value: { phaseCount: number; gateCount: number } | null } = {
+      value: null,
+    };
+
+    expect(
+      await checkProductPhaseFiles({
+        repoRoot,
+        write: true,
+        onValidatedSummary: (value) => {
+          summary.value = value;
+        },
+      }),
+    ).toEqual([]);
+    expect(summary.value).toEqual({ phaseCount: 2, gateCount: 3 });
+  });
+
   test("accepts qualified evidence with versioned tools, inputs, harnesses and required reviews", async () => {
     const repoRoot = await createFixture(validRoadmap());
     await addEvidenceFixture(repoRoot);
@@ -636,6 +670,22 @@ describe("checkProductPhaseFiles", () => {
 
     const failures = await checkProductPhaseFiles({ repoRoot, write: true });
     expect(failures).toContain("MP-P0-G01: evidence contains a sensitive marker at line 7");
+  });
+
+  test("rejects a sensitive marker hidden in an evidence record by JSON escaping", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    await addEvidenceFixture(repoRoot);
+    const evidencePath = join(repoRoot, FIXTURE_EVIDENCE_PATH);
+    const evidenceText = (await readFile(evidencePath, "utf8")).replace(
+      "The fixture gate has independently reproducible evidence.",
+      "AKI\\u00411234567890ABCDEF",
+    );
+    await writeRawEvidenceFixture(repoRoot, evidenceText);
+
+    const failures = await checkProductPhaseFiles({ repoRoot, write: true });
+    expect(failures).toContain(
+      "MP-P0-G01: evidence contains a sensitive marker after JSON decoding",
+    );
   });
 
   test("rejects phase and gate identity drift inside a content-addressed record", async () => {
@@ -739,6 +789,28 @@ describe("checkProductPhaseFiles", () => {
     ).toBe(true);
   });
 
+  test("rejects a sensitive marker hidden in a review attestation by JSON escaping", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    await addEvidenceFixture(repoRoot, { achievedEvidenceLevel: "qualified" });
+    const attestationPath =
+      "distribution/evidence/model-policy/reviews/mp-p0-g01-architecture.json";
+    const attestationText = (await readFile(join(repoRoot, attestationPath), "utf8")).replace(
+      "reviewer:architecture",
+      "reviewer\\u0040example.invalid",
+    );
+    await writeFile(join(repoRoot, attestationPath), attestationText);
+    await rewriteEvidenceFixture(repoRoot, (record) => {
+      const binding = record.reviewBindings.find((candidate) => candidate.role === "architecture");
+      if (!binding) throw new Error("architecture review binding is missing");
+      binding.sha256 = sha256(attestationText);
+    });
+
+    const failures = await checkProductPhaseFiles({ repoRoot, write: true });
+    expect(failures).toContain(
+      "MP-P0-G01: architecture review attestation contains a sensitive marker after JSON decoding",
+    );
+  });
+
   test("rejects one review identity reused by multiple attestation records", async () => {
     const repoRoot = await createFixture(validRoadmap());
     await addEvidenceFixture(repoRoot, { sharedReviewId: true });
@@ -829,6 +901,56 @@ describe("checkProductPhaseFiles", () => {
     );
   });
 
+  test("rejects a sensitive marker hidden by JSON Unicode escaping", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    await addEvidenceFixture(repoRoot, {
+      achievedEvidenceLevel: "in_service",
+      includeServiceObservation: true,
+    });
+    const authorizationPath =
+      "distribution/evidence/model-policy/operations/mp-p0-g01-authorization.json";
+    const authorizationText = (await readFile(join(repoRoot, authorizationPath), "utf8")).replace(
+      "approval:fixture",
+      "AKI\\u00411234567890ABCDEF",
+    );
+    await writeFile(join(repoRoot, authorizationPath), authorizationText);
+    await rewriteEvidenceFixture(repoRoot, (record) => {
+      if (!record.serviceObservation) throw new Error("service observation is missing");
+      record.serviceObservation.authorizationEvidenceSha256 = sha256(authorizationText);
+    });
+
+    const failures = await checkProductPhaseFiles({ repoRoot, write: true });
+    expect(failures).toContain(
+      "MP-P0-G01: deployment authorization contains a sensitive marker after JSON decoding",
+    );
+  });
+
+  test("rejects deployment authorization recorded exactly when observation starts", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    await addEvidenceFixture(repoRoot, {
+      achievedEvidenceLevel: "in_service",
+      includeServiceObservation: true,
+    });
+    const authorizationPath =
+      "distribution/evidence/model-policy/operations/mp-p0-g01-authorization.json";
+    const authorization = JSON.parse(await readFile(join(repoRoot, authorizationPath), "utf8")) as {
+      recordedAt: string;
+      windowStartedAt: string;
+    };
+    authorization.recordedAt = authorization.windowStartedAt;
+    const authorizationText = `${JSON.stringify(authorization, null, 2)}\n`;
+    await writeFile(join(repoRoot, authorizationPath), authorizationText);
+    await rewriteEvidenceFixture(repoRoot, (record) => {
+      if (!record.serviceObservation) throw new Error("service observation is missing");
+      record.serviceObservation.authorizationEvidenceSha256 = sha256(authorizationText);
+    });
+
+    const failures = await checkProductPhaseFiles({ repoRoot, write: true });
+    expect(failures).toContain(
+      "MP-P0-G01: deployment authorization: authorization must predate the observed window",
+    );
+  });
+
   test("rejects deployment authorization with a denying outcome", async () => {
     const repoRoot = await createFixture(validRoadmap());
     await addEvidenceFixture(repoRoot, {
@@ -914,6 +1036,78 @@ describe("checkProductPhaseFiles", () => {
         failure.includes("smoke test: operational evidence schema rejected"),
       ),
     ).toBe(true);
+  });
+
+  test("rejects an observation outside its bound window", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    await addEvidenceFixture(repoRoot, {
+      achievedEvidenceLevel: "in_service",
+      includeServiceObservation: true,
+    });
+    const smokePath = "distribution/evidence/model-policy/operations/mp-p0-g01-smoke.json";
+    const smoke = JSON.parse(await readFile(join(repoRoot, smokePath), "utf8")) as {
+      observedAt: string;
+    };
+    smoke.observedAt = "2026-07-26T23:59:59Z";
+    const smokeText = `${JSON.stringify(smoke, null, 2)}\n`;
+    await writeFile(join(repoRoot, smokePath), smokeText);
+    await rewriteEvidenceFixture(repoRoot, (record) => {
+      if (!record.serviceObservation) throw new Error("service observation is missing");
+      record.serviceObservation.smokeEvidenceSha256 = sha256(smokeText);
+    });
+
+    const failures = await checkProductPhaseFiles({ repoRoot, write: true });
+    expect(failures).toContain(
+      "MP-P0-G01: smoke test: observation instant is outside the bound window",
+    );
+  });
+
+  test("rejects an operational artifact recorded after the evidence record", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    await addEvidenceFixture(repoRoot, {
+      achievedEvidenceLevel: "in_service",
+      includeServiceObservation: true,
+    });
+    const smokePath = "distribution/evidence/model-policy/operations/mp-p0-g01-smoke.json";
+    const smoke = JSON.parse(await readFile(join(repoRoot, smokePath), "utf8")) as {
+      recordedAt: string;
+    };
+    smoke.recordedAt = "2026-07-28T00:00:01Z";
+    const smokeText = `${JSON.stringify(smoke, null, 2)}\n`;
+    await writeFile(join(repoRoot, smokePath), smokeText);
+    await rewriteEvidenceFixture(repoRoot, (record) => {
+      if (!record.serviceObservation) throw new Error("service observation is missing");
+      record.serviceObservation.smokeEvidenceSha256 = sha256(smokeText);
+    });
+
+    const failures = await checkProductPhaseFiles({ repoRoot, write: true });
+    expect(failures).toContain(
+      "MP-P0-G01: smoke test: artifact cannot postdate the evidence record",
+    );
+  });
+
+  test("rejects an operational record predating its observation", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    await addEvidenceFixture(repoRoot, {
+      achievedEvidenceLevel: "in_service",
+      includeServiceObservation: true,
+    });
+    const rollbackPath = "distribution/evidence/model-policy/operations/mp-p0-g01-rollback.json";
+    const rollback = JSON.parse(await readFile(join(repoRoot, rollbackPath), "utf8")) as {
+      recordedAt: string;
+    };
+    rollback.recordedAt = "2026-07-27T12:59:59Z";
+    const rollbackText = `${JSON.stringify(rollback, null, 2)}\n`;
+    await writeFile(join(repoRoot, rollbackPath), rollbackText);
+    await rewriteEvidenceFixture(repoRoot, (record) => {
+      if (!record.serviceObservation) throw new Error("service observation is missing");
+      record.serviceObservation.rollbackEvidenceSha256 = sha256(rollbackText);
+    });
+
+    const failures = await checkProductPhaseFiles({ repoRoot, write: true });
+    expect(failures).toContain(
+      "MP-P0-G01: rollback test: artifact record predates its observation",
+    );
   });
 
   test("rejects reuse of one operational artifact for authorization and smoke", async () => {

@@ -65,6 +65,17 @@ The independent [business](COUNTER-REVIEW-E03226F-BUSINESS.md), [technical](COUN
 | Coverage required a shared CI edit | Added a repository-discovered app test that executes the app-local line/function coverage threshold; the existing unchanged root `bun test` CI gate therefore blocks regression. |
 | Operational false-greens lacked regressions | Added denying, empty, unrelated, reused, sensitive, future-window, environment mismatch, invalid-digest, and valid resolved-incident cases. |
 
+## Re-review of `a431ebb`
+
+The independent [business](COUNTER-REVIEW-A431EBB-BUSINESS.md) and [architecture](COUNTER-REVIEW-A431EBB-ARCHITECTURE.md) reviews approved the fourth remediation. The [technical review](COUNTER-REVIEW-A431EBB-TECHNICAL.md) rejected it for two security false-greens and one mutable CLI diagnostic.
+
+| Re-review finding | Fifth remediation |
+| --- | --- |
+| JSON Unicode escapes bypassed raw sensitive-marker scanning | Every parsed evidence record, review attestation, and operational record now traverses decoded JSON keys and string values through the same marker classifier before schema validation. Adversarial fixtures cover all three structured artifact classes. |
+| Authorization at the observation-window boundary passed | Deployment-authorization `recordedAt` must now be strictly earlier than `windowStartedAt`; equality is rejected, and explicit before/equal/outside/record-before-observation branches are covered. |
+| CLI summary reread the mutable worktree roadmap | Successful validation returns phase/gate counts directly from the already validated indexed roadmap. A staged-valid/unstaged-divergent test proves the callback does not reread mutable roadmap text. |
+| Direct app imports remain declared only at root | No unauthorized manifest or lockfile write was reintroduced. Ajv/Ajv Formats app autonomy remains an explicit non-blocking integrator-owned residual until an accepted work package permits a workspace dependency and lock update. |
+
 ## Intentionally not fabricated
 
 - No work package, ADR/specification amendment, owner selection, wave activation, production approval, or commercial approval is marked accepted. Those are external human-controlled prerequisites.
