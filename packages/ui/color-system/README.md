@@ -15,7 +15,7 @@ convergence candidate. It does not change the published `@libre-ai/ui` color tok
   contrast, code/diff readability and categorical screening.
 - `generated-assets.test.ts` validates generated tokens against the pinned official DTCG 2025.10
   schema, then verifies audits, Tailwind 4.3 compilation and preview constraints.
-- `vendor/` contains that schema and its upstream license notice for deterministic offline checks.
+- `third_party/dtcg-format-2025.10/` (repo root) contains that schema and its upstream license notice for deterministic offline checks.
 
 The generated reports are in [`generated/README.md`](./generated/README.md).
 

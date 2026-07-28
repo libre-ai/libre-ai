@@ -18,7 +18,7 @@ interface AuditReport {
 describe("generated color-system deliverables", () => {
   test("emits complete DTCG 2025.10 token files", async () => {
     const schema = await Bun.file(
-      join(import.meta.dir, "vendor", "dtcg-format-2025.10.schema.json"),
+      join(import.meta.dir, "..", "..", "..", "third_party", "dtcg-format-2025.10", "dtcg-format-2025.10.schema.json"),
     ).json();
     const validateDtcg = new Ajv({
       allErrors: true,

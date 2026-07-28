@@ -17,7 +17,7 @@
       "!docs/reviews/**/evidence",
       "!docs/transformation/inputs",
       "!packages/ui/color-system/generated",
-      "!packages/ui/color-system/vendor"
+      "!third_party/dtcg-format-2025.10"
     ]
   },
   "formatter": {
