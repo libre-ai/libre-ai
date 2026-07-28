@@ -324,7 +324,7 @@
     },
     "operationalEvidencePath": {
       "type": "string",
-      "pattern": "^distribution/evidence/model-policy/operations/[A-Za-z0-9._/-]+$"
+      "pattern": "^distribution/evidence/model-policy/operations/[A-Za-z0-9._/-]+\\.json$"
     },
     "operationalDigestedPath": {
       "type": "object",

@@ -3,6 +3,8 @@ import { resolve } from "node:path";
 import Ajv2020, { type AnySchema, type ErrorObject, type ValidateFunction } from "ajv/dist/2020";
 import addFormats from "ajv-formats";
 
+import { containsSensitivePublicMarker } from "../../../tools/quality/public-source-scanner";
+
 export type EvidenceLevel = "declared" | "implemented" | "verified" | "qualified" | "in_service";
 export type ReviewRole =
   | "accessibility"
@@ -88,6 +90,31 @@ interface ReviewAttestation {
   };
   readonly reportPath: string;
   readonly reportSha256: string;
+}
+
+type OperationalEvidenceKind =
+  | "deployment_authorization"
+  | "smoke_test"
+  | "rollback_test"
+  | "incident_report";
+
+type OperationalEvidenceOutcome = "authorized" | "passed" | "resolved";
+
+interface OperationalEvidence {
+  readonly schemaVersion: "libre-ai.model-policy-operational-evidence.v1";
+  readonly operationalEvidenceId: string;
+  readonly kind: OperationalEvidenceKind;
+  readonly phaseId: string;
+  readonly gateId: string;
+  readonly evidenceId: string;
+  readonly deploymentIdentity: string;
+  readonly windowStartedAt: string;
+  readonly windowEndedAt: string;
+  readonly outcome: OperationalEvidenceOutcome;
+  readonly authorizationRef?: string;
+  readonly observedAt?: string;
+  readonly incidentId?: string;
+  readonly recordedAt: string;
 }
 
 interface ServiceObservation {
@@ -253,6 +280,17 @@ async function readTrackedRegularBlob(
 function sha256Bytes(bytes: Uint8Array): string {
   const digest = new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
   return `${SHA256_PREFIX}${digest}`;
+}
+
+function sensitiveMarkerFailures(bytes: Uint8Array, context: string): string[] {
+  const lines = new TextDecoder().decode(bytes).split("\n");
+  const failures: string[] = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    if (containsSensitivePublicMarker(lines[index] ?? "")) {
+      failures.push(`${context} contains a sensitive marker at line ${index + 1}`);
+    }
+  }
+  return failures;
 }
 
 async function commitExists(repoRoot: string, commit: string): Promise<boolean> {
@@ -497,6 +535,106 @@ async function writeProjectionUpdates(
   }
 }
 
+interface OperationalEvidenceExpectation {
+  readonly kind: OperationalEvidenceKind;
+  readonly context: string;
+  readonly path: string;
+  readonly sha256: string;
+}
+
+async function validateOperationalEvidenceReference(
+  repoRoot: string,
+  phase: ProductPhase,
+  gate: ProductPhaseGate,
+  record: EvidenceRecord,
+  expectation: OperationalEvidenceExpectation,
+  trackedIndex: ReadonlyMap<string, TrackedIndexEntry>,
+  validateOperationalEvidence: ValidateFunction,
+  operationalEvidenceIds: Map<string, string>,
+): Promise<string[]> {
+  const failures: string[] = [];
+  const artifactBlob = await readTrackedRegularBlob(
+    repoRoot,
+    expectation.path,
+    trackedIndex,
+    expectation.context,
+  );
+  failures.push(...artifactBlob.failures);
+  if (!artifactBlob.bytes) return failures;
+  if (sha256Bytes(artifactBlob.bytes) !== expectation.sha256) {
+    failures.push(`${expectation.context}: digest mismatch for ${expectation.path}`);
+    return failures;
+  }
+  const markerFailures = sensitiveMarkerFailures(artifactBlob.bytes, expectation.context);
+  failures.push(...markerFailures);
+  if (markerFailures.length > 0) return failures;
+
+  let unknownArtifact: unknown;
+  try {
+    unknownArtifact = JSON.parse(new TextDecoder().decode(artifactBlob.bytes));
+  } catch {
+    failures.push(`${expectation.context}: operational evidence is not valid JSON`);
+    return failures;
+  }
+  if (!validateOperationalEvidence(unknownArtifact)) {
+    failures.push(
+      `${expectation.context}: operational evidence schema rejected: ` +
+        validationErrors(validateOperationalEvidence.errors),
+    );
+    return failures;
+  }
+  const artifact = unknownArtifact as OperationalEvidence;
+  const priorPath = operationalEvidenceIds.get(artifact.operationalEvidenceId);
+  if (priorPath && priorPath !== expectation.path) {
+    failures.push(
+      `${expectation.context}: operational evidence id ${artifact.operationalEvidenceId} ` +
+        `is already bound to ${priorPath}`,
+    );
+  } else {
+    operationalEvidenceIds.set(artifact.operationalEvidenceId, expectation.path);
+  }
+  if (artifact.kind !== expectation.kind) {
+    failures.push(`${expectation.context}: operational evidence kind mismatch`);
+  }
+  if (
+    artifact.phaseId !== phase.id ||
+    artifact.gateId !== gate.id ||
+    artifact.evidenceId !== record.evidenceId ||
+    artifact.deploymentIdentity !== record.serviceObservation?.deploymentIdentity
+  ) {
+    failures.push(`${expectation.context}: evidence, gate, or deployment binding mismatch`);
+  }
+  if (
+    artifact.windowStartedAt !== record.serviceObservation?.windowStartedAt ||
+    artifact.windowEndedAt !== record.serviceObservation?.windowEndedAt
+  ) {
+    failures.push(`${expectation.context}: authorized observation window mismatch`);
+  }
+
+  const artifactRecordedAt = Date.parse(artifact.recordedAt);
+  const recordRecordedAt = Date.parse(record.recordedAt);
+  if (artifactRecordedAt > recordRecordedAt) {
+    failures.push(`${expectation.context}: artifact cannot postdate the evidence record`);
+  }
+  if (artifact.kind === "deployment_authorization") {
+    const windowStartedAt = Date.parse(artifact.windowStartedAt);
+    if (artifactRecordedAt > windowStartedAt) {
+      failures.push(`${expectation.context}: authorization must predate the observed window`);
+    }
+  } else if (artifact.observedAt) {
+    const observedAt = Date.parse(artifact.observedAt);
+    const windowStartedAt = Date.parse(artifact.windowStartedAt);
+    const windowEndedAt = Date.parse(artifact.windowEndedAt);
+    if (observedAt < windowStartedAt || observedAt > windowEndedAt) {
+      failures.push(`${expectation.context}: observation instant is outside the bound window`);
+    }
+    if (artifactRecordedAt < observedAt) {
+      failures.push(`${expectation.context}: artifact record predates its observation`);
+    }
+  }
+  return failures;
+}
+
 async function validateEvidenceReference(
   repoRoot: string,
   phase: ProductPhase,
@@ -505,8 +643,10 @@ async function validateEvidenceReference(
   trackedIndex: ReadonlyMap<string, TrackedIndexEntry>,
   validateEvidenceRecord: ValidateFunction,
   validateReviewAttestation: ValidateFunction,
+  validateOperationalEvidence: ValidateFunction,
   evidenceIds: Map<string, string>,
   reviewIds: Map<string, string>,
+  operationalEvidenceIds: Map<string, string>,
   currentGateDefinitionSha256: string,
 ): Promise<string[]> {
   const failures: string[] = [];
@@ -525,6 +665,9 @@ async function validateEvidenceReference(
     failures.push(`${gate.id}: evidence record digest mismatch for ${reference.record}`);
     return failures;
   }
+  const markerFailures = sensitiveMarkerFailures(evidenceBlob.bytes, `${gate.id}: evidence`);
+  failures.push(...markerFailures);
+  if (markerFailures.length > 0) return failures;
 
   let unknownRecord: unknown;
   try {
@@ -646,6 +789,12 @@ async function validateEvidenceReference(
       failures.push(`${attestationContext}: digest mismatch`);
       continue;
     }
+    const attestationMarkerFailures = sensitiveMarkerFailures(
+      attestationBlob.bytes,
+      attestationContext,
+    );
+    failures.push(...attestationMarkerFailures);
+    if (attestationMarkerFailures.length > 0) continue;
 
     let unknownAttestation: unknown;
     try {
@@ -702,6 +851,9 @@ async function validateEvidenceReference(
     if (reportBlob.bytes && sha256Bytes(reportBlob.bytes) !== attestation.reportSha256) {
       failures.push(`${attestationContext}: report digest mismatch`);
     }
+    if (reportBlob.bytes) {
+      failures.push(...sensitiveMarkerFailures(reportBlob.bytes, `${attestationContext}: report`));
+    }
   }
 
   if (EVIDENCE_LEVEL_RANK[record.achievedEvidenceLevel] >= EVIDENCE_LEVEL_RANK.qualified) {
@@ -737,38 +889,54 @@ async function validateEvidenceReference(
     ) {
       failures.push(`${gate.id}: service observation is not bound to its operated environment`);
     }
-    for (const evidence of [
+    const operationalEvidence: OperationalEvidenceExpectation[] = [
       {
+        kind: "deployment_authorization",
+        context: `${gate.id}: deployment authorization`,
         path: record.serviceObservation.authorizationEvidencePath,
         sha256: record.serviceObservation.authorizationEvidenceSha256,
       },
       {
+        kind: "smoke_test",
+        context: `${gate.id}: smoke test`,
         path: record.serviceObservation.smokeEvidencePath,
         sha256: record.serviceObservation.smokeEvidenceSha256,
       },
       {
+        kind: "rollback_test",
+        context: `${gate.id}: rollback test`,
         path: record.serviceObservation.rollbackEvidencePath,
         sha256: record.serviceObservation.rollbackEvidenceSha256,
       },
-      ...record.serviceObservation.incidentEvidence,
-    ]) {
-      const serviceBlob = await readTrackedRegularBlob(
-        repoRoot,
-        evidence.path,
-        trackedIndex,
-        `${gate.id}: service observation ${evidence.path}`,
+      ...record.serviceObservation.incidentEvidence.map((evidence) => ({
+        kind: "incident_report" as const,
+        context: `${gate.id}: incident report ${evidence.path}`,
+        path: evidence.path,
+        sha256: evidence.sha256,
+      })),
+    ];
+    if (
+      new Set(operationalEvidence.map((evidence) => evidence.path)).size !==
+      operationalEvidence.length
+    ) {
+      failures.push(`${gate.id}: operational evidence paths must be distinct`);
+    }
+    for (const evidence of operationalEvidence) {
+      failures.push(
+        ...(await validateOperationalEvidenceReference(
+          repoRoot,
+          phase,
+          gate,
+          record,
+          evidence,
+          trackedIndex,
+          validateOperationalEvidence,
+          operationalEvidenceIds,
+        )),
       );
-      failures.push(...serviceBlob.failures);
-      if (serviceBlob.bytes && sha256Bytes(serviceBlob.bytes) !== evidence.sha256) {
-        failures.push(`${gate.id}: service observation digest mismatch for ${evidence.path}`);
-      }
     }
   }
   return failures;
-}
-
-async function readUnknownJson(path: string): Promise<unknown> {
-  return Bun.file(path).json() as Promise<unknown>;
 }
 
 function checkedSchema(value: unknown, name: string): AnySchema {
@@ -787,19 +955,91 @@ export async function checkProductPhaseFiles(
   const ajv = new Ajv2020({ allErrors: true, strict: true });
   addFormats(ajv);
 
+  let trackedIndex: Map<string, TrackedIndexEntry>;
+  try {
+    trackedIndex = await loadTrackedIndex(repoRoot);
+  } catch (error) {
+    return [error instanceof Error ? error.message : "Unable to load tracked paths"];
+  }
+
+  const indexedJsonPaths = {
+    roadmapSchema: "docs/apps/model-policy/phases.v1.schema.json",
+    evidenceSchema: "docs/apps/model-policy/evidence-record.v1.schema.json",
+    reviewAttestationSchema: "docs/apps/model-policy/review-attestation.v1.schema.json",
+    operationalEvidenceSchema: "docs/apps/model-policy/operational-evidence.v1.schema.json",
+    roadmap: "docs/apps/model-policy/phases.v1.json",
+  } as const;
+  const [
+    roadmapSchemaBlob,
+    evidenceSchemaBlob,
+    reviewAttestationSchemaBlob,
+    operationalEvidenceSchemaBlob,
+    roadmapBlob,
+  ] = await Promise.all([
+    readTrackedRegularBlob(
+      repoRoot,
+      indexedJsonPaths.roadmapSchema,
+      trackedIndex,
+      `Model Policy plan ${indexedJsonPaths.roadmapSchema}`,
+    ),
+    readTrackedRegularBlob(
+      repoRoot,
+      indexedJsonPaths.evidenceSchema,
+      trackedIndex,
+      `Model Policy plan ${indexedJsonPaths.evidenceSchema}`,
+    ),
+    readTrackedRegularBlob(
+      repoRoot,
+      indexedJsonPaths.reviewAttestationSchema,
+      trackedIndex,
+      `Model Policy plan ${indexedJsonPaths.reviewAttestationSchema}`,
+    ),
+    readTrackedRegularBlob(
+      repoRoot,
+      indexedJsonPaths.operationalEvidenceSchema,
+      trackedIndex,
+      `Model Policy plan ${indexedJsonPaths.operationalEvidenceSchema}`,
+    ),
+    readTrackedRegularBlob(
+      repoRoot,
+      indexedJsonPaths.roadmap,
+      trackedIndex,
+      `Model Policy plan ${indexedJsonPaths.roadmap}`,
+    ),
+  ]);
+  const indexedJsonFailures = [
+    ...roadmapSchemaBlob.failures,
+    ...evidenceSchemaBlob.failures,
+    ...reviewAttestationSchemaBlob.failures,
+    ...operationalEvidenceSchemaBlob.failures,
+    ...roadmapBlob.failures,
+  ];
+  if (indexedJsonFailures.length > 0) return indexedJsonFailures;
+  if (
+    !roadmapSchemaBlob.bytes ||
+    !evidenceSchemaBlob.bytes ||
+    !reviewAttestationSchemaBlob.bytes ||
+    !operationalEvidenceSchemaBlob.bytes ||
+    !roadmapBlob.bytes
+  ) {
+    return ["Model Policy plan indexed JSON blobs are unavailable"];
+  }
+
   let roadmapSchema: unknown;
   let evidenceSchema: unknown;
   let reviewAttestationSchema: unknown;
+  let operationalEvidenceSchema: unknown;
   let unknownRoadmap: unknown;
   try {
-    [roadmapSchema, evidenceSchema, reviewAttestationSchema, unknownRoadmap] = await Promise.all([
-      readUnknownJson(resolve(repoRoot, "docs/apps/model-policy/phases.v1.schema.json")),
-      readUnknownJson(resolve(repoRoot, "docs/apps/model-policy/evidence-record.v1.schema.json")),
-      readUnknownJson(
-        resolve(repoRoot, "docs/apps/model-policy/review-attestation.v1.schema.json"),
-      ),
-      readUnknownJson(resolve(repoRoot, "docs/apps/model-policy/phases.v1.json")),
-    ]);
+    roadmapSchema = JSON.parse(new TextDecoder().decode(roadmapSchemaBlob.bytes));
+    evidenceSchema = JSON.parse(new TextDecoder().decode(evidenceSchemaBlob.bytes));
+    reviewAttestationSchema = JSON.parse(
+      new TextDecoder().decode(reviewAttestationSchemaBlob.bytes),
+    );
+    operationalEvidenceSchema = JSON.parse(
+      new TextDecoder().decode(operationalEvidenceSchemaBlob.bytes),
+    );
+    unknownRoadmap = JSON.parse(new TextDecoder().decode(roadmapBlob.bytes));
   } catch (error) {
     return [
       error instanceof Error
@@ -811,11 +1051,15 @@ export async function checkProductPhaseFiles(
   let validateRoadmap: ValidateFunction;
   let validateEvidenceRecord: ValidateFunction;
   let validateReviewAttestation: ValidateFunction;
+  let validateOperationalEvidence: ValidateFunction;
   try {
     validateRoadmap = ajv.compile(checkedSchema(roadmapSchema, "Roadmap schema"));
     validateEvidenceRecord = ajv.compile(checkedSchema(evidenceSchema, "Evidence schema"));
     validateReviewAttestation = ajv.compile(
       checkedSchema(reviewAttestationSchema, "Review attestation schema"),
+    );
+    validateOperationalEvidence = ajv.compile(
+      checkedSchema(operationalEvidenceSchema, "Operational evidence schema"),
     );
   } catch (error) {
     return [
@@ -830,14 +1074,9 @@ export async function checkProductPhaseFiles(
   const roadmap = unknownRoadmap as ProductPhaseRoadmap;
   failures.push(...validateRoadmapSemantics(roadmap));
 
-  let trackedIndex: Map<string, TrackedIndexEntry>;
-  try {
-    trackedIndex = await loadTrackedIndex(repoRoot);
-  } catch (error) {
-    return [error instanceof Error ? error.message : "Unable to load tracked paths"];
-  }
   const evidenceIds = new Map<string, string>();
   const reviewIds = new Map<string, string>();
+  const operationalEvidenceIds = new Map<string, string>();
   for (const phase of roadmap.phases) {
     if (!isAllowedPhaseDocument(phase.document)) {
       failures.push(`${phase.id}: phase document path is outside ${PHASE_DOCUMENT_PREFIX}`);
@@ -872,8 +1111,10 @@ export async function checkProductPhaseFiles(
             trackedIndex,
             validateEvidenceRecord,
             validateReviewAttestation,
+            validateOperationalEvidence,
             evidenceIds,
             reviewIds,
+            operationalEvidenceIds,
             currentGateDefinitionSha256,
           )),
         );

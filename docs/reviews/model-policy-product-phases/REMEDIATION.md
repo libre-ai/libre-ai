@@ -52,6 +52,19 @@ The independent [business](COUNTER-REVIEW-A95C313-BUSINESS.md), [technical](COUN
 | Coverage was informative only | Added an app-local line/function threshold and a required CI step for the phase-checker coverage run. |
 | Missing adversarial regressions | Added indexed semantic-drift, unstaged-worktree divergence, future-window, deployment-authorization, operated-environment, credential, and evidence-PII tests. |
 
+## Re-review of `e03226f`
+
+The independent [business](COUNTER-REVIEW-E03226F-BUSINESS.md), [technical](COUNTER-REVIEW-E03226F-TECHNICAL.md), and [architecture](COUNTER-REVIEW-E03226F-ARCHITECTURE.md) passes approved the business surface but rejected the third remediation for unauthorized integrator writes and three remaining evidence false-greens.
+
+| Re-review finding | Fourth remediation |
+| --- | --- |
+| Shared CI, lockfile, and secret-scanner writes exceeded Model Policy write paths | Restored `.github/workflows/ci.yml`, `bun.lock`, and `tools/quality/check-secret-scan*` to their pre-remediation blobs and withdrew the app dependency entries that would require an integrator lock update. Coverage and sensitive-evidence enforcement now live in app-owned checker/tests discovered by the unchanged root test gate. |
+| Roadmap and schemas came from mutable worktree files | The checker first snapshots the Git index and reads the roadmap plus all four schemas from regular indexed blobs; digest/parse/validation use those bytes, and staged-invalid/unstaged-valid adversarial tests refuse substitution. |
+| Operational evidence accepted unscanned arbitrary files | Operational evidence paths are JSON-only. The checker scans every referenced evidence, attestation, report, and operational blob for credential/personal-data markers before parsing, without changing shared scanner policy. |
+| Operational artifacts were hash-only claims | Added `operational-evidence.v1.schema.json` with closed authorization/smoke/rollback/incident variants. The checker requires distinct paths/IDs, expected favorable outcomes, exact evidence/phase/gate/deployment/window binding, authorization before the window, observations inside it, coherent record times, and resolved incidents. |
+| Coverage required a shared CI edit | Added a repository-discovered app test that executes the app-local line/function coverage threshold; the existing unchanged root `bun test` CI gate therefore blocks regression. |
+| Operational false-greens lacked regressions | Added denying, empty, unrelated, reused, sensitive, future-window, environment mismatch, invalid-digest, and valid resolved-incident cases. |
+
 ## Intentionally not fabricated
 
 - No work package, ADR/specification amendment, owner selection, wave activation, production approval, or commercial approval is marked accepted. Those are external human-controlled prerequisites.

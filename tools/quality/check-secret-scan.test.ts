@@ -63,30 +63,11 @@ describe("scanForSecrets", () => {
     expect(findings).toHaveLength(0);
   });
 
-  test("scans canonical Model Policy evidence instead of trusting its path", () => {
+  test("excludes non-normative review evidence", () => {
     const findings = findingsFor(
-      "distribution/evidence/model-policy/mp-p7-g08.json",
+      "crates/authz-biscuit/evidence/reviews/x/NOTE.md",
       "example token ghp_0123456789abcdefghijABCDEFGHIJ0123",
     );
-    expect(findings).toHaveLength(1);
-    expect(findings[0]?.kind).toBe("credential");
-  });
-
-  test("rejects personal data from canonical Model Policy evidence", () => {
-    const findings = findingsFor(
-      "distribution/evidence/model-policy/mp-p7-g08.json",
-      "reviewer email: alice@example.org",
-    );
-    expect(findings).toEqual([
-      {
-        path: "distribution/evidence/model-policy/mp-p7-g08.json",
-        line: 1,
-        kind: "personal_data",
-      },
-    ]);
-  });
-
-  test("keeps the personal-data extension scoped to Model Policy evidence", () => {
-    expect(findingsFor("apps/x/example.ts", "email: example@example.org")).toEqual([]);
+    expect(findings).toHaveLength(0);
   });
 });

@@ -81,7 +81,7 @@ Architecture decisions remain in [`docs/adr/`](../../adr/), contracts remain in 
 3. Implement only inside the accepted write paths.
 4. Collect candidate-commit artifacts, the canonical gate-section digest, exact tools, commands, inputs, harnesses, and observed results.
 5. Run every phase-required independent review and content-address its role/candidate/gate attestation plus human report.
-6. Produce the final evidence record for the exact phase, gate, candidate, assertion, achieved level, and attestations; an `in_service` record also binds operated-environment identity, deployment authorization, observation window, smoke, rollback, and incidents.
+6. Produce the final evidence record for the exact phase, gate, candidate, assertion, achieved level, and attestations; an `in_service` record also binds distinct structured JSON for operated-environment identity, favorable deployment authorization, bounded observations, passing smoke/rollback, and resolved incidents.
 7. Let `GOALS.md`/`STATUS.md` record any accepted execution-state change; this plan never self-promotes.
 8. Regenerate both README projections only after validation succeeds:
 
@@ -91,4 +91,4 @@ bun run --cwd apps/model-policy test:product-phases:coverage
 bun tools/quality/check-secret-scan.ts
 ```
 
-The app phase-plan check and its repository-discovered Bun integration tests refuse schema, dependency, evidence/attestation binding and digest, canonical gate-section drift, tracked-index mode, source-commit blob, required-review, deployment-authorization/service-observation, bidirectional gate-definition, or README drift failures. The checker stages both projections before replacement and rolls back an applied replacement if a later one fails. CI blocks coverage below the app-local phase-checker thresholds and scans canonical Model Policy evidence for both credentials and personal-data markers.
+The app phase-plan check and its repository-discovered Bun integration tests refuse mutable-worktree substitution for indexed roadmap/schema/phase authorities, schema, dependency, evidence/attestation binding and digest, canonical gate-section drift, source-commit blob, required-review, operational kind/outcome/identity/window/time reuse or mismatch, sensitive evidence content, bidirectional gate-definition, or README drift failures. The checker stages both projections before replacement and rolls back an applied replacement if a later one fails. A repository-discovered app test executes the app-local coverage thresholds, so the existing root `bun test` CI path blocks a coverage regression without changing shared integrator configuration.

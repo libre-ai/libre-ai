@@ -135,8 +135,6 @@ jobs:
           bun run check:toolchain
       - run: bun install --frozen-lockfile
       - run: bun run check
-      - name: Enforce Model Policy phase-checker coverage
-        run: bun run --cwd apps/model-policy test:product-phases:coverage
       # WP-G2-Q01 foundation gates (acceptance 2 secret, acceptance 3 no-Clever).
       # Wired here, in the Q01 writePath, rather than in the root package.json.
       - run: bun tools/quality/check-secret-scan.ts
