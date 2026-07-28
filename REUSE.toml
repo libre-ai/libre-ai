@@ -65,6 +65,30 @@ precedence = "closest"
 SPDX-FileCopyrightText = "2026 Libre AI contributors"
 SPDX-License-Identifier = "EUPL-1.2"
 
+# Vendored W3C Design Tokens Community Group material retains its upstream
+# licence (W3C Software and Document Notice and License, 2015-05-13). The
+# broad packages/ui/** Apache-2.0 rule must not absorb third-party material
+# (LICENSING.md, "Third-party material").
+[[annotations]]
+path = [
+  "packages/ui/color-system/vendor/dtcg-format-2025.10.schema.json",
+  "packages/ui/color-system/vendor/LICENSE.design-tokens.md",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "2025 W3C Design Tokens Community Group and contributors"
+SPDX-License-Identifier = "W3C-20150513"
+
+# The vendored DTCG schema and its upstream notice remain under the licence
+# selected by Design Tokens Community Group contributors for W3C reports.
+[[annotations]]
+path = [
+  "packages/ui/color-system/vendor/dtcg-format-2025.10.schema.json",
+  "packages/ui/color-system/vendor/LICENSE.design-tokens.md",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "Design Tokens Community Group contributors"
+SPDX-License-Identifier = "W3C-20150513"
+
 # Vendored RustCrypto sources retain their upstream dual licence. Libre AI's
 # local patch is distributed on the same terms.
 [[annotations]]

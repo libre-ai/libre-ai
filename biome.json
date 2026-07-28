@@ -15,7 +15,9 @@
       "!ecosystem/projections/public.v1.json",
       "!contracts/fixtures/radar-engine-v2",
       "!docs/reviews/**/evidence",
-      "!docs/transformation/inputs"
+      "!docs/transformation/inputs",
+      "!packages/ui/color-system/generated",
+      "!packages/ui/color-system/vendor"
     ]
   },
   "formatter": {
