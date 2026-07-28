@@ -50,6 +50,7 @@
     "check:objects": "bun run check:bun:runtime && bun tools/quality/validate-knowledge-objects.ts",
     "check:objectives": "bun run check:bun:runtime && bun tools/quality/check-objectives.ts",
     "check:specifications": "bun run check:bun:runtime && bun tools/quality/check-specification-lock.ts",
+    "check:model-policy-phases": "bun run check:bun:runtime && bun tools/quality/check-model-policy-phases.ts",
     "check:contracts": "bun run check:bun:runtime && bun tools/quality/check-contracts.ts && bun tools/quality/check-agent-orchestration-vectors.ts && bun tools/quality/check-policy-core-vectors.ts && bun tools/quality/check-radar-v2-vectors.ts && bun tools/quality/check-notebook-v2-vectors.ts && bun tools/quality/check-policy-core-v2-vectors.ts && bun tools/quality/check-boussole-v2-vectors.ts",
     "check:notebook-core-v2": "bun run check:bun:runtime && bun tools/quality/check-notebook-core-v2-candidate.ts",
     "check:notebook-core-v2-candidate": "bun run check:bun:runtime && bun run check:notebook-core-v2",
@@ -73,7 +74,7 @@
     "qualify:notebook-core-v2:performance": "bun run check:bun:runtime && NOTEBOOK_QUALIFICATION_REQUIRE_ARCHIVES=1 bun run qualify:notebook-core-v2:toolchain && bun run qualify:notebook-core-v2:resource-class && bun run qualify:notebook-core-v2:build && playwright test --config tools/qualification/notebook-core-v2/performance.config.ts && bun tools/qualification/notebook-core-v2/summarize-performance.ts",
     "diagnose:notebook-core-v2:performance:vm": "bun run check:bun:runtime && NOTEBOOK_QUALIFICATION_EVIDENCE_MODE=vm-diagnostic bun run qualify:notebook-core-v2:performance",
     "build": "bun run check:bun && bun run check:toolchain && bun run typecheck",
-    "check": "bun run check:bun && bun run check:toolchain && bun run check:source && bun run check:objects && bun run check:objectives && bun run check:specifications && bun run check:contracts && bun run check:notebook-core-v2 && bun run check:generated-contracts && bun run check:work-packages && bun run check:licenses && bun run check:dead-code && bun run lint && bun run typecheck && bun test"
+    "check": "bun run check:bun && bun run check:toolchain && bun run check:source && bun run check:objects && bun run check:objectives && bun run check:specifications && bun run check:model-policy-phases && bun run check:contracts && bun run check:notebook-core-v2 && bun run check:generated-contracts && bun run check:work-packages && bun run check:licenses && bun run check:dead-code && bun run lint && bun run typecheck && bun test"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.3",

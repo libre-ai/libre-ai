@@ -9,6 +9,12 @@
 
 Model Policy lets an organization define sourced eligibility rules, capture a versioned model/provider snapshot and obtain a deterministic deny-by-default verdict with traceable explanations. Policy editors propose; approvers accept immutable policy versions; evaluators compare a declared need and snapshot.
 
+## Proposed product delivery trajectory
+
+The proposed gated trajectory from deterministic qualification through optional assistance, organization governance, monitoring, access enforcement, activity steering, and managed operation is tracked in [`docs/apps/model-policy/`](model-policy/README.md). Its machine-readable status is [`phases.v1.json`](model-policy/phases.v1.json).
+
+These phase records do not amend this locked product specification or authorize later capabilities. In particular, ranker, gateway, credential, telemetry, provider-network, production, and managed-service boundaries require their own accepted work packages, contracts, reviews, and owner controls before implementation. The pure evaluator remains advisory and never acquires those capabilities.
+
 ## Journeys
 
 1. **Author/approve policy:** editor creates rules with sources and unknown handling; approver reviews diff and accepts immutable version.
