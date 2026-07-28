@@ -14,7 +14,7 @@ Define what a phase gate may claim and where its evidence lives. This document d
 | `qualified` | Release-relevant safety and quality have independent verdicts | Verified evidence plus role-separated business/architecture/security/privacy/accessibility/performance reviews as applicable |
 | `in_service` | Behavior is observed on an authorized operated instance | Qualified release, deployment identity, smoke/rollback evidence, operational window and incidents |
 
-A gate definition states its `requiredEvidenceLevel`. The planning record never declares a gate or phase complete: owner-controlled execution authorities may do so only after every mandatory gate references evidence at or above that level.
+A gate definition states its `requiredEvidenceLevel`. Each phase also declares `requiredIndependentReviewRoles`; every `qualified` or `in_service` record for one of its gates must bind one distinct non-producer reviewer reference and one content-addressed review attestation for every declared role. The planning record never declares a gate or phase complete: owner-controlled execution authorities may do so only after every mandatory gate references evidence at or above that level.
 
 ## Evidence record requirements
 
@@ -23,23 +23,26 @@ Each gate reference points to one JSON record under `distribution/evidence/model
 - stable evidence ID plus exact phase and gate IDs;
 - assertion under test and achieved evidence level;
 - immutable source commit and relevant artifact/contract digests;
-- commands and qualified tool versions;
-- input fixtures or legally usable corpus identity;
+- non-empty commands and exact tool versions (never `latest`, `unknown`, or `unversioned`);
+- content-digested repository fixtures, synthetic/legally usable corpus identities, or operated-environment identities;
 - explicit expected and observed results;
 - blocking, major, minor, and residual findings;
-- one verdict where a review is required;
-- reviewer roles and exposed harness identifiers, never reviewer PII;
-- supporting review paths;
+- an approving verdict for `qualified` and `in_service` claims, with no unresolved blocking or major finding;
+- role-separated bindings from required role and opaque reviewer reference to a content-addressed review attestation;
+- exposed harness identifiers for `verified`, `qualified`, and `in_service` claims, never reviewer PII;
+- deployment identity, bounded observation window, content-addressed tracked smoke/rollback artifacts under the operational evidence root, and incident state plus incident artifacts when any occurred for `in_service` claims;
 - rollback or invalidation conditions;
 - creation instant in ISO 8601 UTC.
 
-The checker verifies the record digest, schema, phase/gate binding, achieved level, source commit, supporting-review paths, and digests of tracked regular non-symlink artifacts. A bare path—even to an existing review—cannot pass a gate. A mutable branch output, unqualified screenshot, “tests passed” without commands, or provider marketing claim is insufficient.
+The checker verifies the record digest, schema, phase/gate binding, achieved level, source commit, repository-fixture digest, role separation, every phase-required review role, approving verdict, service-observation bindings, and digests of source-commit regular-file artifacts. For each qualified role it also verifies a tracked regular non-symlink attestation against [`review-attestation.v1.schema.json`](review-attestation.v1.schema.json), exact candidate/phase/gate/role/reviewer binding, an approving attestation verdict with no blocking or major finding, and the digest of its human review report. The evidence record itself must be a tracked regular non-symlink file under the evidence root. Evidence records, attestations, review reports, and in-service smoke/rollback artifacts are hashed and parsed from their regular Git-index blobs so one immutable byte buffer controls each check; candidate artifacts and repository fixtures are read from exact source-commit blobs. Every evidence record must digest its phase document so the reviewed gate definition is part of the candidate. A bare path—even to an existing review—cannot pass a gate. A mutable branch output, self-review, shared reviewer reference across required roles, unqualified screenshot, “tests passed” without commands and pinned tools, or provider marketing claim is insufficient.
+
+Opaque reviewer references make role separation mechanically checkable without publishing identity. They do not prove human identity by themselves: the owner-controlled acceptance authority must resolve them through the retained role-at-time identity/attestation mechanism before recording promotion.
 
 ## Storage
 
 - Normative product phase records live under `docs/apps/model-policy/`.
 - Immutable supporting review dossiers live under `docs/reviews/`; they are not direct gate evidence.
-- Content-addressed gate records and reproducible release evidence live under `distribution/evidence/model-policy/`.
+- Content-addressed gate records, review attestations, and reproducible release evidence live under `distribution/evidence/model-policy/`; attestations live in its `reviews/` subtree.
 - Restricted datasets and customer-instance evidence do not enter the public repository.
 - GitHub comments may supplement evidence only when immutable URL/body digest is recorded.
 

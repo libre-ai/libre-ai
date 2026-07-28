@@ -12,15 +12,17 @@
     "assertion",
     "achievedEvidenceLevel",
     "sourceCommit",
+    "evidenceProducerRef",
     "artifactDigests",
+    "toolVersions",
+    "inputIdentities",
     "commands",
     "expectedResults",
     "observedResults",
     "findings",
     "verdict",
-    "reviewerRoles",
+    "reviewBindings",
     "harnessIdentifiers",
-    "supportingReviews",
     "invalidationConditions",
     "recordedAt"
   ],
@@ -37,14 +39,30 @@
       "enum": ["declared", "implemented", "verified", "qualified", "in_service"]
     },
     "sourceCommit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "evidenceProducerRef": { "$ref": "#/$defs/opaqueActorRef" },
     "artifactDigests": {
       "type": "array",
       "minItems": 1,
       "maxItems": 128,
       "items": { "$ref": "#/$defs/digestedPath" }
     },
+    "toolVersions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/toolVersion" }
+    },
+    "inputIdentities": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/inputIdentity" }
+    },
     "commands": {
       "type": "array",
+      "minItems": 1,
       "maxItems": 128,
       "items": { "type": "string", "minLength": 1, "maxLength": 2000 }
     },
@@ -74,12 +92,11 @@
     "verdict": {
       "enum": ["approve", "approve_with_minor_reservations", "reject", "not_applicable"]
     },
-    "reviewerRoles": {
+    "reviewBindings": {
       "type": "array",
-      "minItems": 1,
       "maxItems": 32,
       "uniqueItems": true,
-      "items": { "type": "string", "minLength": 1, "maxLength": 100 }
+      "items": { "$ref": "#/$defs/reviewBinding" }
     },
     "harnessIdentifiers": {
       "type": "array",
@@ -87,15 +104,7 @@
       "uniqueItems": true,
       "items": { "type": "string", "minLength": 1, "maxLength": 256 }
     },
-    "supportingReviews": {
-      "type": "array",
-      "maxItems": 64,
-      "uniqueItems": true,
-      "items": {
-        "type": "string",
-        "pattern": "^docs/reviews/[A-Za-z0-9._/-]+\\.md$"
-      }
-    },
+    "serviceObservation": { "$ref": "#/$defs/serviceObservation" },
     "invalidationConditions": {
       "type": "array",
       "minItems": 1,
@@ -108,6 +117,49 @@
       "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$"
     }
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "achievedEvidenceLevel": { "enum": ["verified", "qualified", "in_service"] }
+        },
+        "required": ["achievedEvidenceLevel"]
+      },
+      "then": {
+        "properties": {
+          "harnessIdentifiers": { "type": "array", "minItems": 1 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "achievedEvidenceLevel": { "enum": ["qualified", "in_service"] }
+        },
+        "required": ["achievedEvidenceLevel"]
+      },
+      "then": {
+        "properties": {
+          "verdict": { "not": { "const": "not_applicable" } },
+          "reviewBindings": { "type": "array", "minItems": 1 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "achievedEvidenceLevel": { "const": "in_service" }
+        },
+        "required": ["achievedEvidenceLevel"]
+      },
+      "then": {
+        "properties": {
+          "serviceObservation": { "$ref": "#/$defs/serviceObservation" }
+        },
+        "required": ["serviceObservation"]
+      }
+    }
+  ],
   "$defs": {
     "repositoryPath": {
       "type": "string",
@@ -115,13 +167,165 @@
       "maxLength": 512,
       "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$"
     },
+    "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "opaqueActorRef": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]+$"
+    },
+    "reviewRole": {
+      "enum": [
+        "accessibility",
+        "architecture",
+        "business",
+        "legal",
+        "operations",
+        "performance",
+        "privacy",
+        "security",
+        "technical"
+      ]
+    },
     "digestedPath": {
       "type": "object",
       "additionalProperties": false,
       "required": ["path", "sha256"],
       "properties": {
         "path": { "$ref": "#/$defs/repositoryPath" },
-        "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "toolVersion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tool", "version"],
+      "properties": {
+        "tool": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._+/-]*$"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "not": { "enum": ["latest", "unknown", "unversioned"] }
+        }
+      }
+    },
+    "inputIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "identifier", "sha256"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "repository_fixture",
+            "synthetic_corpus",
+            "restricted_corpus",
+            "operated_environment"
+          ]
+        },
+        "identifier": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]+$"
+        },
+        "path": { "$ref": "#/$defs/repositoryPath" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "kind": { "const": "repository_fixture" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": { "path": { "$ref": "#/$defs/repositoryPath" } },
+            "required": ["path"]
+          },
+          "else": { "properties": { "path": false } }
+        }
+      ]
+    },
+    "reviewBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "reviewerRef", "attestationRecord", "sha256"],
+      "properties": {
+        "role": { "$ref": "#/$defs/reviewRole" },
+        "reviewerRef": { "$ref": "#/$defs/opaqueActorRef" },
+        "attestationRecord": {
+          "type": "string",
+          "pattern": "^distribution/evidence/model-policy/reviews/[A-Za-z0-9._/-]+\\.json$"
+        },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "serviceObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "deploymentIdentity",
+        "windowStartedAt",
+        "windowEndedAt",
+        "smokeEvidencePath",
+        "smokeEvidenceSha256",
+        "rollbackEvidencePath",
+        "rollbackEvidenceSha256",
+        "incidentState",
+        "incidentEvidence"
+      ],
+      "properties": {
+        "deploymentIdentity": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 256,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]+$"
+        },
+        "windowStartedAt": { "type": "string", "format": "date-time" },
+        "windowEndedAt": { "type": "string", "format": "date-time" },
+        "smokeEvidencePath": { "$ref": "#/$defs/operationalEvidencePath" },
+        "smokeEvidenceSha256": { "$ref": "#/$defs/sha256" },
+        "rollbackEvidencePath": { "$ref": "#/$defs/operationalEvidencePath" },
+        "rollbackEvidenceSha256": { "$ref": "#/$defs/sha256" },
+        "incidentState": { "enum": ["none_observed", "incidents_bound_in_artifacts"] },
+        "incidentEvidence": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/operationalDigestedPath" }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "incidentState": { "const": "incidents_bound_in_artifacts" } },
+            "required": ["incidentState"]
+          },
+          "then": {
+            "properties": { "incidentEvidence": { "type": "array", "minItems": 1 } }
+          },
+          "else": {
+            "properties": { "incidentEvidence": { "type": "array", "maxItems": 0 } }
+          }
+        }
+      ]
+    },
+    "operationalEvidencePath": {
+      "type": "string",
+      "pattern": "^distribution/evidence/model-policy/operations/[A-Za-z0-9._/-]+$"
+    },
+    "operationalDigestedPath": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/operationalEvidencePath" },
+        "sha256": { "$ref": "#/$defs/sha256" }
       }
     },
     "findingList": {

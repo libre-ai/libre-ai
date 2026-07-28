@@ -20,9 +20,9 @@ Re-evaluation can be triggered by:
 - policy approval, revocation, or exception expiry;
 - need revision;
 - evaluator qualification or revocation;
-- quality, price, latency, or availability snapshot refresh.
+- price, latency, availability, error/retry/fallback, or evidence-health snapshot refresh for an already approved route.
 
-Eligibility triggers and operational-observation triggers remain distinct. A price change cannot change rule status unless price is an explicit policy fact.
+Eligibility triggers and operational-observation triggers remain distinct. These observations describe route operations or control-process evidence only: MP-P4 does not measure model-output quality, compare models, or infer a preferred route. A price change cannot change rule status unless price is an explicit policy fact.
 
 ## Snapshot pipeline
 
@@ -97,7 +97,7 @@ The cockpit shows exact changed facts/rules, freshness, severity, affected opaqu
 
 ### MP-P4-G07 — Operational recovery is qualified
 
-Queue backpressure, adapter outage, stale source, duplicate event, partial worker failure, database restore, and rollback journeys have automated evidence. Security revocations retain priority and unavailable authority dependencies deny new decisions.
+Queue backpressure, adapter outage, stale source, duplicate event, partial worker failure, database restore, and rollback journeys have automated evidence. Security revocations retain priority; an unavailable authority dependency makes MP-P4 publish an unavailable state and no permissive transition. The accepted authorization-consumer contract—not MP-P4—must prove denial of new decisions.
 
 ## Dependencies and parallel work
 

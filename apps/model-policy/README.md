@@ -9,7 +9,7 @@ Work package: `WP-G3-M01`.
 
 The deterministic no-LLM journey remains the product authority and permanent fallback.
 LLM assistance, organization governance, continuous monitoring, access enforcement,
-activity steering, and managed operation are separately gated in the
+activity observation, and managed operation are separately gated in the
 [product phase records](../../docs/apps/model-policy/README.md).
 
 <!-- model-policy-phases:start -->
@@ -24,7 +24,7 @@ Planning record: [`phases.v1.json`](../../docs/apps/model-policy/phases.v1.json)
 | MP-P4 · Continuous monitoring | Re-evaluate use cases when model, provider, policy, evidence, or engine facts change. | 0/7 | [Phase record](../../docs/apps/model-policy/phases/04-continuous-monitoring.md) |
 | MP-P5 · Access profiles and gateway | Enforce approved model routes through revocable access profiles without exposing provider secrets. | 0/8 | [Phase record](../../docs/apps/model-policy/phases/05-access-gateway.md) |
 | MP-P6 · Activity cockpit | Pilot evidence health, policy state, access, operations, cost, usage, and incidents without model-quality ranking or compliance scoring. | 0/8 | [Phase record](../../docs/apps/model-policy/phases/06-activity-cockpit.md) |
-| MP-P7 · Managed service | Operate model-policy control under an organization's approved doctrine and explicit service commitments. | 0/7 | [Phase record](../../docs/apps/model-policy/phases/07-managed-service.md) |
+| MP-P7 · Managed service | Operate model-policy control under an organization's approved doctrine and explicit service commitments. | 0/8 | [Phase record](../../docs/apps/model-policy/phases/07-managed-service.md) |
 
 Evidence coverage is not execution status. No phase is activated by this draft: owner selection, wave 4b activation, and accepted bounded work packages must first be recorded by the global authorities.
 <!-- model-policy-phases:end -->

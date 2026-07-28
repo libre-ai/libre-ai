@@ -13,6 +13,7 @@
       "outcome": "Establish the sourced facts, approved rules, and deterministic evaluator required by every later phase.",
       "document": "docs/apps/model-policy/phases/00-foundation.md",
       "dependsOn": [],
+      "requiredIndependentReviewRoles": ["architecture", "business", "security", "technical"],
       "gates": [
         {
           "id": "MP-P0-G01",
@@ -62,6 +63,13 @@
       "outcome": "Let a business user qualify a use case and inspect deterministic policy verdicts for deployment configurations without any LLM.",
       "document": "docs/apps/model-policy/phases/01-deterministic-qualification.md",
       "dependsOn": ["MP-P0"],
+      "requiredIndependentReviewRoles": [
+        "accessibility",
+        "business",
+        "privacy",
+        "security",
+        "technical"
+      ],
       "gates": [
         {
           "id": "MP-P1-G01",
@@ -117,6 +125,7 @@
       "outcome": "Pre-fill and challenge the deterministic tunnel while keeping every AI suggestion non-authoritative.",
       "document": "docs/apps/model-policy/phases/02-llm-assistance.md",
       "dependsOn": ["MP-P1"],
+      "requiredIndependentReviewRoles": ["business", "privacy", "security", "technical"],
       "gates": [
         {
           "id": "MP-P2-G01",
@@ -168,6 +177,13 @@
       "outcome": "Translate an organization's doctrine into approved, versioned policies and bounded exceptions.",
       "document": "docs/apps/model-policy/phases/03-organization-governance.md",
       "dependsOn": ["MP-P1"],
+      "requiredIndependentReviewRoles": [
+        "architecture",
+        "business",
+        "privacy",
+        "security",
+        "technical"
+      ],
       "gates": [
         {
           "id": "MP-P3-G01",
@@ -219,6 +235,7 @@
       "outcome": "Re-evaluate use cases when model, provider, policy, evidence, or engine facts change.",
       "document": "docs/apps/model-policy/phases/04-continuous-monitoring.md",
       "dependsOn": ["MP-P3"],
+      "requiredIndependentReviewRoles": ["architecture", "privacy", "security", "technical"],
       "gates": [
         {
           "id": "MP-P4-G01",
@@ -270,6 +287,13 @@
       "outcome": "Enforce approved model routes through revocable access profiles without exposing provider secrets.",
       "document": "docs/apps/model-policy/phases/05-access-gateway.md",
       "dependsOn": ["MP-P4"],
+      "requiredIndependentReviewRoles": [
+        "architecture",
+        "performance",
+        "privacy",
+        "security",
+        "technical"
+      ],
       "gates": [
         {
           "id": "MP-P5-G01",
@@ -326,6 +350,14 @@
       "outcome": "Pilot evidence health, policy state, access, operations, cost, usage, and incidents without model-quality ranking or compliance scoring.",
       "document": "docs/apps/model-policy/phases/06-activity-cockpit.md",
       "dependsOn": ["MP-P4", "MP-P5"],
+      "requiredIndependentReviewRoles": [
+        "accessibility",
+        "business",
+        "performance",
+        "privacy",
+        "security",
+        "technical"
+      ],
       "gates": [
         {
           "id": "MP-P6-G01",
@@ -382,6 +414,16 @@
       "outcome": "Operate model-policy control under an organization's approved doctrine and explicit service commitments.",
       "document": "docs/apps/model-policy/phases/07-managed-service.md",
       "dependsOn": ["MP-P6"],
+      "requiredIndependentReviewRoles": [
+        "architecture",
+        "business",
+        "legal",
+        "operations",
+        "performance",
+        "privacy",
+        "security",
+        "technical"
+      ],
       "gates": [
         {
           "id": "MP-P7-G01",
@@ -415,6 +457,11 @@
         },
         {
           "id": "MP-P7-G07",
+          "evidence": [],
+          "requiredEvidenceLevel": "qualified"
+        },
+        {
+          "id": "MP-P7-G08",
           "evidence": [],
           "requiredEvidenceLevel": "in_service"
         }

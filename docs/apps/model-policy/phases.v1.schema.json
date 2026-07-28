@@ -48,6 +48,19 @@
         "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
       }
     },
+    "reviewRole": {
+      "enum": [
+        "accessibility",
+        "architecture",
+        "business",
+        "legal",
+        "operations",
+        "performance",
+        "privacy",
+        "security",
+        "technical"
+      ]
+    },
     "gate": {
       "type": "object",
       "additionalProperties": false,
@@ -75,6 +88,7 @@
         "document",
         "dependsOn",
         "activationPrerequisites",
+        "requiredIndependentReviewRoles",
         "gates"
       ],
       "properties": {
@@ -97,6 +111,13 @@
           "maxItems": 16,
           "uniqueItems": true,
           "items": { "type": "string", "minLength": 1, "maxLength": 256 }
+        },
+        "requiredIndependentReviewRoles": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/reviewRole" }
         },
         "gates": {
           "type": "array",

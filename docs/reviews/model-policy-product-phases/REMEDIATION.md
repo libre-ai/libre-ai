@@ -23,6 +23,21 @@
 | Opaque approvals not auditable | Added customer-controlled IdP or signed role-at-time pseudonym mapping with access, retention, deletion, custody, and break-glass rules. |
 | Unsafe language and missing glossary | Replaced “what can be used” and “compliance metrics”; added concise definitions for tunnel, passport, doctrine, deployment configuration, access profile, and qualified. |
 
+## Follow-up review of `2f749ded`
+
+The independent [business](FOLLOW-UP-BUSINESS-REVIEW.md), [technical](FOLLOW-UP-TECHNICAL-REVIEW.md), and [architecture](FOLLOW-UP-ARCHITECTURE-REVIEW.md) passes all rejected the first remediation commit. They confirmed the authority, capability-boundary, accountability, optional-assistance, and managed-service RACI corrections, then identified evidence false-greens and smaller sequencing/wording defects.
+
+| Follow-up finding | Second remediation |
+| --- | --- |
+| Qualified and in-service levels were self-declared | Added exact tool versions, content-digested input identities, non-empty commands, harness requirements for verified-plus, favorable qualified verdicts, no unresolved blocking/major finding, and bounded operated-instance observations for `in_service`. |
+| Required reviews were optional or reusable despite rejection | Each phase now declares required independent roles. Qualified records bind distinct non-producer reviewer references to content-addressed `review-attestation.v1` records. The checker verifies exact candidate/phase/gate/role/reviewer binding, favorable attestation verdict, zero blocking/major findings, and the human report digest. |
+| Evidence hashing/parsing had a TOCTOU gap | Evidence records, review attestations, and reports are read as regular non-symlink Git-index blobs; each digest and JSON parse uses the same immutable byte buffer. Candidate artifacts and repository fixtures are read from exact source-commit blobs. |
+| Evidence validation lacked adversarial coverage | Expanded the checker suite from 11 to 33 tests, including valid qualified/in-service paths and negatives for untracked/symlink records, record/fixture/operational digests, missing gate-definition binding, phase/gate/level/source-commit drift, empty reproducibility fields, missing/shared/self-review, rejecting attestations, and service observations. |
+| README projection writes could partially drift | Both expected files are staged before replacement; applied replacements roll back on a later rename failure, with a test proving no projection changes when second-file staging fails. |
+| MP-P4 exposed an orphan quality-monitoring path | Restricted refreshes to route operations and evidence-health observations; explicitly prohibited model-output quality measurement, model comparison, or preferred-route inference. |
+| Managed-service pilot/production/commercial ordering was circular | Added a separately owner-authorized non-commercial pilot, then a qualified production-only cutover gate, then an in-service smoke/rollback/operational-window gate before separate paid-onboarding approval. |
+| Metric authority, denial ownership, and “activity steering” were overstated | Limited `METRICS.md` claims to fields it owns, assigned runtime metric bindings to emitted records, made downstream authorization contracts own denial, and renamed the app summary to activity observation. |
+
 ## Intentionally not fabricated
 
 - No work package, ADR/specification amendment, owner selection, wave activation, production approval, or commercial approval is marked accepted. Those are external human-controlled prerequisites.
@@ -34,4 +49,4 @@
 - app phase-plan checker and adversarial tests;
 - app test suite;
 - repository typecheck, Biome, source policy, contract checks, Bun suite, Markdown links, and diff hygiene;
-- independent follow-up review against the immutable remediated commit before merge.
+- independent counter-review against the next immutable remediation commit before merge.

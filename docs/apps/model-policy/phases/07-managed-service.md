@@ -59,6 +59,12 @@ Before onboarding, the contract and DPA identify:
 
 Provider keys stay in the gateway secret boundary. Customer-owned and operator-owned key modes have separate custody, rotation, compromise, termination, and audit procedures; no shared team credential is accepted.
 
+## Authorization sequence
+
+An owner-authorized, isolated, non-commercial pilot may operate before production solely to produce `in_service` evidence. Its authorization fixes tenant, approved synthetic or customer-authorized data, routes, keys, personnel, observation window, incident handling, rollback, deletion, and a prohibition on paid customer traffic. Pilot evidence cannot authorize commercial exposure by itself.
+
+Production sequencing is explicit: qualified pre-production reviews authorize a bounded production-only cutover with no paid customer onboarding; smoke, rollback, and operational-window evidence from that cutover is then reviewed; only the human owner can authorize paid onboarding. A failed or incomplete observation rolls back and cannot be relabelled as commercial acceptance.
+
 ## Service commitments
 
 Commercial commitments can cover:
@@ -105,9 +111,9 @@ Base deterministic and optional-assistance variants are distinct. Customer/opera
 
 Managed-service identities can propose but cannot approve customer policy, material exceptions, or scope broadening. Authorization, RLS, approval separation, and break-glass controls pass adversarial tenant tests.
 
-### MP-P7-G03 — Service levels are measurable and evidenced
+### MP-P7-G03 — Service levels are measurable in an authorized non-commercial pilot
 
-Freshness, re-evaluation, revocation, availability, latency, incident, deletion, export, and support commitments have stable formulas, service/severity classes, monitoring, evidence, provider-dependency treatment, exclusions, escalation, and contractual remedies.
+The owner separately authorizes an isolated, time-bounded pilot with explicit tenant, data, route, key, personnel, rollback, deletion, and no-paid-traffic constraints. Freshness, re-evaluation, revocation, availability, latency, incident, deletion, export, and support commitments have stable formulas, service/severity classes, monitoring, evidence, provider-dependency treatment, exclusions, escalation, and contractual remedies. Only observations inside that authorization may claim `in_service` evidence.
 
 ### MP-P7-G04 — Operations and incident response are qualified
 
@@ -121,13 +127,17 @@ Canonical exports, digests, signatures/attestations, timestamps, retention, acce
 
 A representative customer can export and independently replay eligibility, revoke credentials, recover owned records, complete deletion, and leave without inaccessible proprietary authority data or retained provider secrets.
 
-### MP-P7-G07 — Paid-service release receives independent approval
+### MP-P7-G07 — Production-only cutover receives independent approval
 
-Business, Architecture, Security, France/EU Privacy, operations, performance, legal-language, and candidate-integration reviews approve the immutable release. The human owner explicitly authorizes production and commercial exposure after post-deploy smoke and rollback evidence.
+Business, Architecture, Security, France/EU Privacy, operations, performance, legal-language, and candidate-integration reviews approve the immutable release and the bounded production cutover plan. The human owner may then authorize production deployment with no paid customer onboarding; this gate does not authorize commercial exposure.
+
+### MP-P7-G08 — Paid-service release follows in-service observation
+
+The production-only cutover has content-addressed smoke, rollback, deployment-identity, operational-window, incident-state, and deletion evidence. Independent reviewers approve that evidence with no blocking or major finding, then the human owner separately authorizes paid onboarding. Failed smoke, rollback, or observation returns to the prior qualified release and cannot satisfy this gate.
 
 ## Dependencies and parallel work
 
-MP-P7 depends on accepted operation of the deterministic MP-P1 and MP-P3–MP-P6 path. MP-P2 is required only for the separately contracted assistance extension. Commercial terms, DPA/subprocessor schedules, provider/key modes, operations/runbooks, and portability can be prepared in parallel only after `GOALS.md`/`STATUS.md` activation and an accepted managed-service work package plus owner-reviewed architecture, contracts, threat model, and privacy/legal language. No paid production claim precedes in-service evidence.
+MP-P7 depends on accepted operation of the deterministic MP-P1 and MP-P3–MP-P6 path. MP-P2 is required only for the separately contracted assistance extension. Commercial terms, DPA/subprocessor schedules, provider/key modes, operations/runbooks, and portability can be prepared in parallel only after `GOALS.md`/`STATUS.md` activation and an accepted managed-service work package plus owner-reviewed architecture, contracts, threat model, and privacy/legal language. The separately authorized non-commercial pilot precedes the production-only cutover; the cutover precedes paid onboarding. No paid production claim precedes accepted `in_service` smoke, rollback, and operational-window evidence.
 
 ## Release and rollback
 

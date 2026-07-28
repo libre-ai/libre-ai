@@ -42,7 +42,7 @@ A future comparative capability would require an owner-reviewed specification an
 
 ## Metric governance
 
-Every metric has a stable ID, definition, formula, unit, owner, source, window, freshness, phase, privacy classification, and gate/diagnostic status in [`../METRICS.md`](../METRICS.md). “All metrics” is not a valid collection rule: only actionable and qualified measures are retained.
+[`../METRICS.md`](../METRICS.md) owns each metric's stable ID, definition/formula, kind, introduction phase, privacy class, and gate or diagnostic use. Each emitted metric-version record must additionally bind its unit, accountable owner, producer/source kind, observation window, freshness, retention, and missing-value behavior before the measure may be displayed. “All metrics” is not a valid collection rule: only actionable and qualified measures are retained.
 
 A metric definition change creates a new version and does not rewrite old dashboards. Unknown data is displayed as unknown, never zero. Metric snapshots bind exact versions and inputs. Dashboard thresholds may alert but cannot issue policy, evaluation, profile, credential, or gateway commands.
 

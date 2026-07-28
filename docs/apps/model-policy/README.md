@@ -6,7 +6,7 @@
 
 [`GOALS.md`](../../../GOALS.md) is the sole program/phase authority and [`STATUS.md`](../../../STATUS.md) is the sole current execution authority. In particular, Model Policy remains behind owner selection, wave 4b activation, and an accepted bounded work package. An agent cannot satisfy those controls by editing this plan.
 
-The machine-readable planning record is [`phases.v1.json`](phases.v1.json), validated by [`phases.v1.schema.json`](phases.v1.schema.json). Gate evidence may be attached only through content-addressed records conforming to [`evidence-record.v1.schema.json`](evidence-record.v1.schema.json); evidence coverage is not execution status.
+The machine-readable planning record is [`phases.v1.json`](phases.v1.json), validated by [`phases.v1.schema.json`](phases.v1.schema.json). Gate evidence may be attached only through content-addressed records conforming to [`evidence-record.v1.schema.json`](evidence-record.v1.schema.json); qualified roles additionally bind attestations conforming to [`review-attestation.v1.schema.json`](review-attestation.v1.schema.json). Evidence coverage is not execution status.
 
 ## Product progression
 
@@ -20,7 +20,7 @@ The machine-readable planning record is [`phases.v1.json`](phases.v1.json), vali
 | [MP-P4](phases/04-continuous-monitoring.md) | Re-evaluate use cases when model, provider, policy, evidence, or engine facts change. | MP-P3 | 0/7 |
 | [MP-P5](phases/05-access-gateway.md) | Enforce approved model routes through revocable access profiles without exposing provider secrets. | MP-P4 | 0/8 |
 | [MP-P6](phases/06-activity-cockpit.md) | Pilot evidence health, policy state, access, operations, cost, usage, and incidents without model-quality ranking or compliance scoring. | MP-P4, MP-P5 | 0/8 |
-| [MP-P7](phases/07-managed-service.md) | Operate model-policy control under an organization's approved doctrine and explicit service commitments. | MP-P6 | 0/7 |
+| [MP-P7](phases/07-managed-service.md) | Operate model-policy control under an organization's approved doctrine and explicit service commitments. | MP-P6 | 0/8 |
 <!-- model-policy-plan:end -->
 
 MP-P2 is an optional extension after MP-P1, not a dependency of governance or managed operation. MP-P3 through MP-P7 form the deterministic service path. The no-LLM tunnel remains available through every later phase.
@@ -66,7 +66,7 @@ Privacy-minimized activity cockpit and evidence exports
 ## Supporting authorities
 
 - [Product specification](../model-policy.md) — current purpose, actors, protocol, contracts, and non-goals.
-- [Metric catalogue](METRICS.md) — stable definitions, formulas, sources, privacy, and gate use.
+- [Metric catalogue](METRICS.md) — stable definitions/formulas, kinds, introduction phases, privacy classes, and gate use.
 - [Evidence policy](EVIDENCE.md) — evidence levels, review roles, storage, invalidation, and customer export.
 - [Policy Core v2 semantics](../../../contracts/wit/policy-core-v2/SEMANTICS.md) — deterministic eligibility boundary.
 - [Role-separated review protocol](../../reviews/AGENT-REVIEW-PROTOCOL.md) — immutable review requirements.
@@ -79,13 +79,14 @@ Architecture decisions remain in [`docs/adr/`](../../adr/), contracts remain in 
 1. Define or amend a phase gate in its phase record.
 2. Obtain owner selection, wave activation, accepted work package, and any required contract/ADR/specification amendment through their existing authorities.
 3. Implement only inside the accepted write paths.
-4. Produce a content-addressed evidence record for the exact phase, gate, candidate, assertion, and achieved level.
-5. Run the required business, technical, architecture, security/privacy, operations, and owner reviews.
-6. Let `GOALS.md`/`STATUS.md` record any accepted execution-state change; this plan never self-promotes.
-7. Regenerate both README projections only after validation succeeds:
+4. Collect candidate-commit artifacts, exact tools, commands, inputs, harnesses, and observed results.
+5. Run every phase-required independent review and content-address its role/candidate/gate attestation plus human report.
+6. Produce the final evidence record for the exact phase, gate, candidate, assertion, achieved level, and attestations.
+7. Let `GOALS.md`/`STATUS.md` record any accepted execution-state change; this plan never self-promotes.
+8. Regenerate both README projections only after validation succeeds:
 
 ```console
 bun apps/model-policy/tools/check-product-phases.ts --write
 ```
 
-The app phase-plan check and its repository-discovered Bun integration tests refuse schema, dependency, evidence binding/digest, path, bidirectional gate-definition, or README drift. The checker writes no projection after any validation failure.
+The app phase-plan check and its repository-discovered Bun integration tests refuse schema, dependency, evidence/attestation binding and digest, tracked-index mode, source-commit blob, required-review, service-observation, bidirectional gate-definition, or README drift failures. The checker stages both projections before replacement and rolls back an applied replacement if a later one fails.

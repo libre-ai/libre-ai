@@ -1,9 +1,19 @@
-import { lstat, realpath } from "node:fs/promises";
+import { chmod, lstat, realpath, rename, unlink } from "node:fs/promises";
 import { relative, resolve, sep } from "node:path";
 import Ajv2020, { type AnySchema, type ErrorObject, type ValidateFunction } from "ajv/dist/2020";
 import addFormats from "ajv-formats";
 
 export type EvidenceLevel = "declared" | "implemented" | "verified" | "qualified" | "in_service";
+export type ReviewRole =
+  | "accessibility"
+  | "architecture"
+  | "business"
+  | "legal"
+  | "operations"
+  | "performance"
+  | "privacy"
+  | "security"
+  | "technical";
 
 export interface EvidenceReference {
   readonly record: string;
@@ -23,6 +33,7 @@ export interface ProductPhase {
   readonly document: string;
   readonly dependsOn: string[];
   readonly activationPrerequisites: string[];
+  readonly requiredIndependentReviewRoles: ReviewRole[];
   readonly gates: ProductPhaseGate[];
 }
 
@@ -42,6 +53,55 @@ interface DigestedPath {
   readonly sha256: string;
 }
 
+interface InputIdentity {
+  readonly kind:
+    | "repository_fixture"
+    | "synthetic_corpus"
+    | "restricted_corpus"
+    | "operated_environment";
+  readonly identifier: string;
+  readonly path?: string;
+  readonly sha256: string;
+}
+
+interface ReviewBinding {
+  readonly role: ReviewRole;
+  readonly reviewerRef: string;
+  readonly attestationRecord: string;
+  readonly sha256: string;
+}
+
+interface ReviewAttestation {
+  readonly schemaVersion: "libre-ai.model-policy-review-attestation.v1";
+  readonly reviewId: string;
+  readonly phaseId: string;
+  readonly gateId: string;
+  readonly candidateCommit: string;
+  readonly role: ReviewRole;
+  readonly reviewerRef: string;
+  readonly verdict: "approve" | "approve_with_minor_reservations" | "reject";
+  readonly findings: {
+    readonly blocking: string[];
+    readonly major: string[];
+    readonly minor: string[];
+    readonly residual: string[];
+  };
+  readonly reportPath: string;
+  readonly reportSha256: string;
+}
+
+interface ServiceObservation {
+  readonly deploymentIdentity: string;
+  readonly windowStartedAt: string;
+  readonly windowEndedAt: string;
+  readonly smokeEvidencePath: string;
+  readonly smokeEvidenceSha256: string;
+  readonly rollbackEvidencePath: string;
+  readonly rollbackEvidenceSha256: string;
+  readonly incidentState: "none_observed" | "incidents_bound_in_artifacts";
+  readonly incidentEvidence: DigestedPath[];
+}
+
 interface EvidenceRecord {
   readonly schemaVersion: "libre-ai.model-policy-evidence-record.v1";
   readonly evidenceId: string;
@@ -50,8 +110,18 @@ interface EvidenceRecord {
   readonly assertion: string;
   readonly achievedEvidenceLevel: EvidenceLevel;
   readonly sourceCommit: string;
+  readonly evidenceProducerRef: string;
   readonly artifactDigests: DigestedPath[];
-  readonly supportingReviews: string[];
+  readonly inputIdentities: InputIdentity[];
+  readonly verdict: "approve" | "approve_with_minor_reservations" | "reject" | "not_applicable";
+  readonly findings: {
+    readonly blocking: string[];
+    readonly major: string[];
+    readonly minor: string[];
+    readonly residual: string[];
+  };
+  readonly reviewBindings: ReviewBinding[];
+  readonly serviceObservation?: ServiceObservation;
 }
 
 interface ProjectionUpdate {
@@ -60,9 +130,12 @@ interface ProjectionUpdate {
   readonly expected: string;
 }
 
+type RenameFile = (oldPath: string, newPath: string) => Promise<void>;
+
 export interface CheckProductPhaseFilesOptions {
   readonly repoRoot?: string;
   readonly write?: boolean;
+  readonly projectionRename?: RenameFile;
 }
 
 const APP_START_MARKER = "<!-- model-policy-phases:start -->";
@@ -71,6 +144,7 @@ const DOCS_START_MARKER = "<!-- model-policy-plan:start -->";
 const DOCS_END_MARKER = "<!-- model-policy-plan:end -->";
 const PHASE_DOCUMENT_PREFIX = "docs/apps/model-policy/phases/";
 const EVIDENCE_RECORD_PREFIX = "distribution/evidence/model-policy/";
+const REVIEW_ATTESTATION_PREFIX = "distribution/evidence/model-policy/reviews/";
 const REVIEW_PREFIX = "docs/reviews/";
 const SHA256_PREFIX = "sha256:";
 const EVIDENCE_LEVEL_RANK: Record<EvidenceLevel, number> = {
@@ -103,12 +177,21 @@ export function isAllowedEvidenceRecordPath(path: string): boolean {
   return path.startsWith(EVIDENCE_RECORD_PREFIX) && path.endsWith(".json");
 }
 
+function isAllowedReviewAttestationPath(path: string): boolean {
+  return path.startsWith(REVIEW_ATTESTATION_PREFIX) && path.endsWith(".json");
+}
+
 function isAllowedReviewPath(path: string): boolean {
   return path.startsWith(REVIEW_PREFIX) && path.endsWith(".md");
 }
 
-async function loadTrackedPaths(repoRoot: string): Promise<Set<string>> {
-  const process = Bun.spawn(["git", "ls-files", "-z"], {
+interface TrackedIndexEntry {
+  readonly mode: string;
+  readonly objectId: string;
+}
+
+async function loadTrackedIndex(repoRoot: string): Promise<Map<string, TrackedIndexEntry>> {
+  const process = Bun.spawn(["git", "ls-files", "--stage", "-z"], {
     cwd: repoRoot,
     stdout: "pipe",
     stderr: "pipe",
@@ -119,7 +202,53 @@ async function loadTrackedPaths(repoRoot: string): Promise<Set<string>> {
     process.exited,
   ]);
   if (exitCode !== 0) throw new Error(`git ls-files failed: ${stderr.trim()}`);
-  return new Set(stdout.split("\0").filter((path) => path.length > 0));
+
+  const entries = new Map<string, TrackedIndexEntry>();
+  for (const rawEntry of stdout.split("\0")) {
+    if (rawEntry.length === 0) continue;
+    const separatorIndex = rawEntry.indexOf("\t");
+    if (separatorIndex < 0) throw new Error("git ls-files returned an invalid index entry");
+    const [mode, objectId, stage] = rawEntry.slice(0, separatorIndex).split(" ");
+    const path = rawEntry.slice(separatorIndex + 1);
+    if (!mode || !objectId || stage !== "0" || !/^[0-9a-f]{40,64}$/.test(objectId)) {
+      throw new Error(`git index entry is unmerged or invalid: ${path}`);
+    }
+    entries.set(path, { mode, objectId });
+  }
+  return entries;
+}
+
+async function readTrackedRegularBlob(
+  repoRoot: string,
+  repositoryPath: string,
+  trackedIndex: ReadonlyMap<string, TrackedIndexEntry>,
+  context: string,
+): Promise<{ readonly failures: string[]; readonly bytes: Uint8Array | null }> {
+  const entry = trackedIndex.get(repositoryPath);
+  if (!entry) return { failures: [`${context}: path is not tracked by git`], bytes: null };
+  if (entry.mode !== "100644" && entry.mode !== "100755") {
+    return {
+      failures: [`${context}: git index entry must be a regular non-symlink file`],
+      bytes: null,
+    };
+  }
+  const process = Bun.spawn(["git", "cat-file", "blob", entry.objectId], {
+    cwd: repoRoot,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [bytes, stderr, exitCode] = await Promise.all([
+    new Response(process.stdout).bytes(),
+    new Response(process.stderr).text(),
+    process.exited,
+  ]);
+  if (exitCode !== 0) {
+    return {
+      failures: [`${context}: git index blob is unavailable: ${stderr.trim()}`],
+      bytes: null,
+    };
+  }
+  return { failures: [], bytes };
 }
 
 async function assertTrackedRegularFile(
@@ -154,11 +283,6 @@ function sha256Bytes(bytes: Uint8Array): string {
   return `${SHA256_PREFIX}${digest}`;
 }
 
-async function sha256File(repoRoot: string, repositoryPath: string): Promise<string> {
-  const bytes = new Uint8Array(await Bun.file(resolve(repoRoot, repositoryPath)).arrayBuffer());
-  return sha256Bytes(bytes);
-}
-
 async function commitExists(repoRoot: string, commit: string): Promise<boolean> {
   const process = Bun.spawn(["git", "cat-file", "-e", `${commit}^{commit}`], {
     cwd: repoRoot,
@@ -182,7 +306,7 @@ async function blobAtCommit(
     new Response(treeProcess.stdout).text(),
     treeProcess.exited,
   ]);
-  if (treeExitCode !== 0 || !/^100(?:644|755) blob [0-9a-f]{40}\t/.test(treeOutput)) {
+  if (treeExitCode !== 0 || !/^100(?:644|755) blob [0-9a-f]{40,64}\t/.test(treeOutput)) {
     return null;
   }
   const showProcess = Bun.spawn(["git", "show", `${commit}:${repositoryPath}`], {
@@ -336,37 +460,89 @@ export function replaceReadmeProjection(source: string, projection: string): str
   return replaceProjection(source, projection);
 }
 
+async function writeProjectionUpdates(
+  repoRoot: string,
+  projectionUpdates: readonly ProjectionUpdate[],
+  renameFile: RenameFile,
+): Promise<void> {
+  const nonce = crypto.randomUUID();
+  const stagedUpdates: Array<ProjectionUpdate & { readonly temporaryPath: string }> = [];
+  const appliedUpdates: Array<ProjectionUpdate & { readonly temporaryPath: string }> = [];
+  try {
+    for (const update of projectionUpdates) {
+      if (update.current === update.expected) continue;
+      const targetPath = resolve(repoRoot, update.path);
+      const temporaryPath = `${targetPath}.model-policy-${nonce}.tmp`;
+      await Bun.write(temporaryPath, update.expected);
+      await chmod(temporaryPath, (await lstat(targetPath)).mode & 0o777);
+      stagedUpdates.push({ ...update, temporaryPath });
+    }
+    try {
+      for (const update of stagedUpdates) {
+        await renameFile(update.temporaryPath, resolve(repoRoot, update.path));
+        appliedUpdates.push(update);
+      }
+    } catch (error) {
+      const rollbackFailures: string[] = [];
+      for (const update of appliedUpdates.reverse()) {
+        const targetPath = resolve(repoRoot, update.path);
+        const rollbackPath = `${targetPath}.model-policy-${nonce}.rollback`;
+        try {
+          await Bun.write(rollbackPath, update.current);
+          await chmod(rollbackPath, (await lstat(targetPath)).mode & 0o777);
+          await rename(rollbackPath, targetPath);
+        } catch (rollbackError) {
+          rollbackFailures.push(
+            rollbackError instanceof Error ? rollbackError.message : "unknown rollback failure",
+          );
+        } finally {
+          await unlink(rollbackPath).catch(() => undefined);
+        }
+      }
+      const message = error instanceof Error ? error.message : "unknown projection write failure";
+      if (rollbackFailures.length > 0) {
+        throw new Error(`${message}; rollback failed: ${rollbackFailures.join("; ")}`);
+      }
+      throw error;
+    }
+  } finally {
+    await Promise.all(
+      stagedUpdates.map((update) => unlink(update.temporaryPath).catch(() => undefined)),
+    );
+  }
+}
+
 async function validateEvidenceReference(
   repoRoot: string,
   phase: ProductPhase,
   gate: ProductPhaseGate,
   reference: EvidenceReference,
-  trackedPaths: ReadonlySet<string>,
+  trackedIndex: ReadonlyMap<string, TrackedIndexEntry>,
   validateEvidenceRecord: ValidateFunction,
+  validateReviewAttestation: ValidateFunction,
+  evidenceIds: Map<string, string>,
+  reviewIds: Map<string, string>,
 ): Promise<string[]> {
   const failures: string[] = [];
   if (!isAllowedEvidenceRecordPath(reference.record)) {
     return [`${gate.id}: evidence record path is outside ${EVIDENCE_RECORD_PREFIX}`];
   }
-  failures.push(
-    ...(await assertTrackedRegularFile(
-      repoRoot,
-      reference.record,
-      trackedPaths,
-      `${gate.id}: evidence`,
-    )),
+  const evidenceBlob = await readTrackedRegularBlob(
+    repoRoot,
+    reference.record,
+    trackedIndex,
+    `${gate.id}: evidence`,
   );
-  if (failures.length > 0) return failures;
-
-  const actualDigest = await sha256File(repoRoot, reference.record);
-  if (actualDigest !== reference.sha256) {
+  failures.push(...evidenceBlob.failures);
+  if (!evidenceBlob.bytes) return failures;
+  if (sha256Bytes(evidenceBlob.bytes) !== reference.sha256) {
     failures.push(`${gate.id}: evidence record digest mismatch for ${reference.record}`);
     return failures;
   }
 
   let unknownRecord: unknown;
   try {
-    unknownRecord = await Bun.file(resolve(repoRoot, reference.record)).json();
+    unknownRecord = JSON.parse(new TextDecoder().decode(evidenceBlob.bytes));
   } catch {
     failures.push(`${gate.id}: evidence record is not valid JSON`);
     return failures;
@@ -379,6 +555,14 @@ async function validateEvidenceReference(
     return failures;
   }
   const record = unknownRecord as EvidenceRecord;
+  const priorEvidencePath = evidenceIds.get(record.evidenceId);
+  if (priorEvidencePath && priorEvidencePath !== reference.record) {
+    failures.push(
+      `${gate.id}: evidence id ${record.evidenceId} is already bound to ${priorEvidencePath}`,
+    );
+  } else {
+    evidenceIds.set(record.evidenceId, reference.record);
+  }
   if (record.phaseId !== phase.id || record.gateId !== gate.id) {
     failures.push(`${gate.id}: evidence record phase/gate binding does not match`);
   }
@@ -408,13 +592,157 @@ async function validateEvidenceReference(
     }
   }
   const artifactPaths = new Set(record.artifactDigests.map((artifact) => artifact.path));
-  for (const reviewPath of record.supportingReviews) {
-    if (!isAllowedReviewPath(reviewPath)) {
-      failures.push(`${gate.id}: supporting review path is outside ${REVIEW_PREFIX}`);
+  if (!artifactPaths.has(phase.document)) {
+    failures.push(`${gate.id}: evidence does not bind the gate-definition document`);
+  }
+  for (const input of record.inputIdentities) {
+    if (input.kind !== "repository_fixture") continue;
+    if (!input.path) {
+      failures.push(`${gate.id}: repository fixture ${input.identifier} lacks a path`);
       continue;
     }
-    if (!artifactPaths.has(reviewPath)) {
-      failures.push(`${gate.id}: supporting review ${reviewPath} lacks an artifact digest`);
+    const bytes = await blobAtCommit(repoRoot, record.sourceCommit, input.path);
+    if (bytes === null) {
+      failures.push(
+        `${gate.id}: repository fixture ${input.path} is not a regular file at ${record.sourceCommit}`,
+      );
+      continue;
+    }
+    if (sha256Bytes(bytes) !== input.sha256) {
+      failures.push(`${gate.id}: repository fixture digest mismatch for ${input.path}`);
+    }
+  }
+
+  const reviewRoles = new Set<ReviewRole>();
+  const reviewerRefs = new Set<string>();
+  for (const binding of record.reviewBindings) {
+    if (reviewRoles.has(binding.role)) {
+      failures.push(`${gate.id}: duplicate ${binding.role} review binding`);
+    }
+    reviewRoles.add(binding.role);
+    if (reviewerRefs.has(binding.reviewerRef)) {
+      failures.push(`${gate.id}: reviewer ref must be role-separated for ${binding.role}`);
+    }
+    reviewerRefs.add(binding.reviewerRef);
+    if (binding.reviewerRef === record.evidenceProducerRef) {
+      failures.push(`${gate.id}: ${binding.role} reviewer must differ from evidence producer`);
+    }
+    if (!isAllowedReviewAttestationPath(binding.attestationRecord)) {
+      failures.push(`${gate.id}: review attestation path is outside ${REVIEW_ATTESTATION_PREFIX}`);
+      continue;
+    }
+    const attestationContext = `${gate.id}: ${binding.role} review attestation`;
+    const attestationBlob = await readTrackedRegularBlob(
+      repoRoot,
+      binding.attestationRecord,
+      trackedIndex,
+      attestationContext,
+    );
+    failures.push(...attestationBlob.failures);
+    if (!attestationBlob.bytes) continue;
+    if (sha256Bytes(attestationBlob.bytes) !== binding.sha256) {
+      failures.push(`${attestationContext}: digest mismatch`);
+      continue;
+    }
+
+    let unknownAttestation: unknown;
+    try {
+      unknownAttestation = JSON.parse(new TextDecoder().decode(attestationBlob.bytes));
+    } catch {
+      failures.push(`${attestationContext}: record is not valid JSON`);
+      continue;
+    }
+    if (!validateReviewAttestation(unknownAttestation)) {
+      failures.push(
+        `${attestationContext}: schema rejected: ` +
+          validationErrors(validateReviewAttestation.errors),
+      );
+      continue;
+    }
+    const attestation = unknownAttestation as ReviewAttestation;
+    const priorAttestationPath = reviewIds.get(attestation.reviewId);
+    if (priorAttestationPath && priorAttestationPath !== binding.attestationRecord) {
+      failures.push(
+        `${attestationContext}: review id ${attestation.reviewId} is already bound to ${priorAttestationPath}`,
+      );
+    } else {
+      reviewIds.set(attestation.reviewId, binding.attestationRecord);
+    }
+    if (
+      attestation.phaseId !== phase.id ||
+      attestation.gateId !== gate.id ||
+      attestation.candidateCommit !== record.sourceCommit ||
+      attestation.role !== binding.role ||
+      attestation.reviewerRef !== binding.reviewerRef
+    ) {
+      failures.push(`${attestationContext}: candidate, gate, role, or reviewer binding mismatch`);
+    }
+    if (
+      attestation.verdict !== "approve" &&
+      attestation.verdict !== "approve_with_minor_reservations"
+    ) {
+      failures.push(`${attestationContext}: verdict does not approve the gate`);
+    }
+    if (attestation.findings.blocking.length > 0 || attestation.findings.major.length > 0) {
+      failures.push(`${attestationContext}: retains blocking or major findings`);
+    }
+    if (!isAllowedReviewPath(attestation.reportPath)) {
+      failures.push(`${attestationContext}: report path is outside ${REVIEW_PREFIX}`);
+      continue;
+    }
+    const reportBlob = await readTrackedRegularBlob(
+      repoRoot,
+      attestation.reportPath,
+      trackedIndex,
+      `${attestationContext}: report`,
+    );
+    failures.push(...reportBlob.failures);
+    if (reportBlob.bytes && sha256Bytes(reportBlob.bytes) !== attestation.reportSha256) {
+      failures.push(`${attestationContext}: report digest mismatch`);
+    }
+  }
+
+  if (EVIDENCE_LEVEL_RANK[record.achievedEvidenceLevel] >= EVIDENCE_LEVEL_RANK.qualified) {
+    for (const requiredRole of phase.requiredIndependentReviewRoles) {
+      if (!reviewRoles.has(requiredRole)) {
+        failures.push(`${gate.id}: missing required independent ${requiredRole} review`);
+      }
+    }
+    if (record.verdict !== "approve" && record.verdict !== "approve_with_minor_reservations") {
+      failures.push(`${gate.id}: qualified evidence verdict does not approve the gate`);
+    }
+    if (record.findings.blocking.length > 0 || record.findings.major.length > 0) {
+      failures.push(`${gate.id}: qualified evidence retains blocking or major findings`);
+    }
+  }
+
+  if (record.serviceObservation) {
+    const startedAt = Date.parse(record.serviceObservation.windowStartedAt);
+    const endedAt = Date.parse(record.serviceObservation.windowEndedAt);
+    if (startedAt >= endedAt) {
+      failures.push(`${gate.id}: service observation window must end after it starts`);
+    }
+    for (const evidence of [
+      {
+        path: record.serviceObservation.smokeEvidencePath,
+        sha256: record.serviceObservation.smokeEvidenceSha256,
+      },
+      {
+        path: record.serviceObservation.rollbackEvidencePath,
+        sha256: record.serviceObservation.rollbackEvidenceSha256,
+      },
+      ...record.serviceObservation.incidentEvidence,
+    ]) {
+      const serviceBlob = await readTrackedRegularBlob(
+        repoRoot,
+        evidence.path,
+        trackedIndex,
+        `${gate.id}: service observation ${evidence.path}`,
+      );
+      failures.push(...serviceBlob.failures);
+      if (serviceBlob.bytes && sha256Bytes(serviceBlob.bytes) !== evidence.sha256) {
+        failures.push(`${gate.id}: service observation digest mismatch for ${evidence.path}`);
+      }
     }
   }
   return failures;
@@ -442,11 +770,15 @@ export async function checkProductPhaseFiles(
 
   let roadmapSchema: unknown;
   let evidenceSchema: unknown;
+  let reviewAttestationSchema: unknown;
   let unknownRoadmap: unknown;
   try {
-    [roadmapSchema, evidenceSchema, unknownRoadmap] = await Promise.all([
+    [roadmapSchema, evidenceSchema, reviewAttestationSchema, unknownRoadmap] = await Promise.all([
       readUnknownJson(resolve(repoRoot, "docs/apps/model-policy/phases.v1.schema.json")),
       readUnknownJson(resolve(repoRoot, "docs/apps/model-policy/evidence-record.v1.schema.json")),
+      readUnknownJson(
+        resolve(repoRoot, "docs/apps/model-policy/review-attestation.v1.schema.json"),
+      ),
       readUnknownJson(resolve(repoRoot, "docs/apps/model-policy/phases.v1.json")),
     ]);
   } catch (error) {
@@ -459,9 +791,13 @@ export async function checkProductPhaseFiles(
 
   let validateRoadmap: ValidateFunction;
   let validateEvidenceRecord: ValidateFunction;
+  let validateReviewAttestation: ValidateFunction;
   try {
     validateRoadmap = ajv.compile(checkedSchema(roadmapSchema, "Roadmap schema"));
     validateEvidenceRecord = ajv.compile(checkedSchema(evidenceSchema, "Evidence schema"));
+    validateReviewAttestation = ajv.compile(
+      checkedSchema(reviewAttestationSchema, "Review attestation schema"),
+    );
   } catch (error) {
     return [
       error instanceof Error
@@ -475,13 +811,16 @@ export async function checkProductPhaseFiles(
   const roadmap = unknownRoadmap as ProductPhaseRoadmap;
   failures.push(...validateRoadmapSemantics(roadmap));
 
-  let trackedPaths: Set<string>;
+  let trackedIndex: Map<string, TrackedIndexEntry>;
   try {
-    trackedPaths = await loadTrackedPaths(repoRoot);
+    trackedIndex = await loadTrackedIndex(repoRoot);
   } catch (error) {
     return [error instanceof Error ? error.message : "Unable to load tracked paths"];
   }
+  const trackedPaths = new Set(trackedIndex.keys());
 
+  const evidenceIds = new Map<string, string>();
+  const reviewIds = new Map<string, string>();
   for (const phase of roadmap.phases) {
     if (!isAllowedPhaseDocument(phase.document)) {
       failures.push(`${phase.id}: phase document path is outside ${PHASE_DOCUMENT_PREFIX}`);
@@ -504,8 +843,11 @@ export async function checkProductPhaseFiles(
             phase,
             gate,
             reference,
-            trackedPaths,
+            trackedIndex,
             validateEvidenceRecord,
+            validateReviewAttestation,
+            evidenceIds,
+            reviewIds,
           )),
         );
       }
@@ -550,10 +892,14 @@ export async function checkProductPhaseFiles(
 
   if (failures.length > 0) return [...new Set(failures)];
   if (options.write) {
-    for (const update of projectionUpdates) {
-      if (update.current !== update.expected) {
-        await Bun.write(resolve(repoRoot, update.path), update.expected);
-      }
+    try {
+      await writeProjectionUpdates(repoRoot, projectionUpdates, options.projectionRename ?? rename);
+    } catch (error) {
+      return [
+        error instanceof Error
+          ? `Model Policy projection write failed: ${error.message}`
+          : "Model Policy projection write failed",
+      ];
     }
   }
   return [];
