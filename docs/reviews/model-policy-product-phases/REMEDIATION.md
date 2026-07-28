@@ -85,6 +85,16 @@ The independent [business](COUNTER-REVIEW-7BFD688-BUSINESS.md) and [architecture
 | A duplicate JSON member could hide an escaped sensitive value in its discarded occurrence | Added a bounded duplicate-aware JSON structural pass before any roadmap, schema, evidence, attestation, or operational record is materialized. Member names are compared after JSON string decoding, including escaped-equivalent names; duplicates fail closed without logging the member value or name. |
 | Duplicate-member bypass lacked cross-artifact regressions | Added adversarial indexed-roadmap, escaped-key evidence-record, review-attestation, and operational-authorization fixtures, plus a malformed-structure regression. The existing post-decoding traversal remains a second independent layer. |
 
+## Re-review of `fbc12c0`
+
+The independent [business](COUNTER-REVIEW-FBC12C0-BUSINESS.md) and [architecture](COUNTER-REVIEW-FBC12C0-ARCHITECTURE.md) reviews approved the sixth remediation. The [technical review](COUNTER-REVIEW-FBC12C0-TECHNICAL.md) rejected it because non-fatal UTF-8 decoding could replace malformed canonical JSON bytes before validation.
+
+| Re-review finding | Seventh remediation |
+| --- | --- |
+| Malformed UTF-8 could materialize as U+FFFD and pass a permissive string contract | Added one fatal UTF-8 decoding boundary for every roadmap, checker schema, evidence record, review attestation, and operational record before marker scanning, duplicate detection, or `JSON.parse`. Invalid bytes fail closed with a non-content-bearing diagnostic. |
+| Structural depth did not bound total JSON work | Canonical JSON blobs now have an explicit 1,048,576-byte ceiling before decoding and parsing. |
+| Schema, nested-object, depth, and malformed-byte regressions were incomplete | Added direct duplicate tests for all four schemas, escaped-equivalent and nested duplicate members, depth 65, byte-ceiling refusal, and malformed UTF-8 in roadmap/evidence/attestation/operational artifacts. |
+
 ## Intentionally not fabricated
 
 - No work package, ADR/specification amendment, owner selection, wave activation, production approval, or commercial approval is marked accepted. Those are external human-controlled prerequisites.

@@ -288,8 +288,33 @@ function sha256Bytes(bytes: Uint8Array): string {
   return `${SHA256_PREFIX}${digest}`;
 }
 
-function sensitiveMarkerFailures(bytes: Uint8Array, context: string): string[] {
-  const lines = new TextDecoder().decode(bytes).split("\n");
+const CANONICAL_JSON_MAX_BYTES = 1_048_576;
+
+interface DecodedCanonicalJson {
+  readonly failures: string[];
+  readonly text: string | null;
+}
+
+function decodeCanonicalJson(bytes: Uint8Array, context: string): DecodedCanonicalJson {
+  if (bytes.byteLength > CANONICAL_JSON_MAX_BYTES) {
+    return {
+      failures: [`${context}: JSON exceeds the ${CANONICAL_JSON_MAX_BYTES.toString()}-byte limit`],
+      text: null,
+    };
+  }
+  try {
+    return {
+      failures: [],
+      text: new TextDecoder("utf-8", { fatal: true }).decode(bytes),
+    };
+  } catch {
+    return { failures: [`${context}: JSON is not valid UTF-8`], text: null };
+  }
+}
+
+function sensitiveMarkerFailures(content: string | Uint8Array, context: string): string[] {
+  const text = typeof content === "string" ? content : new TextDecoder().decode(content);
+  const lines = text.split("\n");
   const failures: string[] = [];
   for (let index = 0; index < lines.length; index += 1) {
     if (containsSensitivePublicMarker(lines[index] ?? "")) {
@@ -714,15 +739,17 @@ async function validateOperationalEvidenceReference(
     failures.push(`${expectation.context}: digest mismatch for ${expectation.path}`);
     return failures;
   }
-  const markerFailures = sensitiveMarkerFailures(artifactBlob.bytes, expectation.context);
+  const decodedArtifact = decodeCanonicalJson(artifactBlob.bytes, expectation.context);
+  failures.push(...decodedArtifact.failures);
+  if (decodedArtifact.text === null) return failures;
+  const markerFailures = sensitiveMarkerFailures(decodedArtifact.text, expectation.context);
   failures.push(...markerFailures);
   if (markerFailures.length > 0) return failures;
 
   let unknownArtifact: unknown;
   try {
-    const artifactText = new TextDecoder().decode(artifactBlob.bytes);
-    assertNoDuplicateJsonMemberNames(artifactText);
-    unknownArtifact = JSON.parse(artifactText);
+    assertNoDuplicateJsonMemberNames(decodedArtifact.text);
+    unknownArtifact = JSON.parse(decodedArtifact.text);
   } catch (error) {
     failures.push(
       error instanceof DuplicateJsonMemberNameError
@@ -826,15 +853,18 @@ async function validateEvidenceReference(
     failures.push(`${gate.id}: evidence record digest mismatch for ${reference.record}`);
     return failures;
   }
-  const markerFailures = sensitiveMarkerFailures(evidenceBlob.bytes, `${gate.id}: evidence`);
+  const evidenceContext = `${gate.id}: evidence`;
+  const decodedEvidence = decodeCanonicalJson(evidenceBlob.bytes, evidenceContext);
+  failures.push(...decodedEvidence.failures);
+  if (decodedEvidence.text === null) return failures;
+  const markerFailures = sensitiveMarkerFailures(decodedEvidence.text, evidenceContext);
   failures.push(...markerFailures);
   if (markerFailures.length > 0) return failures;
 
   let unknownRecord: unknown;
   try {
-    const evidenceText = new TextDecoder().decode(evidenceBlob.bytes);
-    assertNoDuplicateJsonMemberNames(evidenceText);
-    unknownRecord = JSON.parse(evidenceText);
+    assertNoDuplicateJsonMemberNames(decodedEvidence.text);
+    unknownRecord = JSON.parse(decodedEvidence.text);
   } catch (error) {
     failures.push(
       error instanceof DuplicateJsonMemberNameError
@@ -962,8 +992,11 @@ async function validateEvidenceReference(
       failures.push(`${attestationContext}: digest mismatch`);
       continue;
     }
+    const decodedAttestation = decodeCanonicalJson(attestationBlob.bytes, attestationContext);
+    failures.push(...decodedAttestation.failures);
+    if (decodedAttestation.text === null) continue;
     const attestationMarkerFailures = sensitiveMarkerFailures(
-      attestationBlob.bytes,
+      decodedAttestation.text,
       attestationContext,
     );
     failures.push(...attestationMarkerFailures);
@@ -971,9 +1004,8 @@ async function validateEvidenceReference(
 
     let unknownAttestation: unknown;
     try {
-      const attestationText = new TextDecoder().decode(attestationBlob.bytes);
-      assertNoDuplicateJsonMemberNames(attestationText);
-      unknownAttestation = JSON.parse(attestationText);
+      assertNoDuplicateJsonMemberNames(decodedAttestation.text);
+      unknownAttestation = JSON.parse(decodedAttestation.text);
     } catch (error) {
       failures.push(
         error instanceof DuplicateJsonMemberNameError
@@ -1210,33 +1242,64 @@ export async function checkProductPhaseFiles(
     return ["Model Policy plan indexed JSON blobs are unavailable"];
   }
 
+  const decodedRoadmapSchema = decodeCanonicalJson(
+    roadmapSchemaBlob.bytes,
+    `Model Policy plan ${indexedJsonPaths.roadmapSchema}`,
+  );
+  const decodedEvidenceSchema = decodeCanonicalJson(
+    evidenceSchemaBlob.bytes,
+    `Model Policy plan ${indexedJsonPaths.evidenceSchema}`,
+  );
+  const decodedReviewAttestationSchema = decodeCanonicalJson(
+    reviewAttestationSchemaBlob.bytes,
+    `Model Policy plan ${indexedJsonPaths.reviewAttestationSchema}`,
+  );
+  const decodedOperationalEvidenceSchema = decodeCanonicalJson(
+    operationalEvidenceSchemaBlob.bytes,
+    `Model Policy plan ${indexedJsonPaths.operationalEvidenceSchema}`,
+  );
+  const decodedRoadmap = decodeCanonicalJson(
+    roadmapBlob.bytes,
+    `Model Policy plan ${indexedJsonPaths.roadmap}`,
+  );
+  const decodeFailures = [
+    ...decodedRoadmapSchema.failures,
+    ...decodedEvidenceSchema.failures,
+    ...decodedReviewAttestationSchema.failures,
+    ...decodedOperationalEvidenceSchema.failures,
+    ...decodedRoadmap.failures,
+  ];
+  if (decodeFailures.length > 0) return decodeFailures;
+  if (
+    decodedRoadmapSchema.text === null ||
+    decodedEvidenceSchema.text === null ||
+    decodedReviewAttestationSchema.text === null ||
+    decodedOperationalEvidenceSchema.text === null ||
+    decodedRoadmap.text === null
+  ) {
+    return ["Model Policy plan decoded JSON text is unavailable"];
+  }
+
   let roadmapSchema: unknown;
   let evidenceSchema: unknown;
   let reviewAttestationSchema: unknown;
   let operationalEvidenceSchema: unknown;
   let unknownRoadmap: unknown;
   try {
-    const roadmapSchemaText = new TextDecoder().decode(roadmapSchemaBlob.bytes);
-    const evidenceSchemaText = new TextDecoder().decode(evidenceSchemaBlob.bytes);
-    const reviewAttestationSchemaText = new TextDecoder().decode(reviewAttestationSchemaBlob.bytes);
-    const operationalEvidenceSchemaText = new TextDecoder().decode(
-      operationalEvidenceSchemaBlob.bytes,
-    );
-    const roadmapText = new TextDecoder().decode(roadmapBlob.bytes);
     for (const source of [
-      roadmapSchemaText,
-      evidenceSchemaText,
-      reviewAttestationSchemaText,
-      operationalEvidenceSchemaText,
-      roadmapText,
+      decodedRoadmapSchema.text,
+      decodedEvidenceSchema.text,
+      decodedReviewAttestationSchema.text,
+      decodedOperationalEvidenceSchema.text,
+      decodedRoadmap.text,
     ]) {
       assertNoDuplicateJsonMemberNames(source);
     }
-    roadmapSchema = JSON.parse(roadmapSchemaText);
-    evidenceSchema = JSON.parse(evidenceSchemaText);
-    reviewAttestationSchema = JSON.parse(reviewAttestationSchemaText);
-    operationalEvidenceSchema = JSON.parse(operationalEvidenceSchemaText);
-    unknownRoadmap = JSON.parse(roadmapText);
+    roadmapSchema = JSON.parse(decodedRoadmapSchema.text);
+    evidenceSchema = JSON.parse(decodedEvidenceSchema.text);
+    reviewAttestationSchema = JSON.parse(decodedReviewAttestationSchema.text);
+    operationalEvidenceSchema = JSON.parse(decodedOperationalEvidenceSchema.text);
+    unknownRoadmap = JSON.parse(decodedRoadmap.text);
   } catch (error) {
     if (error instanceof DuplicateJsonMemberNameError) {
       return ["Model Policy plan JSON contains a duplicate member name"];

@@ -114,6 +114,18 @@ function sha256(value: string | Uint8Array): string {
   return `sha256:${new Bun.CryptoHasher("sha256").update(value).digest("hex")}`;
 }
 
+function withMalformedUtf8(value: Uint8Array, needle: string): Uint8Array {
+  const result = value.slice();
+  const needleBytes = new TextEncoder().encode(needle);
+  for (let offset = 0; offset <= result.length - needleBytes.length; offset += 1) {
+    if (needleBytes.every((byte, index) => result[offset + index] === byte)) {
+      result[offset] = 0xff;
+      return result;
+    }
+  }
+  throw new Error(`fixture text is missing: ${needle}`);
+}
+
 async function createFixture(
   roadmap: unknown,
   firstPhaseDocument = [
@@ -240,15 +252,18 @@ async function rewriteEvidenceFixture(
   await runGit(repoRoot, ["add", "."]);
 }
 
-async function writeRawEvidenceFixture(repoRoot: string, evidenceText: string): Promise<void> {
-  await writeFile(join(repoRoot, FIXTURE_EVIDENCE_PATH), evidenceText);
+async function writeRawEvidenceFixture(
+  repoRoot: string,
+  evidenceContent: string | Uint8Array,
+): Promise<void> {
+  await writeFile(join(repoRoot, FIXTURE_EVIDENCE_PATH), evidenceContent);
   const roadmapPath = join(repoRoot, "docs/apps/model-policy/phases.v1.json");
   const roadmap = JSON.parse(await readFile(roadmapPath, "utf8")) as ProductPhaseRoadmap;
   const evidenceReference = roadmap.phases[0]?.gates[0]?.evidence[0] as
     | { sha256: string }
     | undefined;
   if (!evidenceReference) throw new Error("fixture evidence reference is missing");
-  evidenceReference.sha256 = sha256(evidenceText);
+  evidenceReference.sha256 = sha256(evidenceContent);
   await writeFile(roadmapPath, `${JSON.stringify(roadmap, null, 2)}\n`);
   await runGit(repoRoot, ["add", "."]);
 }
@@ -571,6 +586,32 @@ describe("checkProductPhaseFiles", () => {
     expect(failures[0]).toStartWith("Model Policy phase schema rejected:");
   });
 
+  test("rejects malformed UTF-8 in an indexed roadmap before materialization", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    const roadmapPath = join(repoRoot, "docs/apps/model-policy/phases.v1.json");
+    const roadmapBytes = withMalformedUtf8(
+      new Uint8Array(await Bun.file(roadmapPath).arrayBuffer()),
+      "Foundation",
+    );
+    await Bun.write(roadmapPath, roadmapBytes);
+    await runGit(repoRoot, ["add", roadmapPath]);
+
+    expect(await checkProductPhaseFiles({ repoRoot, write: true })).toContain(
+      "Model Policy plan docs/apps/model-policy/phases.v1.json: JSON is not valid UTF-8",
+    );
+  });
+
+  test("rejects a canonical JSON blob above the byte ceiling", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    const roadmapPath = join(repoRoot, "docs/apps/model-policy/phases.v1.json");
+    await writeFile(roadmapPath, `{"padding":"${"a".repeat(1_048_576)}"}\n`);
+    await runGit(repoRoot, ["add", roadmapPath]);
+
+    expect(await checkProductPhaseFiles({ repoRoot, write: true })).toContain(
+      "Model Policy plan docs/apps/model-policy/phases.v1.json: JSON exceeds the 1048576-byte limit",
+    );
+  });
+
   test("rejects structurally malformed indexed JSON before materialization", async () => {
     const repoRoot = await createFixture(validRoadmap());
     const roadmapPath = join(repoRoot, "docs/apps/model-policy/phases.v1.json");
@@ -594,6 +635,35 @@ describe("checkProductPhaseFiles", () => {
 
     expect(await checkProductPhaseFiles({ repoRoot, write: true })).toContain(
       "Model Policy plan JSON contains a duplicate member name",
+    );
+  });
+
+  for (const schemaPath of [
+    "docs/apps/model-policy/phases.v1.schema.json",
+    "docs/apps/model-policy/evidence-record.v1.schema.json",
+    "docs/apps/model-policy/review-attestation.v1.schema.json",
+    "docs/apps/model-policy/operational-evidence.v1.schema.json",
+  ]) {
+    test(`rejects duplicate member names in indexed schema ${schemaPath}`, async () => {
+      const repoRoot = await createFixture(validRoadmap());
+      const schemaText = await readFile(join(repoRoot, schemaPath), "utf8");
+      await writeFile(join(repoRoot, schemaPath), schemaText.replace("{", '{"probe":1,"probe":2,'));
+      await runGit(repoRoot, ["add", schemaPath]);
+
+      expect(await checkProductPhaseFiles({ repoRoot, write: true })).toContain(
+        "Model Policy plan JSON contains a duplicate member name",
+      );
+    });
+  }
+
+  test("rejects JSON nesting above the structural bound", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    const roadmapPath = join(repoRoot, "docs/apps/model-policy/phases.v1.json");
+    await writeFile(roadmapPath, `${"[".repeat(65)}null${"]".repeat(65)}\n`);
+    await runGit(repoRoot, ["add", roadmapPath]);
+
+    expect(await checkProductPhaseFiles({ repoRoot, write: true })).toContain(
+      "Model Policy plan JSON read failed: JSON nesting limit exceeded",
     );
   });
 
@@ -698,6 +768,20 @@ describe("checkProductPhaseFiles", () => {
     expect(failures).toContain("MP-P0-G01: evidence contains a sensitive marker at line 7");
   });
 
+  test("rejects malformed UTF-8 in an evidence record", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    await addEvidenceFixture(repoRoot);
+    const evidencePath = join(repoRoot, FIXTURE_EVIDENCE_PATH);
+    const evidenceBytes = withMalformedUtf8(
+      new Uint8Array(await Bun.file(evidencePath).arrayBuffer()),
+      "fixture gate",
+    );
+    await writeRawEvidenceFixture(repoRoot, evidenceBytes);
+
+    const failures = await checkProductPhaseFiles({ repoRoot, write: true });
+    expect(failures).toContain("MP-P0-G01: evidence: JSON is not valid UTF-8");
+  });
+
   test("rejects a sensitive marker hidden in an evidence record by JSON escaping", async () => {
     const repoRoot = await createFixture(validRoadmap());
     await addEvidenceFixture(repoRoot);
@@ -722,6 +806,20 @@ describe("checkProductPhaseFiles", () => {
       '  "assertion": "The fixture gate has independently reproducible evidence.",',
       '  "ass\\u0065rtion": "AKI\\u00411234567890ABCDEF",\n' +
         '  "assertion": "The fixture gate has independently reproducible evidence.",',
+    );
+    await writeRawEvidenceFixture(repoRoot, evidenceText);
+
+    const failures = await checkProductPhaseFiles({ repoRoot, write: true });
+    expect(failures).toContain("MP-P0-G01: evidence contains a duplicate JSON member name");
+  });
+
+  test("rejects a sensitive value hidden in a nested duplicate member", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    await addEvidenceFixture(repoRoot);
+    const evidencePath = join(repoRoot, FIXTURE_EVIDENCE_PATH);
+    const evidenceText = (await readFile(evidencePath, "utf8")).replace(
+      '  "findings": {',
+      '  "findings": {\n    "major": ["AKI\\u00411234567890ABCDEF"],\n    "major": [],',
     );
     await writeRawEvidenceFixture(repoRoot, evidenceText);
 
@@ -828,6 +926,28 @@ describe("checkProductPhaseFiles", () => {
     expect(
       failures.some((failure) => failure.includes("reviewer ref must be role-separated")),
     ).toBe(true);
+  });
+
+  test("rejects malformed UTF-8 in a review attestation", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    await addEvidenceFixture(repoRoot, { achievedEvidenceLevel: "qualified" });
+    const attestationPath =
+      "distribution/evidence/model-policy/reviews/mp-p0-g01-architecture.json";
+    const attestationBytes = withMalformedUtf8(
+      new Uint8Array(await Bun.file(join(repoRoot, attestationPath)).arrayBuffer()),
+      "reviewer:architecture",
+    );
+    await writeFile(join(repoRoot, attestationPath), attestationBytes);
+    await rewriteEvidenceFixture(repoRoot, (record) => {
+      const binding = record.reviewBindings.find((candidate) => candidate.role === "architecture");
+      if (!binding) throw new Error("architecture review binding is missing");
+      binding.sha256 = sha256(attestationBytes);
+    });
+
+    const failures = await checkProductPhaseFiles({ repoRoot, write: true });
+    expect(failures).toContain(
+      "MP-P0-G01: architecture review attestation: JSON is not valid UTF-8",
+    );
   });
 
   test("rejects a sensitive marker hidden in a review attestation by JSON escaping", async () => {
@@ -963,6 +1083,28 @@ describe("checkProductPhaseFiles", () => {
     expect(failures).toContain(
       "MP-P0-G01: service observation is not bound to its operated environment",
     );
+  });
+
+  test("rejects malformed UTF-8 in operational evidence", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    await addEvidenceFixture(repoRoot, {
+      achievedEvidenceLevel: "in_service",
+      includeServiceObservation: true,
+    });
+    const authorizationPath =
+      "distribution/evidence/model-policy/operations/mp-p0-g01-authorization.json";
+    const authorizationBytes = withMalformedUtf8(
+      new Uint8Array(await Bun.file(join(repoRoot, authorizationPath)).arrayBuffer()),
+      "approval:fixture",
+    );
+    await writeFile(join(repoRoot, authorizationPath), authorizationBytes);
+    await rewriteEvidenceFixture(repoRoot, (record) => {
+      if (!record.serviceObservation) throw new Error("service observation is missing");
+      record.serviceObservation.authorizationEvidenceSha256 = sha256(authorizationBytes);
+    });
+
+    const failures = await checkProductPhaseFiles({ repoRoot, write: true });
+    expect(failures).toContain("MP-P0-G01: deployment authorization: JSON is not valid UTF-8");
   });
 
   test("rejects a sensitive marker hidden by JSON Unicode escaping", async () => {
