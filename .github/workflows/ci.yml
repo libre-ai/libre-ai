@@ -119,7 +119,11 @@ jobs:
     name: Bun quality
     runs-on: ubuntu-latest
     steps:
+      # Full history: `check:forgotten` proves each evicted tree is still recoverable
+      # at the commit its register entry records. Unverifiable in a shallow clone.
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
       - name: Install archived Bun toolchain
         env:
           BUN_ARCHIVE_URL: https://github.com/libre-ai/libre-ai/releases/download/toolchain-bun-1.4.0-canary.1-57f349f63/bun-linux-x64.zip
