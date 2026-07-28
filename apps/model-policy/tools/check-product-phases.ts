@@ -184,6 +184,7 @@ const EVIDENCE_RECORD_PREFIX = "distribution/evidence/model-policy/";
 const REVIEW_ATTESTATION_PREFIX = "distribution/evidence/model-policy/reviews/";
 const REVIEW_PREFIX = "docs/reviews/";
 const SHA256_PREFIX = "sha256:";
+const CANONICAL_JSON_MAX_BYTES = 1_048_576;
 const EVIDENCE_LEVEL_RANK: Record<EvidenceLevel, number> = {
   declared: 0,
   implemented: 1,
@@ -195,10 +196,8 @@ const EVIDENCE_LEVEL_RANK: Record<EvidenceLevel, number> = {
 export const DEFAULT_REPO_ROOT = resolve(import.meta.dir, "../../..");
 
 function validationErrors(value: ErrorObject[] | null | undefined): string {
-  return (value ?? [])
-    .slice(0, 20)
-    .map((error) => `${error.instancePath || "/"} ${error.message ?? error.keyword}`)
-    .join("; ");
+  const keywords = [...new Set((value ?? []).slice(0, 20).map((error) => error.keyword))].sort();
+  return keywords.length > 0 ? `validation failed (${keywords.join(", ")})` : "validation failed";
 }
 
 function isAllowedPhaseDocument(path: string): boolean {
@@ -226,24 +225,23 @@ async function loadTrackedIndex(repoRoot: string): Promise<Map<string, TrackedIn
   const process = Bun.spawn(["git", "ls-files", "--stage", "-z"], {
     cwd: repoRoot,
     stdout: "pipe",
-    stderr: "pipe",
+    stderr: "ignore",
   });
-  const [stdout, stderr, exitCode] = await Promise.all([
+  const [stdout, exitCode] = await Promise.all([
     new Response(process.stdout).text(),
-    new Response(process.stderr).text(),
     process.exited,
   ]);
-  if (exitCode !== 0) throw new Error(`git ls-files failed: ${stderr.trim()}`);
+  if (exitCode !== 0) throw new Error("git index listing failed");
 
   const entries = new Map<string, TrackedIndexEntry>();
   for (const rawEntry of stdout.split("\0")) {
     if (rawEntry.length === 0) continue;
     const separatorIndex = rawEntry.indexOf("\t");
-    if (separatorIndex < 0) throw new Error("git ls-files returned an invalid index entry");
+    if (separatorIndex < 0) throw new Error("git index contains an invalid entry");
     const [mode, objectId, stage] = rawEntry.slice(0, separatorIndex).split(" ");
     const path = rawEntry.slice(separatorIndex + 1);
     if (!mode || !objectId || stage !== "0" || !/^[0-9a-f]{40,64}$/.test(objectId)) {
-      throw new Error(`git index entry is unmerged or invalid: ${path}`);
+      throw new Error("git index contains an unmerged or invalid entry");
     }
     entries.set(path, { mode, objectId });
   }
@@ -255,6 +253,7 @@ async function readTrackedRegularBlob(
   repositoryPath: string,
   trackedIndex: ReadonlyMap<string, TrackedIndexEntry>,
   context: string,
+  maxBytes?: number,
 ): Promise<{ readonly failures: string[]; readonly bytes: Uint8Array | null }> {
   const entry = trackedIndex.get(repositoryPath);
   if (!entry) return { failures: [`${context}: path is not tracked by git`], bytes: null };
@@ -263,6 +262,27 @@ async function readTrackedRegularBlob(
       failures: [`${context}: git index entry must be a regular non-symlink file`],
       bytes: null,
     };
+  }
+  if (maxBytes !== undefined) {
+    const sizeProcess = Bun.spawn(["git", "cat-file", "-s", entry.objectId], {
+      cwd: repoRoot,
+      stdout: "pipe",
+      stderr: "ignore",
+    });
+    const [sizeOutput, sizeExitCode] = await Promise.all([
+      new Response(sizeProcess.stdout).text(),
+      sizeProcess.exited,
+    ]);
+    const size = Number(sizeOutput.trim());
+    if (sizeExitCode !== 0 || !Number.isSafeInteger(size) || size < 0) {
+      return { failures: [`${context}: git index blob size is unavailable`], bytes: null };
+    }
+    if (size > maxBytes) {
+      return {
+        failures: [`${context}: JSON exceeds the ${maxBytes.toString()}-byte limit`],
+        bytes: null,
+      };
+    }
   }
   const process = Bun.spawn(["git", "cat-file", "blob", entry.objectId], {
     cwd: repoRoot,
@@ -287,8 +307,6 @@ function sha256Bytes(bytes: Uint8Array): string {
   const digest = new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
   return `${SHA256_PREFIX}${digest}`;
 }
-
-const CANONICAL_JSON_MAX_BYTES = 1_048_576;
 
 interface DecodedCanonicalJson {
   readonly failures: string[];
@@ -732,6 +750,7 @@ async function validateOperationalEvidenceReference(
     expectation.path,
     trackedIndex,
     expectation.context,
+    CANONICAL_JSON_MAX_BYTES,
   );
   failures.push(...artifactBlob.failures);
   if (!artifactBlob.bytes) return failures;
@@ -846,6 +865,7 @@ async function validateEvidenceReference(
     reference.record,
     trackedIndex,
     `${gate.id}: evidence`,
+    CANONICAL_JSON_MAX_BYTES,
   );
   failures.push(...evidenceBlob.failures);
   if (!evidenceBlob.bytes) return failures;
@@ -985,6 +1005,7 @@ async function validateEvidenceReference(
       binding.attestationRecord,
       trackedIndex,
       attestationContext,
+      CANONICAL_JSON_MAX_BYTES,
     );
     failures.push(...attestationBlob.failures);
     if (!attestationBlob.bytes) continue;
@@ -1198,30 +1219,35 @@ export async function checkProductPhaseFiles(
       indexedJsonPaths.roadmapSchema,
       trackedIndex,
       `Model Policy plan ${indexedJsonPaths.roadmapSchema}`,
+      CANONICAL_JSON_MAX_BYTES,
     ),
     readTrackedRegularBlob(
       repoRoot,
       indexedJsonPaths.evidenceSchema,
       trackedIndex,
       `Model Policy plan ${indexedJsonPaths.evidenceSchema}`,
+      CANONICAL_JSON_MAX_BYTES,
     ),
     readTrackedRegularBlob(
       repoRoot,
       indexedJsonPaths.reviewAttestationSchema,
       trackedIndex,
       `Model Policy plan ${indexedJsonPaths.reviewAttestationSchema}`,
+      CANONICAL_JSON_MAX_BYTES,
     ),
     readTrackedRegularBlob(
       repoRoot,
       indexedJsonPaths.operationalEvidenceSchema,
       trackedIndex,
       `Model Policy plan ${indexedJsonPaths.operationalEvidenceSchema}`,
+      CANONICAL_JSON_MAX_BYTES,
     ),
     readTrackedRegularBlob(
       repoRoot,
       indexedJsonPaths.roadmap,
       trackedIndex,
       `Model Policy plan ${indexedJsonPaths.roadmap}`,
+      CANONICAL_JSON_MAX_BYTES,
     ),
   ]);
   const indexedJsonFailures = [
@@ -1304,11 +1330,7 @@ export async function checkProductPhaseFiles(
     if (error instanceof DuplicateJsonMemberNameError) {
       return ["Model Policy plan JSON contains a duplicate member name"];
     }
-    return [
-      error instanceof Error
-        ? `Model Policy plan JSON read failed: ${error.message}`
-        : "Model Policy plan JSON read failed",
-    ];
+    return ["Model Policy plan JSON is malformed"];
   }
 
   let validateRoadmap: ValidateFunction;
@@ -1324,12 +1346,8 @@ export async function checkProductPhaseFiles(
     validateOperationalEvidence = ajv.compile(
       checkedSchema(operationalEvidenceSchema, "Operational evidence schema"),
     );
-  } catch (error) {
-    return [
-      error instanceof Error
-        ? `Model Policy schema compilation failed: ${error.message}`
-        : "Model Policy schema compilation failed",
-    ];
+  } catch {
+    return ["Model Policy schema compilation failed"];
   }
   if (!validateRoadmap(unknownRoadmap)) {
     return [`Model Policy phase schema rejected: ${validationErrors(validateRoadmap.errors)}`];

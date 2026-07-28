@@ -17,6 +17,7 @@ import {
 
 const temporaryDirectories: string[] = [];
 const FIXTURE_EVIDENCE_PATH = "distribution/evidence/model-policy/mp-p0-g01-fixture.json";
+const CANONICAL_JSON_MAX_BYTES = 1_048_576;
 
 interface MutableEvidenceFixture {
   assertion: string;
@@ -124,6 +125,14 @@ function withMalformedUtf8(value: Uint8Array, needle: string): Uint8Array {
     }
   }
   throw new Error(`fixture text is missing: ${needle}`);
+}
+
+function jsonDocumentWithByteLength(byteLength: number): string {
+  const prefix = '{"padding":"';
+  const suffix = '"}';
+  const paddingLength = byteLength - prefix.length - suffix.length;
+  if (paddingLength < 0) throw new Error("requested JSON fixture is too small");
+  return `${prefix}${"a".repeat(paddingLength)}${suffix}`;
 }
 
 async function createFixture(
@@ -601,15 +610,80 @@ describe("checkProductPhaseFiles", () => {
     );
   });
 
+  test("accepts the exact canonical JSON byte ceiling before schema validation", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    const roadmapPath = join(repoRoot, "docs/apps/model-policy/phases.v1.json");
+    await writeFile(roadmapPath, jsonDocumentWithByteLength(CANONICAL_JSON_MAX_BYTES));
+    await runGit(repoRoot, ["add", roadmapPath]);
+
+    const failures = await checkProductPhaseFiles({ repoRoot, write: true });
+    expect(failures.some((failure) => failure.includes("JSON exceeds"))).toBe(false);
+    expect(
+      failures.some((failure) => failure.startsWith("Model Policy phase schema rejected")),
+    ).toBe(true);
+  });
+
   test("rejects a canonical JSON blob above the byte ceiling", async () => {
     const repoRoot = await createFixture(validRoadmap());
     const roadmapPath = join(repoRoot, "docs/apps/model-policy/phases.v1.json");
-    await writeFile(roadmapPath, `{"padding":"${"a".repeat(1_048_576)}"}\n`);
+    await writeFile(roadmapPath, jsonDocumentWithByteLength(CANONICAL_JSON_MAX_BYTES + 1));
     await runGit(repoRoot, ["add", roadmapPath]);
 
     expect(await checkProductPhaseFiles({ repoRoot, write: true })).toContain(
       "Model Policy plan docs/apps/model-policy/phases.v1.json: JSON exceeds the 1048576-byte limit",
     );
+  });
+
+  test("never returns untrusted parser or schema-compiler content", async () => {
+    const sensitiveMarker = ["AKI", "A1234567890ABCDEF"].join("");
+    const malformedRepoRoot = await createFixture(validRoadmap());
+    const malformedRoadmapPath = join(malformedRepoRoot, "docs/apps/model-policy/phases.v1.json");
+    await writeFile(malformedRoadmapPath, `{"value":${sensitiveMarker}}\n`);
+    await runGit(malformedRepoRoot, ["add", malformedRoadmapPath]);
+
+    const parserFailures = await checkProductPhaseFiles({
+      repoRoot: malformedRepoRoot,
+      write: true,
+    });
+    expect(parserFailures).toEqual(["Model Policy plan JSON is malformed"]);
+    expect(parserFailures.join("\n")).not.toContain(sensitiveMarker);
+
+    const schemaRepoRoot = await createFixture(validRoadmap());
+    const schemaPath = join(schemaRepoRoot, "docs/apps/model-policy/phases.v1.schema.json");
+    const schema = JSON.parse(await readFile(schemaPath, "utf8")) as {
+      properties: { documentStatus: Record<string, unknown> };
+    };
+    schema.properties.documentStatus.format = sensitiveMarker;
+    await writeFile(schemaPath, `${JSON.stringify(schema, null, 2)}\n`);
+    await runGit(schemaRepoRoot, ["add", schemaPath]);
+
+    const compilerFailures = await checkProductPhaseFiles({
+      repoRoot: schemaRepoRoot,
+      write: true,
+    });
+    expect(compilerFailures).toEqual(["Model Policy schema compilation failed"]);
+    expect(compilerFailures.join("\n")).not.toContain(sensitiveMarker);
+
+    const validationRepoRoot = await createFixture(validRoadmap());
+    const validationSchemaPath = join(
+      validationRepoRoot,
+      "docs/apps/model-policy/phases.v1.schema.json",
+    );
+    const validationSchema = JSON.parse(await readFile(validationSchemaPath, "utf8")) as {
+      $defs: { phase: { properties: { title: Record<string, unknown> } } };
+    };
+    validationSchema.$defs.phase.properties.title.pattern = sensitiveMarker;
+    await writeFile(validationSchemaPath, `${JSON.stringify(validationSchema, null, 2)}\n`);
+    await runGit(validationRepoRoot, ["add", validationSchemaPath]);
+
+    const validationFailures = await checkProductPhaseFiles({
+      repoRoot: validationRepoRoot,
+      write: true,
+    });
+    expect(validationFailures[0]).toBe(
+      "Model Policy phase schema rejected: validation failed (pattern)",
+    );
+    expect(validationFailures.join("\n")).not.toContain(sensitiveMarker);
   });
 
   test("rejects structurally malformed indexed JSON before materialization", async () => {
@@ -619,7 +693,7 @@ describe("checkProductPhaseFiles", () => {
     await runGit(repoRoot, ["add", roadmapPath]);
 
     expect(await checkProductPhaseFiles({ repoRoot, write: true })).toContain(
-      "Model Policy plan JSON read failed: invalid JSON structure",
+      "Model Policy plan JSON is malformed",
     );
   });
 
@@ -663,7 +737,7 @@ describe("checkProductPhaseFiles", () => {
     await runGit(repoRoot, ["add", roadmapPath]);
 
     expect(await checkProductPhaseFiles({ repoRoot, write: true })).toContain(
-      "Model Policy plan JSON read failed: JSON nesting limit exceeded",
+      "Model Policy plan JSON is malformed",
     );
   });
 
@@ -676,7 +750,7 @@ describe("checkProductPhaseFiles", () => {
     await writeFile(schemaPath, validSchemaText);
 
     const failures = await checkProductPhaseFiles({ repoRoot, write: true });
-    expect(failures[0]).toStartWith("Model Policy schema compilation failed:");
+    expect(failures[0]).toBe("Model Policy schema compilation failed");
   });
 
   test("does not write projections after a gate-definition failure", async () => {
@@ -827,6 +901,25 @@ describe("checkProductPhaseFiles", () => {
     expect(failures).toContain("MP-P0-G01: evidence contains a duplicate JSON member name");
   });
 
+  test("rejects empty and oversized evidence records", async () => {
+    const emptyRepoRoot = await createFixture(validRoadmap());
+    await addEvidenceFixture(emptyRepoRoot);
+    await writeRawEvidenceFixture(emptyRepoRoot, "");
+    expect(await checkProductPhaseFiles({ repoRoot: emptyRepoRoot, write: true })).toContain(
+      "MP-P0-G01: evidence record is not valid JSON",
+    );
+
+    const oversizedRepoRoot = await createFixture(validRoadmap());
+    await addEvidenceFixture(oversizedRepoRoot);
+    await writeRawEvidenceFixture(
+      oversizedRepoRoot,
+      jsonDocumentWithByteLength(CANONICAL_JSON_MAX_BYTES + 1),
+    );
+    expect(await checkProductPhaseFiles({ repoRoot: oversizedRepoRoot, write: true })).toContain(
+      "MP-P0-G01: evidence: JSON exceeds the 1048576-byte limit",
+    );
+  });
+
   test("rejects phase and gate identity drift inside a content-addressed record", async () => {
     const repoRoot = await createFixture(validRoadmap());
     await addEvidenceFixture(repoRoot, { phaseId: "MP-P1", gateId: "MP-P1-G01" });
@@ -926,6 +1019,32 @@ describe("checkProductPhaseFiles", () => {
     expect(
       failures.some((failure) => failure.includes("reviewer ref must be role-separated")),
     ).toBe(true);
+  });
+
+  test("rejects empty and oversized review attestations", async () => {
+    for (const [content, expectedFailure] of [
+      ["", "MP-P0-G01: architecture review attestation: record is not valid JSON"],
+      [
+        jsonDocumentWithByteLength(CANONICAL_JSON_MAX_BYTES + 1),
+        "MP-P0-G01: architecture review attestation: JSON exceeds the 1048576-byte limit",
+      ],
+    ] as const) {
+      const repoRoot = await createFixture(validRoadmap());
+      await addEvidenceFixture(repoRoot, { achievedEvidenceLevel: "qualified" });
+      const attestationPath =
+        "distribution/evidence/model-policy/reviews/mp-p0-g01-architecture.json";
+      await writeFile(join(repoRoot, attestationPath), content);
+      await rewriteEvidenceFixture(repoRoot, (record) => {
+        const binding = record.reviewBindings.find(
+          (candidate) => candidate.role === "architecture",
+        );
+        if (!binding) throw new Error("architecture review binding is missing");
+        binding.sha256 = sha256(content);
+      });
+
+      const failures = await checkProductPhaseFiles({ repoRoot, write: true });
+      expect(failures).toContain(expectedFailure);
+    }
   });
 
   test("rejects malformed UTF-8 in a review attestation", async () => {
@@ -1083,6 +1202,32 @@ describe("checkProductPhaseFiles", () => {
     expect(failures).toContain(
       "MP-P0-G01: service observation is not bound to its operated environment",
     );
+  });
+
+  test("rejects empty and oversized operational evidence", async () => {
+    for (const [content, expectedFailure] of [
+      ["", "MP-P0-G01: deployment authorization: operational evidence is not valid JSON"],
+      [
+        jsonDocumentWithByteLength(CANONICAL_JSON_MAX_BYTES + 1),
+        "MP-P0-G01: deployment authorization: JSON exceeds the 1048576-byte limit",
+      ],
+    ] as const) {
+      const repoRoot = await createFixture(validRoadmap());
+      await addEvidenceFixture(repoRoot, {
+        achievedEvidenceLevel: "in_service",
+        includeServiceObservation: true,
+      });
+      const authorizationPath =
+        "distribution/evidence/model-policy/operations/mp-p0-g01-authorization.json";
+      await writeFile(join(repoRoot, authorizationPath), content);
+      await rewriteEvidenceFixture(repoRoot, (record) => {
+        if (!record.serviceObservation) throw new Error("service observation is missing");
+        record.serviceObservation.authorizationEvidenceSha256 = sha256(content);
+      });
+
+      const failures = await checkProductPhaseFiles({ repoRoot, write: true });
+      expect(failures).toContain(expectedFailure);
+    }
   });
 
   test("rejects malformed UTF-8 in operational evidence", async () => {

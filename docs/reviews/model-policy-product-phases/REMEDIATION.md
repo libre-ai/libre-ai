@@ -95,6 +95,16 @@ The independent [business](COUNTER-REVIEW-FBC12C0-BUSINESS.md) and [architecture
 | Structural depth did not bound total JSON work | Canonical JSON blobs now have an explicit 1,048,576-byte ceiling before decoding and parsing. |
 | Schema, nested-object, depth, and malformed-byte regressions were incomplete | Added direct duplicate tests for all four schemas, escaped-equivalent and nested duplicate members, depth 65, byte-ceiling refusal, and malformed UTF-8 in roadmap/evidence/attestation/operational artifacts. |
 
+## Re-review of `72fe421`
+
+The independent [business](COUNTER-REVIEW-72FE421-BUSINESS.md) and [architecture](COUNTER-REVIEW-72FE421-ARCHITECTURE.md) reviews approved the seventh remediation. The [technical review](COUNTER-REVIEW-72FE421-TECHNICAL.md) rejected it because parser/compiler exceptions could disclose staged content and the byte bound followed blob allocation.
+
+| Re-review finding | Eighth remediation |
+| --- | --- |
+| Parser, compiler, and validator diagnostics could interpolate untrusted content | Replaced raw exception/message interpolation with stable parse/compile categories and a bounded set of validator keywords. Adversarial parser, unknown-format compiler, and pattern-validation probes assert that an injected credential-shaped marker never appears in returned diagnostics. |
+| JSON size was checked after the Git blob had been buffered | `git cat-file -s` now preflights the immutable indexed object ID before `git cat-file blob`; any oversized canonical JSON object is refused before allocation. The decoder retains the same ceiling as defense in depth. |
+| Exact-boundary and per-artifact malformed/oversize cases were missing | Added exact 1,048,576-byte acceptance-before-schema validation, above-limit refusal, and empty/oversized evidence, attestation, and operational cases. |
+
 ## Intentionally not fabricated
 
 - No work package, ADR/specification amendment, owner selection, wave activation, production approval, or commercial approval is marked accepted. Those are external human-controlled prerequisites.
