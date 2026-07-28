@@ -6,6 +6,7 @@ import { join } from "node:path";
 import {
   checkProductPhaseFiles,
   DEFAULT_REPO_ROOT,
+  extractGateDefinition,
   extractGateIds,
   isAllowedEvidenceRecordPath,
   type ProductPhaseRoadmap,
@@ -192,7 +193,9 @@ interface EvidenceFixtureOptions {
   readonly sourceCommit?: string;
   readonly referenceDigest?: string;
   readonly artifactPath?: string;
+  readonly invalidAuthorizationDigest?: boolean;
   readonly invalidServiceDigest?: boolean;
+  readonly serviceDeploymentIdentity?: string;
   readonly incidentState?: "none_observed" | "incidents_bound_in_artifacts";
 }
 
@@ -214,6 +217,12 @@ async function addEvidenceFixture(
     await Bun.file(join(repoRoot, phase.document)).arrayBuffer(),
   );
   const phaseDocumentDigest = sha256(phaseDocumentBytes);
+  const gateDefinition = extractGateDefinition(
+    new TextDecoder().decode(phaseDocumentBytes),
+    gate.id,
+  );
+  if (!gateDefinition) throw new Error("fixture phase document lacks MP-P0-G01");
+  const gateDefinitionSha256 = sha256(gateDefinition);
   const artifactPath = options.artifactPath ?? phase.document;
   const artifactDigest = sha256(
     new Uint8Array(await Bun.file(join(repoRoot, artifactPath)).arrayBuffer()),
@@ -263,6 +272,7 @@ async function addEvidenceFixture(
     evidenceId: "MP-EVD-P0-G01-FIXTURE",
     phaseId: options.phaseId ?? phase.id,
     gateId: options.gateId ?? gate.id,
+    gateDefinitionSha256,
     assertion: "The fixture gate has independently reproducible evidence.",
     achievedEvidenceLevel: options.achievedEvidenceLevel ?? "qualified",
     sourceCommit: options.sourceCommit ?? sourceCommit,
@@ -278,6 +288,15 @@ async function addEvidenceFixture(
             path: phase.document,
             sha256: options.inputDigest ?? phaseDocumentDigest,
           },
+          ...(options.includeServiceObservation
+            ? [
+                {
+                  kind: "operated_environment",
+                  identifier: "deployment:model-policy:fixture",
+                  sha256: sha256("deployment:model-policy:fixture"),
+                },
+              ]
+            : []),
         ],
     commands: options.commands ?? ["bun test apps/model-policy/tools/check-product-phases.test.ts"],
     expectedResults: ["The gate evidence validation passes."],
@@ -295,17 +314,26 @@ async function addEvidenceFixture(
     recordedAt: "2026-07-28T00:00:00Z",
   };
   if (options.includeServiceObservation) {
+    const authorizationEvidencePath =
+      "distribution/evidence/model-policy/operations/mp-p0-g01-authorization.json";
     const smokeEvidencePath = "distribution/evidence/model-policy/operations/mp-p0-g01-smoke.json";
     const rollbackEvidencePath =
       "distribution/evidence/model-policy/operations/mp-p0-g01-rollback.json";
+    const authorizationEvidence =
+      '{"authorized":true,"deployment":"deployment:model-policy:fixture"}\n';
     const smokeEvidence = '{"status":"passed","deployment":"fixture"}\n';
     const rollbackEvidence = '{"status":"passed","restored":"fixture"}\n';
+    await writeFile(join(repoRoot, authorizationEvidencePath), authorizationEvidence);
     await writeFile(join(repoRoot, smokeEvidencePath), smokeEvidence);
     await writeFile(join(repoRoot, rollbackEvidencePath), rollbackEvidence);
     evidenceRecord.serviceObservation = {
-      deploymentIdentity: "deployment:model-policy:fixture",
+      deploymentIdentity: options.serviceDeploymentIdentity ?? "deployment:model-policy:fixture",
       windowStartedAt: "2026-07-27T00:00:00Z",
       windowEndedAt: "2026-07-28T00:00:00Z",
+      authorizationEvidencePath,
+      authorizationEvidenceSha256: options.invalidAuthorizationDigest
+        ? `sha256:${"0".repeat(64)}`
+        : sha256(authorizationEvidence),
       smokeEvidencePath,
       smokeEvidenceSha256: options.invalidServiceDigest
         ? `sha256:${"0".repeat(64)}`
@@ -485,6 +513,36 @@ describe("checkProductPhaseFiles", () => {
     expect(failures).toContain("MP-P0-G01: evidence does not bind the gate-definition document");
   });
 
+  test("rejects evidence after the indexed gate definition changes semantically", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    await addEvidenceFixture(repoRoot);
+    const phaseDocumentPath = join(repoRoot, "docs/apps/model-policy/phases/00-foundation.md");
+    const changedDocument = (await readFile(phaseDocumentPath, "utf8")).replace(
+      "### MP-P0-G01 — First gate",
+      "### MP-P0-G01 — Materially different gate",
+    );
+    await writeFile(phaseDocumentPath, changedDocument);
+    await runGit(repoRoot, ["add", "--", "docs/apps/model-policy/phases/00-foundation.md"]);
+
+    const failures = await checkProductPhaseFiles({ repoRoot, write: true });
+    expect(failures).toContain(
+      "MP-P0-G01: gate definition digest does not match the current indexed document",
+    );
+  });
+
+  test("uses the indexed phase document when the mutable worktree diverges", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    await addEvidenceFixture(repoRoot);
+    const phaseDocumentPath = join(repoRoot, "docs/apps/model-policy/phases/00-foundation.md");
+    const mutableDocument = (await readFile(phaseDocumentPath, "utf8")).replace(
+      "### MP-P0-G01 — First gate",
+      "### MP-P0-G99 — Unstaged mutable gate",
+    );
+    await writeFile(phaseDocumentPath, mutableDocument);
+
+    expect(await checkProductPhaseFiles({ repoRoot, write: true })).toEqual([]);
+  });
+
   test("rejects evidence below the gate-required level", async () => {
     const repoRoot = await createFixture(validRoadmap());
     await addEvidenceFixture(repoRoot, { achievedEvidenceLevel: "verified", roles: [] });
@@ -606,6 +664,32 @@ describe("checkProductPhaseFiles", () => {
     ).toBe(true);
   });
 
+  test("rejects in-service evidence without bound deployment authorization", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    await addEvidenceFixture(repoRoot, {
+      achievedEvidenceLevel: "in_service",
+      includeServiceObservation: true,
+      invalidAuthorizationDigest: true,
+    });
+    const failures = await checkProductPhaseFiles({ repoRoot, write: true });
+    expect(failures).toContain(
+      "MP-P0-G01: service observation digest mismatch for distribution/evidence/model-policy/operations/mp-p0-g01-authorization.json",
+    );
+  });
+
+  test("rejects an in-service deployment absent from the operated-environment inputs", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    await addEvidenceFixture(repoRoot, {
+      achievedEvidenceLevel: "in_service",
+      includeServiceObservation: true,
+      serviceDeploymentIdentity: "deployment:model-policy:unbound",
+    });
+    const failures = await checkProductPhaseFiles({ repoRoot, write: true });
+    expect(failures).toContain(
+      "MP-P0-G01: service observation is not bound to its operated environment",
+    );
+  });
+
   test("requires incident artifacts when an in-service window reports incidents", async () => {
     const repoRoot = await createFixture(validRoadmap());
     await addEvidenceFixture(repoRoot, {
@@ -624,6 +708,36 @@ describe("checkProductPhaseFiles", () => {
       includeServiceObservation: true,
     });
     expect(await checkProductPhaseFiles({ repoRoot, write: true })).toEqual([]);
+  });
+
+  test("rejects an in-service observation ending after the record was produced", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    await addEvidenceFixture(repoRoot, {
+      achievedEvidenceLevel: "in_service",
+      includeServiceObservation: true,
+    });
+    const evidencePath = join(repoRoot, FIXTURE_EVIDENCE_PATH);
+    const evidenceRecord = JSON.parse(await readFile(evidencePath, "utf8")) as {
+      serviceObservation: { windowEndedAt: string };
+    };
+    evidenceRecord.serviceObservation.windowEndedAt = "2099-07-28T00:00:00Z";
+    const evidenceText = `${JSON.stringify(evidenceRecord, null, 2)}\n`;
+    await writeFile(evidencePath, evidenceText);
+
+    const roadmapPath = join(repoRoot, "docs/apps/model-policy/phases.v1.json");
+    const roadmap = JSON.parse(await readFile(roadmapPath, "utf8")) as ProductPhaseRoadmap;
+    const evidenceReference = roadmap.phases[0]?.gates[0]?.evidence[0] as
+      | { sha256: string }
+      | undefined;
+    if (!evidenceReference) throw new Error("fixture evidence reference is missing");
+    evidenceReference.sha256 = sha256(evidenceText);
+    await writeFile(roadmapPath, `${JSON.stringify(roadmap, null, 2)}\n`);
+    await runGit(repoRoot, ["add", "."]);
+
+    const failures = await checkProductPhaseFiles({ repoRoot, write: true });
+    expect(failures).toContain(
+      "MP-P0-G01: service observation window cannot end after the evidence record",
+    );
   });
 
   test("leaves both projections unchanged when staging the second write fails", async () => {

@@ -1,4 +1,4 @@
-import { containsCredentialMarker } from "./public-source-scanner";
+import { containsCredentialMarker, containsSensitivePublicMarker } from "./public-source-scanner";
 
 /**
  * WP-G2-Q01 acceptance criterion 2, the tree-wide "secret" gate: no committed
@@ -13,8 +13,10 @@ import { containsCredentialMarker } from "./public-source-scanner";
  * Excluded: the detector source (it holds the patterns), this gate's own test
  * and the schema-fixtures vector corpus (both carry anti-pattern fixtures by
  * design, already validated in their own context by check-contracts),
- * non-normative review evidence (docs/reviews and any evidence directory), and
- * the usual build or vendored trees.
+ * historical non-normative review reports under docs/reviews (which contain
+ * deliberate hostile examples), and the usual build or vendored trees.
+ * Canonical evidence is never excluded: Model Policy evidence additionally
+ * uses the personal-data boundary detector because records contain free text.
  */
 export interface SecretScanTarget {
   readonly path: string;
@@ -24,10 +26,11 @@ export interface SecretScanTarget {
 export interface SecretFinding {
   readonly path: string;
   readonly line: number;
+  readonly kind: "credential" | "personal_data";
 }
 
+const MODEL_POLICY_EVIDENCE_PREFIX = "distribution/evidence/model-policy/";
 const IGNORED_PREFIXES = ["node_modules/", "target/", "dist/", ".git/", "docs/reviews/"];
-const IGNORED_SUBSTRINGS = ["/evidence/"];
 const IGNORED_SUFFIXES = [
   "public-source-scanner.ts",
   "public-source-scanner.test.ts",
@@ -40,7 +43,6 @@ const IGNORED_SUFFIXES = [
 
 function isIgnored(path: string): boolean {
   if (IGNORED_PREFIXES.some((prefix) => path.startsWith(prefix))) return true;
-  if (IGNORED_SUBSTRINGS.some((part) => path.includes(part))) return true;
   if (IGNORED_SUFFIXES.some((suffix) => path.endsWith(suffix))) return true;
   return false;
 }
@@ -53,8 +55,14 @@ export function scanForSecrets(targets: readonly SecretScanTarget[]): SecretFind
     }
     const lines = target.content.split("\n");
     for (let i = 0; i < lines.length; i += 1) {
-      if (containsCredentialMarker(lines[i] ?? "")) {
-        findings.push({ path: target.path, line: i + 1 });
+      const line = lines[i] ?? "";
+      if (containsCredentialMarker(line)) {
+        findings.push({ path: target.path, line: i + 1, kind: "credential" });
+      } else if (
+        target.path.startsWith(MODEL_POLICY_EVIDENCE_PREFIX) &&
+        containsSensitivePublicMarker(line)
+      ) {
+        findings.push({ path: target.path, line: i + 1, kind: "personal_data" });
       }
     }
   }
@@ -73,9 +81,11 @@ if (import.meta.main) {
   const findings = scanForSecrets(targets);
   if (findings.length > 0) {
     for (const finding of findings) {
-      console.error(`${finding.path}:${finding.line}: committed credential marker`);
+      console.error(`${finding.path}:${finding.line}: committed ${finding.kind} marker`);
     }
-    console.error("Secret scan failed (WP-G2-Q01 acceptance 2): a credential marker was found.");
+    console.error(
+      "Secret scan failed (WP-G2-Q01 acceptance 2): a credential or Model Policy evidence personal-data marker was found.",
+    );
     process.exit(1);
   }
   console.log("Secret scan clean (WP-G2-Q01 acceptance 2) verified");

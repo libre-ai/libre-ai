@@ -38,6 +38,20 @@ The independent [business](FOLLOW-UP-BUSINESS-REVIEW.md), [technical](FOLLOW-UP-
 | Managed-service pilot/production/commercial ordering was circular | Added a separately owner-authorized non-commercial pilot, then a qualified production-only cutover gate, then an in-service smoke/rollback/operational-window gate before separate paid-onboarding approval. |
 | Metric authority, denial ownership, and “activity steering” were overstated | Limited `METRICS.md` claims to fields it owns, assigned runtime metric bindings to emitted records, made downstream authorization contracts own denial, and renamed the app summary to activity observation. |
 
+## Counter-review of `a95c313`
+
+The independent [business](COUNTER-REVIEW-A95C313-BUSINESS.md), [technical](COUNTER-REVIEW-A95C313-TECHNICAL.md), and [architecture](COUNTER-REVIEW-A95C313-ARCHITECTURE.md) counter-reviews approved the product/business surface but rejected the second remediation on one architecture boundary and several evidence-gate defects.
+
+| Counter-review finding | Third remediation |
+| --- | --- |
+| MP-P3 selected and re-evaluated affected needs | MP-P3 now emits bounded immutable policy/exception lifecycle events only. MP-P4 is explicitly the sole consumer that selects and re-evaluates affected needs. |
+| Gate criteria could drift after the evidence source commit | Every evidence record now binds the canonical gate-section SHA-256. The checker derives it from the exact source-commit phase-document blob and requires equality with the current regular Git-index blob; unstaged worktree text cannot substitute for either. |
+| In-service windows could end after record creation and lacked deployment authorization | Service observations require `start < end <= recordedAt`, operated-environment identity matching the deployment, and a content-addressed tracked deployment-authorization artifact in addition to smoke, rollback, and incident evidence. |
+| Evidence paths bypassed secret scanning | Removed the generic evidence-directory exclusion. The canonical Model Policy evidence subtree is checked for credential and personal-data markers; only known historical review reports and scanner fixtures keep narrow exclusions. |
+| Ajv imports were indirect | Declared `ajv` and `ajv-formats` as direct app development dependencies through the workspace catalog. |
+| Coverage was informative only | Added an app-local line/function threshold and a required CI step for the phase-checker coverage run. |
+| Missing adversarial regressions | Added indexed semantic-drift, unstaged-worktree divergence, future-window, deployment-authorization, operated-environment, credential, and evidence-PII tests. |
+
 ## Intentionally not fabricated
 
 - No work package, ADR/specification amendment, owner selection, wave activation, production approval, or commercial approval is marked accepted. Those are external human-controlled prerequisites.

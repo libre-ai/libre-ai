@@ -1,5 +1,5 @@
 import { chmod, lstat, realpath, rename, unlink } from "node:fs/promises";
-import { relative, resolve, sep } from "node:path";
+import { resolve } from "node:path";
 import Ajv2020, { type AnySchema, type ErrorObject, type ValidateFunction } from "ajv/dist/2020";
 import addFormats from "ajv-formats";
 
@@ -94,6 +94,8 @@ interface ServiceObservation {
   readonly deploymentIdentity: string;
   readonly windowStartedAt: string;
   readonly windowEndedAt: string;
+  readonly authorizationEvidencePath: string;
+  readonly authorizationEvidenceSha256: string;
   readonly smokeEvidencePath: string;
   readonly smokeEvidenceSha256: string;
   readonly rollbackEvidencePath: string;
@@ -107,6 +109,7 @@ interface EvidenceRecord {
   readonly evidenceId: string;
   readonly phaseId: string;
   readonly gateId: string;
+  readonly gateDefinitionSha256: string;
   readonly assertion: string;
   readonly achievedEvidenceLevel: EvidenceLevel;
   readonly sourceCommit: string;
@@ -122,6 +125,7 @@ interface EvidenceRecord {
   };
   readonly reviewBindings: ReviewBinding[];
   readonly serviceObservation?: ServiceObservation;
+  readonly recordedAt: string;
 }
 
 interface ProjectionUpdate {
@@ -162,11 +166,6 @@ function validationErrors(value: ErrorObject[] | null | undefined): string {
     .slice(0, 20)
     .map((error) => `${error.instancePath || "/"} ${error.message ?? error.keyword}`)
     .join("; ");
-}
-
-function isInside(root: string, candidate: string): boolean {
-  const pathFromRoot = relative(root, candidate);
-  return pathFromRoot === "" || (!pathFromRoot.startsWith(`..${sep}`) && pathFromRoot !== "..");
 }
 
 function isAllowedPhaseDocument(path: string): boolean {
@@ -249,33 +248,6 @@ async function readTrackedRegularBlob(
     };
   }
   return { failures: [], bytes };
-}
-
-async function assertTrackedRegularFile(
-  repoRoot: string,
-  repositoryPath: string,
-  trackedPaths: ReadonlySet<string>,
-  context: string,
-): Promise<string[]> {
-  const failures: string[] = [];
-  const absolutePath = resolve(repoRoot, repositoryPath);
-  if (!isInside(repoRoot, absolutePath)) return [`${context}: path escapes repository`];
-  if (!trackedPaths.has(repositoryPath)) {
-    failures.push(`${context}: path is not tracked by git`);
-  }
-  try {
-    const fileStats = await lstat(absolutePath);
-    if (fileStats.isSymbolicLink() || !fileStats.isFile()) {
-      failures.push(`${context}: path must be a regular non-symlink file`);
-      return failures;
-    }
-    const canonicalPath = await realpath(absolutePath);
-    if (!isInside(repoRoot, canonicalPath))
-      failures.push(`${context}: canonical path escapes repository`);
-  } catch {
-    failures.push(`${context}: file does not exist`);
-  }
-  return failures;
 }
 
 function sha256Bytes(bytes: Uint8Array): string {
@@ -376,6 +348,19 @@ export function extractGateIds(document: string): string[] {
   return [...document.matchAll(/^### (MP-P[0-9]+-G[0-9]{2}) — .+$/gm)].map(
     (match) => match[1] ?? "",
   );
+}
+
+export function extractGateDefinition(document: string, gateId: string): string | null {
+  const normalizedDocument = document.replaceAll("\r\n", "\n");
+  const escapedGateId = gateId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const heading = new RegExp(`^### ${escapedGateId} — .+$`, "m").exec(normalizedDocument);
+  if (!heading || heading.index === undefined) return null;
+  const remainderStart = heading.index + heading[0].length;
+  const remainder = normalizedDocument.slice(remainderStart);
+  const nextHeadingOffset = remainder.search(/^#{1,3} /m);
+  const end =
+    nextHeadingOffset < 0 ? normalizedDocument.length : remainderStart + nextHeadingOffset;
+  return `${normalizedDocument.slice(heading.index, end).trimEnd()}\n`;
 }
 
 function compareGateDefinitions(phase: ProductPhase, content: string): string[] {
@@ -522,6 +507,7 @@ async function validateEvidenceReference(
   validateReviewAttestation: ValidateFunction,
   evidenceIds: Map<string, string>,
   reviewIds: Map<string, string>,
+  currentGateDefinitionSha256: string,
 ): Promise<string[]> {
   const failures: string[] = [];
   if (!isAllowedEvidenceRecordPath(reference.record)) {
@@ -579,6 +565,7 @@ async function validateEvidenceReference(
     failures.push(`${gate.id}: source commit ${record.sourceCommit} is unavailable`);
   }
 
+  let candidatePhaseDocument: Uint8Array | null = null;
   for (const artifact of record.artifactDigests) {
     const bytes = await blobAtCommit(repoRoot, record.sourceCommit, artifact.path);
     if (bytes === null) {
@@ -590,10 +577,25 @@ async function validateEvidenceReference(
     if (sha256Bytes(bytes) !== artifact.sha256) {
       failures.push(`${gate.id}: artifact digest mismatch for ${artifact.path}`);
     }
+    if (artifact.path === phase.document) candidatePhaseDocument = bytes;
   }
-  const artifactPaths = new Set(record.artifactDigests.map((artifact) => artifact.path));
-  if (!artifactPaths.has(phase.document)) {
+  if (!candidatePhaseDocument) {
     failures.push(`${gate.id}: evidence does not bind the gate-definition document`);
+  } else {
+    const candidateGateDefinition = extractGateDefinition(
+      new TextDecoder().decode(candidatePhaseDocument),
+      gate.id,
+    );
+    if (!candidateGateDefinition) {
+      failures.push(`${gate.id}: candidate phase document does not define the gate`);
+    } else if (
+      sha256Bytes(new TextEncoder().encode(candidateGateDefinition)) !== record.gateDefinitionSha256
+    ) {
+      failures.push(`${gate.id}: gate definition digest does not match the source commit`);
+    }
+  }
+  if (record.gateDefinitionSha256 !== currentGateDefinitionSha256) {
+    failures.push(`${gate.id}: gate definition digest does not match the current indexed document`);
   }
   for (const input of record.inputIdentities) {
     if (input.kind !== "repository_fixture") continue;
@@ -719,10 +721,27 @@ async function validateEvidenceReference(
   if (record.serviceObservation) {
     const startedAt = Date.parse(record.serviceObservation.windowStartedAt);
     const endedAt = Date.parse(record.serviceObservation.windowEndedAt);
+    const recordedAt = Date.parse(record.recordedAt);
     if (startedAt >= endedAt) {
       failures.push(`${gate.id}: service observation window must end after it starts`);
     }
+    if (endedAt > recordedAt) {
+      failures.push(`${gate.id}: service observation window cannot end after the evidence record`);
+    }
+    if (
+      !record.inputIdentities.some(
+        (input) =>
+          input.kind === "operated_environment" &&
+          input.identifier === record.serviceObservation?.deploymentIdentity,
+      )
+    ) {
+      failures.push(`${gate.id}: service observation is not bound to its operated environment`);
+    }
     for (const evidence of [
+      {
+        path: record.serviceObservation.authorizationEvidencePath,
+        sha256: record.serviceObservation.authorizationEvidenceSha256,
+      },
       {
         path: record.serviceObservation.smokeEvidencePath,
         sha256: record.serviceObservation.smokeEvidenceSha256,
@@ -817,8 +836,6 @@ export async function checkProductPhaseFiles(
   } catch (error) {
     return [error instanceof Error ? error.message : "Unable to load tracked paths"];
   }
-  const trackedPaths = new Set(trackedIndex.keys());
-
   const evidenceIds = new Map<string, string>();
   const reviewIds = new Map<string, string>();
   for (const phase of roadmap.phases) {
@@ -826,16 +843,25 @@ export async function checkProductPhaseFiles(
       failures.push(`${phase.id}: phase document path is outside ${PHASE_DOCUMENT_PREFIX}`);
       continue;
     }
-    failures.push(
-      ...(await assertTrackedRegularFile(repoRoot, phase.document, trackedPaths, phase.id)),
+    const phaseDocumentBlob = await readTrackedRegularBlob(
+      repoRoot,
+      phase.document,
+      trackedIndex,
+      phase.id,
     );
-    if (failures.some((failure) => failure.startsWith(`${phase.id}:`))) continue;
-    const content = await Bun.file(resolve(repoRoot, phase.document)).text();
+    failures.push(...phaseDocumentBlob.failures);
+    if (!phaseDocumentBlob.bytes) continue;
+    const content = new TextDecoder().decode(phaseDocumentBlob.bytes);
     if (!content.startsWith(`# ${phase.id} —`)) {
       failures.push(`${phase.document}: title must start with ${phase.id}`);
     }
     failures.push(...compareGateDefinitions(phase, content));
     for (const gate of phase.gates) {
+      const currentGateDefinition = extractGateDefinition(content, gate.id);
+      if (!currentGateDefinition) continue;
+      const currentGateDefinitionSha256 = sha256Bytes(
+        new TextEncoder().encode(currentGateDefinition),
+      );
       for (const reference of gate.evidence) {
         failures.push(
           ...(await validateEvidenceReference(
@@ -848,6 +874,7 @@ export async function checkProductPhaseFiles(
             validateReviewAttestation,
             evidenceIds,
             reviewIds,
+            currentGateDefinitionSha256,
           )),
         );
       }

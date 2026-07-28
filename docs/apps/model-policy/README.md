@@ -79,14 +79,16 @@ Architecture decisions remain in [`docs/adr/`](../../adr/), contracts remain in 
 1. Define or amend a phase gate in its phase record.
 2. Obtain owner selection, wave activation, accepted work package, and any required contract/ADR/specification amendment through their existing authorities.
 3. Implement only inside the accepted write paths.
-4. Collect candidate-commit artifacts, exact tools, commands, inputs, harnesses, and observed results.
+4. Collect candidate-commit artifacts, the canonical gate-section digest, exact tools, commands, inputs, harnesses, and observed results.
 5. Run every phase-required independent review and content-address its role/candidate/gate attestation plus human report.
-6. Produce the final evidence record for the exact phase, gate, candidate, assertion, achieved level, and attestations.
+6. Produce the final evidence record for the exact phase, gate, candidate, assertion, achieved level, and attestations; an `in_service` record also binds operated-environment identity, deployment authorization, observation window, smoke, rollback, and incidents.
 7. Let `GOALS.md`/`STATUS.md` record any accepted execution-state change; this plan never self-promotes.
 8. Regenerate both README projections only after validation succeeds:
 
 ```console
 bun apps/model-policy/tools/check-product-phases.ts --write
+bun run --cwd apps/model-policy test:product-phases:coverage
+bun tools/quality/check-secret-scan.ts
 ```
 
-The app phase-plan check and its repository-discovered Bun integration tests refuse schema, dependency, evidence/attestation binding and digest, tracked-index mode, source-commit blob, required-review, service-observation, bidirectional gate-definition, or README drift failures. The checker stages both projections before replacement and rolls back an applied replacement if a later one fails.
+The app phase-plan check and its repository-discovered Bun integration tests refuse schema, dependency, evidence/attestation binding and digest, canonical gate-section drift, tracked-index mode, source-commit blob, required-review, deployment-authorization/service-observation, bidirectional gate-definition, or README drift failures. The checker stages both projections before replacement and rolls back an applied replacement if a later one fails. CI blocks coverage below the app-local phase-checker thresholds and scans canonical Model Policy evidence for both credentials and personal-data markers.

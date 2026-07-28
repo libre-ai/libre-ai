@@ -40,7 +40,7 @@ Precedence and conflict behavior must be explicit. An exception cannot deactivat
 
 An exception identifies the exact organization, need revision, affected rule IDs, justification code, approver, approval reference, effective instant, expiry, and compensating controls. Free-form justification that may contain personal data is stored separately or avoided; evaluation sees only bounded identifiers.
 
-Expiry returns the use case to the baseline policy and triggers re-evaluation. An exception never edits historical results.
+Expiry returns the use case to the baseline policy for subsequent consumers and emits an immutable lifecycle event carrying the bounded affected scope. MP-P4 alone consumes lifecycle events to select and re-evaluate affected needs; MP-P3 never selects needs or runs re-evaluation. An exception never edits historical results.
 
 ## Authoring journey
 
@@ -50,7 +50,7 @@ Expiry returns the use case to the baseline policy and triggers re-evaluation. A
 4. Compare the draft with the current approved version.
 5. Submit the exact digest for independent approval.
 6. Approve or refuse with an attributable bounded decision.
-7. Publish the immutable version and re-evaluate affected needs.
+7. Publish the immutable version and emit an immutable lifecycle event with bounded affected-scope identifiers; MP-P4 performs any later selection and re-evaluation.
 
 A proposer cannot approve the same subject digest. Services and assistants may propose but approval remains a human organization act.
 
@@ -93,7 +93,7 @@ Layer precedence, non-overridable rules, conflicts, and deactivations have locke
 
 ### MP-P3-G05 — Exceptions are bounded, expiring, and auditable
 
-Every exception is scoped to an organization and need/rule set, has approval and expiry, cannot weaken protected rules, and triggers re-evaluation on activation, expiry, revocation, or baseline change.
+Every exception is scoped to an organization and need/rule set, has approval and expiry, cannot weaken protected rules, and emits immutable lifecycle events on activation, expiry, revocation, or baseline change. MP-P4 is the only phase that consumes those events to select and re-evaluate affected needs.
 
 ### MP-P3-G06 — Policy lifecycle evidence is exportable
 

@@ -54,6 +54,10 @@
         "react": "catalog:",
         "react-dom": "catalog:",
       },
+      "devDependencies": {
+        "ajv": "catalog:",
+        "ajv-formats": "catalog:",
+      },
     },
     "apps/notebook": {
       "name": "@libre-ai/notebook",
