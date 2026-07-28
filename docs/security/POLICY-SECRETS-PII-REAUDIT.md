@@ -81,7 +81,7 @@ L'historique ne porte que les identités du propriétaire :
 | -------------------------------------------------- | ------: |
 | `Constantin Jais <cjais@pm.me>`                    |      27 |
 | `Constantin <…@users.noreply.github.com>`          |      16 |
-| `Constantin Jais <constantin.jais@protonmail.com>` |       1 |
+| `Constantin Jais <…@protonmail.com>` |       1 |
 
 Plus `GitHub <noreply@github.com>` comme committer de merges. Aucune identité de tiers.
 Ces adresses sont inhérentes au sign-off DCO que la gouvernance du dépôt **exige** sur
@@ -123,3 +123,8 @@ dont la condition est désormais établie.
 
 Reste à la main du propriétaire, hors périmètre de ce document : vérifier qu'aucun
 secret d'exécution n'était attaché au dépôt au moment de sa bascule en public.
+
+> Note d'intégration (session γ, 2026-07-28, ajout post-revue K4) : les scans des §1–§2
+> ont couru avec le détecteur de credentials tel que corrigé par #269 (`6007444`,
+> `hasUriUserinfoCredential` câblé dans `containsCredentialMarker`), qui ferme le trou
+> URI-userinfo relevé par la revue K4 de #261 sur le détecteur de `cd51e64`.
