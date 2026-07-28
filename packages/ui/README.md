@@ -8,6 +8,10 @@ the public Tailwind v4 compiler to emit a deterministic allow-list of utilities.
 No font, icon, script or style is loaded from a remote origin. Reduced-motion,
 dark-color-scheme and forced-color behavior are CSS-level invariants.
 
+The non-normative [color-system exploration](https://github.com/libre-ai/libre-ai/tree/main/packages/ui/color-system) compares four measured
+OKLCH directions without changing the published foundation. Adoption remains a separate human
+decision and implementation change.
+
 ## Quickstart
 
 ```sh
