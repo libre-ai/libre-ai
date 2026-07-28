@@ -2,9 +2,11 @@
 
 ## Authority
 
-This monorepo is the only target architecture and GitHub remains the canonical collaboration surface. Historical sibling repositories are read-only evidence after the global freeze. Do not add compatibility layers unless an accepted external dependency is recorded.
+This monorepo is the hub: the single authority for contracts, specifications and shared foundations (I-03). GitHub remains the canonical collaboration surface. Historical sibling repositories are read-only evidence after the global freeze. Do not add compatibility layers unless an accepted external dependency is recorded.
 
-Before acting, read `GOALS.md`, `STATUS.md`, `docs/decisions/DECISION-REGISTER.md` and the prompt for the current phase. Do not work on a later phase while its upstream gate is open.
+The hub is not the final topology. The target is **multi-repository** (I-02): product repositories plus read-only satellite mirrors and distribution repositories, created under fresh thematic names at their activation (ADR-0008 §1). Activation is an owner decision (I-17), never an agent initiative. Until then, everything shared by several products — contracts, identity/authz, data lifecycle, shared UI, proof — stays in the hub (ADR-0008 §5), and a satellite exists as a published package before it ever becomes a repository (I-16).
+
+Before acting, read `GOALS.md`, `STATUS.md`, `docs/decisions/INVARIANTS.md`, `docs/decisions/DECISION-REGISTER.md` and the prompt for the current phase. `INVARIANTS.md` is exhaustive by construction: doctrine that is absent from it does not exist, whatever another document asserts. Do not work on a later phase while its upstream gate is open.
 
 ## Stack
 
@@ -21,6 +23,12 @@ Before acting, read `GOALS.md`, `STATUS.md`, `docs/decisions/DECISION-REGISTER.m
 - Product migrations and data stay under their application.
 - Proof must not depend on private implementation details.
 - Never maintain two durable implementations of one domain.
+
+## Naming
+
+- Retired tooling names are never reused as a repository, package or crate (ADR-0008 §3): `agent-factory`, `artifact-supply`, `client-kit`, `context-kit`, `design-system`, `dioxus-app-template`, `gear`, `proof-kit`. Their responsibilities live in the hub — `design-system` became `packages/ui`, `client-kit` became `packages/*` plus the Bun template. `docs/transformation/REPOSITORY-MAP.md` holds the full historical-to-target mapping; `bun run check:names` enforces it.
+- Satellite and product repository names are already reserved and are never invented: `docs/decisions/LEXICON.md` §2 owns the canonical brick-to-repository map, §1 the historical homes. Do not copy that map into another document. Its wave-1 subset is wired into `tools/release/mirror-satellites.sh`.
+- Retired ecosystem brands are denied by the `doctrine-governance` workflow, which owns the exact list. Do not copy that list into another document.
 
 ## Security
 
