@@ -87,12 +87,23 @@ describe("scanForSecrets", () => {
       "tools/quality/check-no-clever-production.test.ts",
       [
         "const ok = 1;",
-        "'postgresql://u:pw@b0-postgresql.services.clever-cloud.com:5432/db', // secret-scan:allowed-fixture",
+        "'postgresql://u:pw@b0-postgresql.services.hebergeur-fictif.fr:5432/db', // secret-scan:allowed-fixture",
         "const t = 'ghp_0123456789abcdefghijABCDEFGHIJ0123';",
       ].join("\n"),
     );
     expect(findings).toHaveLength(1);
     expect(findings[0]?.line).toBe(3);
+  });
+
+  test("the line marker is honoured only inside the fixture allowlist", () => {
+    // A secrets gate on a public repository must not offer a universal mute:
+    // outside the two known fixture files, the marker is inert and the
+    // credential on the line is still reported (K4 re-pass of 344aea0).
+    const findings = findingsFor(
+      "apps/web/src/config.ts",
+      "const t = 'ghp_0123456789abcdefghijABCDEFGHIJ0123'; // secret-scan:allowed-fixture",
+    );
+    expect(findings).toHaveLength(1);
   });
 
   test("the line marker does not exempt other files' unmarked credentials", () => {

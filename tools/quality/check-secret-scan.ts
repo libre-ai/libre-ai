@@ -44,8 +44,15 @@ const IGNORED_FILES = new Set([
   "contracts/fixtures/schema-fixtures.v1.json",
 ]);
 // Line-level exemption for a fixture that must exercise a positive detection
-// case on a non-reserved host. Greppable, reviewed, single-line by design.
+// case on a non-reserved host. Greppable, reviewed, single-line by design —
+// and honoured ONLY inside the allowlisted fixture files below: a secrets
+// gate on a public repository must not offer a universal mute (K4 re-pass
+// of 344aea0). Extending the allowlist is a security decision.
 const LINE_EXEMPTION_MARKER = "secret-scan:allowed-fixture";
+const LINE_EXEMPTION_FILES = new Set([
+  "tools/quality/check-no-clever-production.test.ts",
+  "tools/quality/check-personal-data-boundary.test.ts",
+]);
 
 function isIgnored(path: string): boolean {
   if (IGNORED_PREFIXES.some((prefix) => path.startsWith(prefix))) return true;
@@ -60,9 +67,10 @@ export function scanForSecrets(targets: readonly SecretScanTarget[]): SecretFind
       continue;
     }
     const lines = target.content.split("\n");
+    const markerHonoured = LINE_EXEMPTION_FILES.has(target.path);
     for (let i = 0; i < lines.length; i += 1) {
       const line = lines[i] ?? "";
-      if (line.includes(LINE_EXEMPTION_MARKER)) continue;
+      if (markerHonoured && line.includes(LINE_EXEMPTION_MARKER)) continue;
       if (containsCredentialMarker(line)) {
         findings.push({ path: target.path, line: i + 1 });
       }
