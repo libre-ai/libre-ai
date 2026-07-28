@@ -6,16 +6,19 @@ A business user completes an explained, rule-driven tunnel and obtains a determi
 
 ## User promise
 
-The user is asked only for facts they can reasonably know about their work, data, expected output, consequences, and operating constraints. Organization policy and provider facts come from their respective authorities. The result explains what can be used, what cannot be used, what remains unknown, and why.
+The user is asked only for facts within their assigned responsibility. Data, application, contract, organization-policy, and provider facts come from their respective accountable authorities. The result explains which configurations satisfy the evaluated policy, which fail, what remains unknown, and why; it never says that eligibility alone authorizes use.
 
 ## Actors
 
-- **Business declarant:** describes and confirms the actual use case.
-- **Use-case owner:** accepts responsibility for the bounded declaration.
+- **Business declarant:** describes the actual task, intended purpose, affected people, and consequences.
+- **Use-case owner:** approves the exact passport digest and remains accountable for renewal or revocation.
+- **Data owner/steward:** supplies or approves data categories, special-category/criminal-data handling, and re-identification facts when the declarant cannot.
+- **Application/service owner:** supplies topology, volume, latency, availability, fallback, and integration facts.
+- **Procurement/contract owner:** supplies provider entity, contractual, retention, training, support, and subprocessor evidence.
 - **Policy approver:** owns the applicable approved policy, not each questionnaire answer.
 - **Security/privacy reader:** inspects rule traces and unresolved evidence.
 
-The DPO advises on privacy requirements but is not silently modelled as the universal processing approver. The organization designates approval roles explicitly.
+Every field definition names its accountable actor, accepted evidence source, allowed delegate, and unknown/escalation path. Conflicting answers remain unresolved until the accountable actor decides; the most permissive answer is never selected automatically. The DPO advises on privacy requirements but is not silently modelled as the universal processing approver.
 
 ## Tunnel
 
@@ -31,19 +34,19 @@ Capture affected groups, direct or indirect identification, vulnerable people, p
 
 ### Step 3 — Input and output data
 
-Capture confidentiality, personal-data presence, special categories, criminal data, financial identifiers, trade secrets, intellectual property, and re-identification risk separately. Public, personal, and critical are orthogonal dimensions.
+Capture confidentiality, personal-data presence, special categories, criminal data, financial identifiers, trade secrets, intellectual property, and re-identification risk separately. The data owner/steward confirms facts outside the declarant's knowledge. Public, personal, and critical are orthogonal dimensions.
 
 ### Step 4 — Processing lifecycle
 
-Display applicable organization constraints and ask only factual exceptions: whether data may leave the existing environment, be retained, appear in logs, train a provider, enter support workflows, or cross specified locations. Inference, storage, logs, backups, and support are separate paths.
+Display applicable organization constraints and sourced provider/contract facts. Ask the declarant only for intended processing; contract owners confirm whether data may be retained, appear in logs, train a provider, enter support workflows, or cross specified locations. Inference, storage, logs, backups, and support are separate paths.
 
 ### Step 5 — Operational requirements
 
-Capture modality, languages, representative input size, volume, latency, throughput, availability, output structure, quality threshold, budget ceiling, and fallback need. These facts do not compensate for failed security rules.
+Capture modality, languages, representative input size, volume, latency, throughput, availability, output structure, acceptance criteria, budget ceiling, and fallback need. The application/service owner confirms topology and service-level facts; the procurement/contract owner confirms commercial constraints. These facts do not compensate for failed security rules and do not create a model-quality oracle.
 
 ### Step 6 — Review and confirmation
 
-Present the normalized passport before evaluation. Each fact shows its meaning and answer source. “I do not know” remains an explicit unknown. The declarant can correct facts; lowering a material restriction can require a named approval according to organization policy.
+Present the normalized passport and exact digest before evaluation. Each fact shows its meaning, accountable actor, answer source, and unresolved conflict. “I do not know” remains an explicit unknown. The declarant can correct facts, but the use-case owner must attest the final digest; lowering a material restriction requires the designated policy/data/security approval. Renewal, revocation, and correction create attributable new revisions rather than rewriting the attested passport.
 
 ## Evaluation and result
 
@@ -74,7 +77,7 @@ Rule status is `satisfied`, `failed`, `unknown`, or `not applicable`; colors nev
 
 ## Decision record
 
-The export contains need, policy, snapshot, engine and evaluation identifiers/digests, rule trace, source dates, unresolved facts, and approval references. JSON canonical data is authoritative; HTML/PDF is a human projection. It contains no secret, document sample, natural-person identity, or raw questionnaire free text.
+The export contains need, policy, snapshot, engine and evaluation identifiers/digests, rule trace, source dates, unresolved facts, the use-case-owner attestation bound to the passport digest, and separate policy/data/access approval references. JSON canonical data is authoritative; HTML/PDF is a human projection. It contains no secret, document sample, natural-person identity, or raw questionnaire free text.
 
 ## Non-goals
 
@@ -97,7 +100,7 @@ Required metrics are `MP-MET-TUN-001`, `MP-MET-TUN-002`, `MP-MET-DET-001`, `MP-M
 
 ### MP-P1-G01 — Every question maps to an accepted fact
 
-The question catalogue identifies answer owner, reason, controlled values, derived follow-ups, unknown behavior, and exact `need.*` mapping. No question asks a business user to assert unsupported legal or provider facts.
+The question catalogue identifies per-field accountable actor, accepted evidence source, allowed delegate, reason, controlled values, derived follow-ups, unknown/escalation and conflict behavior, and exact `need.*` mapping. No question asks a business user to assert unsupported legal, contract, provider, or application-topology facts.
 
 ### MP-P1-G02 — Branching is deterministic and exhaustively tested
 
@@ -105,7 +108,7 @@ For every allowed answer state, the next required questions and completion state
 
 ### MP-P1-G03 — The passport confirmation boundary is explicit
 
-Proposed, confirmed, unknown, and organization-supplied values are distinguishable. Evaluation receives only the confirmed bounded need; corrections are attributable and material downgrades follow policy approval.
+Proposed, confirmed, unknown, delegated, disputed, and organization-supplied values are distinguishable. Evaluation receives only a bounded need whose exact digest is attested by the use-case owner. Corrections, renewal, and revocation are attributable; data, policy, privacy/security, and later access-profile approvals remain separate from that attestation.
 
 ### MP-P1-G04 — All deployment configurations receive a fail-closed verdict
 
@@ -129,7 +132,7 @@ Representative non-expert users understand the questions and reasons; specialize
 
 ## Dependencies and parallel work
 
-The question catalogue and accessible tunnel can progress in parallel with result-card and export design after MP-P0 fact names and evaluation contracts are accepted. The phase cannot close before MP-P0 closes.
+The question catalogue and accessible tunnel can progress in parallel with result-card and export design after MP-P0 fact names and evaluation contracts are accepted. Activation remains blocked until `GOALS.md` records owner selection, `STATUS.md` records wave 4b, and an accepted work package plus any required contract/specification amendments authorize the exact write paths. The phase cannot close before MP-P0 closes.
 
 ## Release and rollback
 

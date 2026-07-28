@@ -94,7 +94,7 @@ With assistance disabled, unavailable, or revoked, all Phase 1 journeys and evid
 
 ## Dependencies and parallel work
 
-MP-P2 depends on the accepted Phase 1 fact and question catalogue. Corpus construction, assistant adapter design, and labelled interaction design can proceed in parallel, but no user data or network capability is enabled before the assistant-route and privacy gates.
+MP-P2 is a conditional extension that depends on the accepted Phase 1 fact and question catalogue. It is not required by MP-P3–MP-P7 or by the base managed service; a customer contract can omit it entirely. Corpus construction, assistant adapter design, and labelled interaction design can proceed in parallel only after an accepted work package and owner-reviewed contract/threat-model amendments authorize the capability. No user data or network capability is enabled before the assistant-route and privacy gates.
 
 ## Release and rollback
 

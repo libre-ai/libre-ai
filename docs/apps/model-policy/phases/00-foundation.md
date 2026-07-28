@@ -35,7 +35,7 @@ The authority model MUST separate:
 7. inference, storage, log, backup, and support locations;
 8. retention, training, subprocessors, and human access;
 9. licence, distribution, and self-hosting rights;
-10. measured quality, latency, capacity, and cost snapshots.
+10. declared task acceptance criteria plus sourced latency, capacity, and cost snapshots.
 
 A model name is not a deployment configuration. The same artifact served locally and through a remote provider can receive different verdicts. Model origin never supplies hosting jurisdiction.
 
@@ -101,11 +101,11 @@ Rust/WASM and the reference implementation pass the same golden vectors byte-for
 
 ### MP-P0-G07 — Product authority and evidence records are accepted
 
-The phase roadmap, metrics catalogue, evidence levels, authority map, and rollback rules receive business, technical, architecture, security/privacy, and owner review. Acceptance creates planning authority only; implementation still requires bounded work packages.
+The phase plan, metrics catalogue, evidence levels, authority map, and rollback rules receive business, technical, architecture, security/privacy, and owner review. Every accepted gate is bound through a content-addressed evidence record. Acceptance creates planning authority only; `GOALS.md`/`STATUS.md` activation and bounded work packages remain separate owner controls.
 
 ## Dependencies and parallel work
 
-Contract/evaluator qualification and fact-dictionary/registry design can progress in parallel once shared fact naming and authority boundaries are fixed. Any contract amendment follows the existing lock and role-separated review protocol.
+Contract/evaluator qualification and fact-dictionary/registry design can progress in parallel once shared fact naming and authority boundaries are fixed. This plan does not start that work: `GOALS.md` must first record owner selection, `STATUS.md` must activate wave 4b, and an accepted bounded work package must authorize exact paths. Any contract amendment follows the existing lock and role-separated review protocol.
 
 ## Release and rollback
 

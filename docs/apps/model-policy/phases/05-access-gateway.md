@@ -35,7 +35,7 @@ The default managed behavior is asymmetric:
 - a route that becomes ineligible, indeterminate, stale, or revoked is removed from new traffic;
 - an already approved eligible fallback may take over;
 - a newly eligible route is visible but not added automatically;
-- quality or price ranking changes do not modify access;
+- cost, latency, or other observational changes do not modify access;
 - a policy/need change requires a new profile revision and approval.
 
 A fully pinned mode may forbid route substitution. Both modes are explicit in the profile; no hidden runtime default exists.
@@ -55,7 +55,7 @@ A credential is scoped to one organization, profile, application/service, and en
 
 ## Gateway enforcement
 
-The gateway validates credential status, tenant/profile binding, operation, quota, route eligibility/revocation generation, and request bounds before selecting an approved route. It sends only the minimum required payload to the selected provider and applies provider-specific retention/log controls where technically enforceable.
+The gateway validates credential status, tenant/profile binding, operation, quota, route eligibility/revocation generation, the exact versioned MP-P4 transition authority, and request bounds before selecting an approved route. It sends only the minimum required payload to the selected provider and applies provider-specific retention/log controls where technically enforceable.
 
 The gateway cannot prove that arbitrary request content matches the declared passport merely from a key. Higher-sensitivity profiles require a dedicated endpoint/workspace, bounded modalities, optional approved content controls, and contractual/user accountability. The product must state this residual risk rather than claim complete runtime compliance.
 
@@ -68,7 +68,7 @@ Audit events contain opaque credential/profile/configuration IDs, operation, tim
 - distributing or displaying provider secrets;
 - one secret shared by a team;
 - auto-authorizing every newly eligible model;
-- allowing ranking to override profile scope;
+- allowing cockpit observations to override profile scope;
 - claiming a credential proves every request matches the business declaration;
 - direct provider fallback outside the gateway;
 - production enablement before key ceremony, penetration, rollback, and owner gates.
@@ -97,7 +97,7 @@ Secret scanning, browser tests, export tests, logs, errors, traces, backups, and
 
 ### MP-P5-G05 — Runtime route enforcement follows asymmetric change rules
 
-Ineligible, indeterminate, stale, revoked, expired, and out-of-profile routes are denied. Approved fallback works deterministically. Newly eligible routes and ranking changes cannot broaden the profile without approval.
+Ineligible, indeterminate, stale, revoked, expired, and out-of-profile routes are denied. Approved fallback works deterministically. Newly eligible routes and cockpit observations cannot broaden the profile without approval.
 
 ### MP-P5-G06 — Gateway data minimization is qualified
 
@@ -113,7 +113,7 @@ Threat model, key ceremony, rotation, revocation propagation, load/latency, prov
 
 ## Dependencies and parallel work
 
-MP-P5 depends on accepted governance and monitoring semantics. Profile contracts and gateway adapters can progress in parallel only after the authorization/revocation boundary is locked; key handling and production enablement require independent security and owner controls.
+MP-P5 depends on accepted governance and monitoring semantics. Profile contracts and gateway adapters can progress in parallel only after `GOALS.md`/`STATUS.md` activation, an accepted work package, and owner-reviewed authorization, revocation-event, credential, gateway, threat-model, and ADR amendments lock the boundary. Key handling and production enablement require independent security and owner controls.
 
 ## Release and rollback
 

@@ -13,20 +13,20 @@ activity steering, and managed operation are separately gated in the
 [product phase records](../../docs/apps/model-policy/README.md).
 
 <!-- model-policy-phases:start -->
-Roadmap authority: [`phases.v1.json`](../../docs/apps/model-policy/phases.v1.json) (`proposed`).
+Planning record: [`phases.v1.json`](../../docs/apps/model-policy/phases.v1.json) (`draft`). Global execution status remains exclusively owned by [`GOALS.md`](../../GOALS.md) and [`STATUS.md`](../../STATUS.md).
 
-| Phase | Outcome | Status | Gates | Detail |
-| --- | --- | --- | ---: | --- |
-| MP-P0 · Foundation of authority | Establish the sourced facts, approved rules, and deterministic evaluator required by every later phase. | In progress | 1/7 | [Phase record](../../docs/apps/model-policy/phases/00-foundation.md) |
-| MP-P1 · Deterministic qualification | Let a business user qualify a use case and inspect usable deployment configurations without any LLM. | Not started | 0/8 | [Phase record](../../docs/apps/model-policy/phases/01-deterministic-qualification.md) |
-| MP-P2 · Optional LLM assistance | Pre-fill and challenge the deterministic tunnel while keeping every AI suggestion non-authoritative. | Not started | 0/7 | [Phase record](../../docs/apps/model-policy/phases/02-llm-assistance.md) |
-| MP-P3 · Organization governance | Translate an organization's doctrine into approved, versioned policies and bounded exceptions. | Not started | 0/7 | [Phase record](../../docs/apps/model-policy/phases/03-organization-governance.md) |
-| MP-P4 · Continuous monitoring | Re-evaluate use cases when model, provider, policy, evidence, or engine facts change. | Not started | 0/7 | [Phase record](../../docs/apps/model-policy/phases/04-continuous-monitoring.md) |
-| MP-P5 · Access profiles and gateway | Enforce approved model routes through revocable access profiles without exposing provider secrets. | Not started | 0/8 | [Phase record](../../docs/apps/model-policy/phases/05-access-gateway.md) |
-| MP-P6 · Activity cockpit | Pilot the model portfolio with qualified compliance, quality, performance, cost, and usage metrics. | Not started | 0/8 | [Phase record](../../docs/apps/model-policy/phases/06-activity-cockpit.md) |
-| MP-P7 · Managed service | Operate model-policy control under an organization's approved doctrine and explicit service commitments. | Not started | 0/7 | [Phase record](../../docs/apps/model-policy/phases/07-managed-service.md) |
+| Phase | Planned outcome | Gate evidence | Detail |
+| --- | --- | ---: | --- |
+| MP-P0 · Foundation of authority | Establish the sourced facts, approved rules, and deterministic evaluator required by every later phase. | 0/7 | [Phase record](../../docs/apps/model-policy/phases/00-foundation.md) |
+| MP-P1 · Deterministic qualification | Let a business user qualify a use case and inspect deterministic policy verdicts for deployment configurations without any LLM. | 0/8 | [Phase record](../../docs/apps/model-policy/phases/01-deterministic-qualification.md) |
+| MP-P2 · Optional LLM assistance | Pre-fill and challenge the deterministic tunnel while keeping every AI suggestion non-authoritative. | 0/7 | [Phase record](../../docs/apps/model-policy/phases/02-llm-assistance.md) |
+| MP-P3 · Organization governance | Translate an organization's doctrine into approved, versioned policies and bounded exceptions. | 0/7 | [Phase record](../../docs/apps/model-policy/phases/03-organization-governance.md) |
+| MP-P4 · Continuous monitoring | Re-evaluate use cases when model, provider, policy, evidence, or engine facts change. | 0/7 | [Phase record](../../docs/apps/model-policy/phases/04-continuous-monitoring.md) |
+| MP-P5 · Access profiles and gateway | Enforce approved model routes through revocable access profiles without exposing provider secrets. | 0/8 | [Phase record](../../docs/apps/model-policy/phases/05-access-gateway.md) |
+| MP-P6 · Activity cockpit | Pilot evidence health, policy state, access, operations, cost, usage, and incidents without model-quality ranking or compliance scoring. | 0/8 | [Phase record](../../docs/apps/model-policy/phases/06-activity-cockpit.md) |
+| MP-P7 · Managed service | Operate model-policy control under an organization's approved doctrine and explicit service commitments. | 0/7 | [Phase record](../../docs/apps/model-policy/phases/07-managed-service.md) |
 
-A phase is complete only when every mandatory gate links to immutable evidence. This proposed product roadmap grants no implementation, deployment, or compliance authority.
+Evidence coverage is not execution status. No phase is activated by this draft: owner selection, wave 4b activation, and accepted bounded work packages must first be recorded by the global authorities.
 <!-- model-policy-phases:end -->
 
 ## Increment 4 — cockpit (accessible SSR read view)

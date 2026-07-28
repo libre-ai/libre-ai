@@ -2,11 +2,11 @@
 
 ## Outcome
 
-Libre AI operates the model-policy control plane for an organization under its approved doctrine and explicit service commitments: policy translation support, sourced model-route curation, continuous re-evaluation, access-profile enforcement, operational monitoring, and evidence delivery.
+Libre AI operates the model-policy control plane for an organization under its approved doctrine and explicit service commitments: policy translation support, sourced model-route curation, continuous re-evaluation, access-profile enforcement, operational monitoring, and evidence delivery. This is a proposed service boundary, not a current commercial or production claim.
 
 ## Customer promise
 
-The customer delegates operation, not policy sovereignty. Its designated humans approve doctrine, material exceptions, and access broadening. The service guarantees faithful application of accepted rules and qualified operational controls within a contractually bounded scope; it does not issue a blanket guarantee that every customer processing activity complies with every law.
+The customer delegates bounded operation, not policy sovereignty. Its designated humans approve doctrine, material exceptions, and access broadening. The service commits to measured controls for applying accepted rules within an explicitly contracted scope, exclusions, evidence, and remedies; it does not guarantee every customer processing activity, third-party provider, model output, or legal outcome.
 
 ## Service boundary
 
@@ -17,7 +17,7 @@ The managed service may:
 - operate freshness and re-evaluation pipelines;
 - prepare use-case and access-profile proposals;
 - enforce approved profiles through the gateway;
-- monitor evidence, usage, quality, cost, and incidents;
+- monitor evidence health, usage, operations, cost, remediation, and incidents;
 - deliver decision records and audit exports;
 - notify and remediate provider-route changes under agreed runbooks.
 
@@ -44,6 +44,21 @@ The service may not:
 
 Customer source documents remain in approved private evidence storage and are minimized; they are not copied to public policy citations or logs.
 
+## Service variants and contractual responsibility
+
+The base managed service operates the deterministic MP-P1 and MP-P3–MP-P6 path. MP-P2 assistance is a separately contracted extension; omitting or disabling it changes neither eligibility semantics nor base-service availability.
+
+Before onboarding, the contract and DPA identify:
+
+- whether provider routes use customer-owned accounts or operator-contracted capacity;
+- who contracts with each provider, owns and rotates provider keys, approves subprocessors, and bears pass-through usage, minimum commitments, currency/tax, and provider-failure costs;
+- customer and operator controller/processor roles by data flow, approved subprocessors, processing/support locations, transfer mechanism where relevant, deletion, audit rights, and incident cooperation;
+- customer responsibility for declaration accuracy, data authorization, doctrine, approvals, user administration, endpoint protection, budgets, and lawful use;
+- operator responsibility for curation scope, gateway controls, observability, support access, evidence delivery, incident handling, portability, and deletion evidence;
+- support severity definitions, response and restoration targets, escalation, exclusions, service credits or other remedies, and provider-dependency limits.
+
+Provider keys stay in the gateway secret boundary. Customer-owned and operator-owned key modes have separate custody, rotation, compromise, termination, and audit procedures; no shared team credential is accepted.
+
 ## Service commitments
 
 Commercial commitments can cover:
@@ -58,7 +73,7 @@ Commercial commitments can cover:
 - audit-log and decision-record availability;
 - portability and exit assistance.
 
-A commitment must identify its measurement, exclusions, evidence, and remedy. Legal compliance outcomes, model correctness, and third-party provider continuity cannot be promised as unbounded absolutes.
+A commitment must identify its measurement, service class, severity, observation source, exclusions, dependency treatment, evidence, escalation, and remedy. Legal compliance outcomes, model correctness, and third-party provider continuity cannot be promised as unbounded absolutes.
 
 ## Operating model
 
@@ -82,9 +97,9 @@ Required metrics include every release gate from earlier phases plus `MP-MET-SVC
 
 ## Exit gates
 
-### MP-P7-G01 — Service scope and responsibility matrix are contractual
+### MP-P7-G01 — Service variants and responsibility matrix are contractual
 
-Customer and operator responsibilities for doctrine, declarations, approvals, curation, gateway, incidents, legal review, and residual risks are explicit. Marketing and contractual language contain no blanket or unsupported compliance guarantee.
+Base deterministic and optional-assistance variants are distinct. Customer/operator responsibilities cover provider contracting, provider and customer keys, pass-through cost, doctrine, declarations, approvals, curation, gateway, controller/processor/subprocessor roles, DPA, locations/transfers, audit rights, support severity/remedies, incidents, legal review, exit, and residual risks. Marketing and contractual language contain no blanket guarantee.
 
 ### MP-P7-G02 — Customer approval sovereignty is enforced
 
@@ -92,7 +107,7 @@ Managed-service identities can propose but cannot approve customer policy, mater
 
 ### MP-P7-G03 — Service levels are measurable and evidenced
 
-Freshness, re-evaluation, revocation, availability, latency, incident, deletion, export, and support commitments have stable formulas, monitoring, evidence, exclusions, and response procedures.
+Freshness, re-evaluation, revocation, availability, latency, incident, deletion, export, and support commitments have stable formulas, service/severity classes, monitoring, evidence, provider-dependency treatment, exclusions, escalation, and contractual remedies.
 
 ### MP-P7-G04 — Operations and incident response are qualified
 
@@ -112,8 +127,8 @@ Business, Architecture, Security, France/EU Privacy, operations, performance, le
 
 ## Dependencies and parallel work
 
-MP-P7 depends on accepted operation of MP-P2 through MP-P6; the LLM remains optional for each customer journey even though its managed operation is qualified. Commercial terms, operations/runbooks, and portability can be prepared in parallel, but no paid production claim precedes in-service evidence.
+MP-P7 depends on accepted operation of the deterministic MP-P1 and MP-P3–MP-P6 path. MP-P2 is required only for the separately contracted assistance extension. Commercial terms, DPA/subprocessor schedules, provider/key modes, operations/runbooks, and portability can be prepared in parallel only after `GOALS.md`/`STATUS.md` activation and an accepted managed-service work package plus owner-reviewed architecture, contracts, threat model, and privacy/legal language. No paid production claim precedes in-service evidence.
 
 ## Release and rollback
 
-The managed service uses staged tenant activation, automated smoke tests, health gates, and rollback that never restores revoked routes, deleted customer data, or expired approvals. A control-plane uncertainty denies new decisions or traffic according to profile policy. Termination and emergency exit procedures remain executable throughout the service lifecycle.
+After the repository's one authorized global cutover, customer onboarding uses controlled tenant enablement, automated smoke tests, health gates, and rollback that never restores revoked routes, deleted customer data, or expired approvals. A control-plane uncertainty denies new decisions or traffic according to profile policy. Termination and emergency exit procedures remain executable throughout the service lifecycle.

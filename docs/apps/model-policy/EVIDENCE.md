@@ -14,32 +14,32 @@ Define what a phase gate may claim and where its evidence lives. This document d
 | `qualified` | Release-relevant safety and quality have independent verdicts | Verified evidence plus role-separated business/architecture/security/privacy/accessibility/performance reviews as applicable |
 | `in_service` | Behavior is observed on an authorized operated instance | Qualified release, deployment identity, smoke/rollback evidence, operational window and incidents |
 
-A gate definition states its required level. `complete` is forbidden while any mandatory gate lacks the required immutable evidence.
+A gate definition states its `requiredEvidenceLevel`. The planning record never declares a gate or phase complete: owner-controlled execution authorities may do so only after every mandatory gate references evidence at or above that level.
 
 ## Evidence record requirements
 
-Each record includes:
+Each gate reference points to one JSON record under `distribution/evidence/model-policy/` and pins the SHA-256 digest of that complete record. The record conforms to [`evidence-record.v1.schema.json`](evidence-record.v1.schema.json) and includes:
 
-- stable evidence or review-pass ID;
-- phase and gate IDs;
-- assertion under test;
-- immutable commit and relevant artifact/contract digests;
+- stable evidence ID plus exact phase and gate IDs;
+- assertion under test and achieved evidence level;
+- immutable source commit and relevant artifact/contract digests;
 - commands and qualified tool versions;
 - input fixtures or legally usable corpus identity;
 - explicit expected and observed results;
 - blocking, major, minor, and residual findings;
 - one verdict where a review is required;
-- reviewer role and exposed harness identifiers;
+- reviewer roles and exposed harness identifiers, never reviewer PII;
+- supporting review paths;
 - rollback or invalidation conditions;
 - creation instant in ISO 8601 UTC.
 
-A link to mutable branch output, an unqualified screenshot, “tests passed” without commands, or a provider marketing claim is insufficient.
+The checker verifies the record digest, schema, phase/gate binding, achieved level, source commit, supporting-review paths, and digests of tracked regular non-symlink artifacts. A bare path—even to an existing review—cannot pass a gate. A mutable branch output, unqualified screenshot, “tests passed” without commands, or provider marketing claim is insufficient.
 
 ## Storage
 
 - Normative product phase records live under `docs/apps/model-policy/`.
-- Immutable review dossiers live under `docs/reviews/`.
-- Reproducible release/gate evidence lives under `distribution/evidence/model-policy/`.
+- Immutable supporting review dossiers live under `docs/reviews/`; they are not direct gate evidence.
+- Content-addressed gate records and reproducible release evidence live under `distribution/evidence/model-policy/`.
 - Restricted datasets and customer-instance evidence do not enter the public repository.
 - GitHub comments may supplement evidence only when immutable URL/body digest is recorded.
 
@@ -75,7 +75,7 @@ Technical review verifies:
 Architecture review verifies:
 
 - one authority per subject;
-- pure eligibility, ranking, authorization, gateway, and telemetry boundaries remain separate;
+- pure eligibility, approval/authorization, gateway, and telemetry boundaries remain separate;
 - ownership and tenant boundaries are explicit;
 - phase dependencies are acyclic and do not smuggle later capabilities into earlier phases;
 - events and state transitions are attributable and replayable;
@@ -104,4 +104,6 @@ Revocation does not delete historical evidence. It records why an artifact canno
 
 The product decision record may contain policy/need/snapshot/evaluation/profile IDs and digests, rule statuses, source citations/dates, approvals, configuration graph, metric snapshots, and revocation state. It MUST NOT contain provider/customer secrets, raw prompts/responses/documents, direct person identifiers, or unrestricted source payloads.
 
-Canonical machine data is the replay authority; PDF/HTML is a readable projection. Stronger external probative claims require accepted signature/attestation, trustworthy timestamp, custody, retention, access history, and legal-language review appropriate to the claim.
+Where an auditor must identify a human approver, the customer retains a role-at-time identity binding through its IdP or a signed pseudonym map with explicit access, retention, deletion, and custody rules. Public and routine exports keep only opaque actor IDs; Model Policy does not make those IDs probative by itself.
+
+Canonical machine data is the replay authority; PDF/HTML is a readable projection. Stronger external probative claims require accepted signature/attestation, trustworthy timestamp, custody, retention, access history, identity-resolution procedure, and legal-language review appropriate to the claim.

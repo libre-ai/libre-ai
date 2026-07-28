@@ -2,11 +2,11 @@
 
 ## Authority and rules
 
-This catalogue defines product metric meaning; it does not contain organization-instance values. A metric is usable for a gate or ranking only when its producer, source, window, freshness, unit, missing-value behavior, privacy class, and version are recorded with the observation.
+This catalogue defines product metric meaning; it does not contain organization-instance values. A metric is usable for a gate or accountable decision support only when its producer, source, window, freshness, unit, missing-value behavior, privacy class, and version are recorded with the observation.
 
 - **Gate** metrics block promotion at their stated threshold.
 - **Operational** metrics describe service health but do not alter eligibility.
-- **Business** metrics may rank only already eligible configurations.
+- **Business** metrics inform accountable humans but never rank models, compensate for failed rules, or grant access.
 - Missing is always unknown, never zero.
 - A definition or formula change creates a new metric version.
 - Labels use opaque bounded IDs; prompts, responses, documents, credentials, and direct person identifiers are forbidden.
@@ -53,9 +53,11 @@ Inter-run assistant consistency is recorded during qualification but is not an e
 | ID | Kind | Definition and formula | Gate or use | Introduced | Privacy |
 | --- | --- | --- | --- | --- | --- |
 | `MP-MET-WATCH-001` | Gate/SLA | Material accepted change events that produce all required affected evaluations within the committed window / material events | `100%` inside configured window | MP-P4 | Opaque tenant/passport/configuration IDs |
-| `MP-MET-WATCH-002` | Gate | Newly ineligible, indeterminate, stale, or revoked routes still available for a new authorization decision after propagation bound | `0` | MP-P4 | Opaque profile/configuration IDs |
+| `MP-MET-WATCH-002` | Gate | Unsafe transition events lacking exact old/new evaluation IDs, affected route IDs, severity, authority version, or idempotency key when published to authorization consumers | `0` | MP-P4 | Opaque profile/configuration IDs |
+| `MP-MET-WATCH-003` | Operational | Open remediation actions by severity and age, including unassigned, overdue, escalated, accepted-risk, and evidence-closed counts | No unassigned critical action; severity-specific due times defined before activation | MP-P4 | Opaque action/owner-role IDs |
+| `MP-MET-WATCH-004` | Gate | Accepted source changes absent from the material-change reconciliation ledger or classified by an unversioned taxonomy | `0` | MP-P4 | None |
 
-The propagation window is a versioned service parameter. Reporting an average cannot hide a breached hard maximum.
+The propagation and remediation windows are versioned service parameters. Reporting an average cannot hide a breached hard maximum. MP-P4 publishes evidence and transition events; only MP-P5 measures and enforces runtime denial.
 
 ## Access and gateway
 
@@ -65,17 +67,16 @@ The propagation window is a versioned service parameter. Reporting an average ca
 | `MP-MET-ACCESS-002` | Gate/SLA | Time from accepted revocation or unsafe transition to denial at every gateway instance; publish max and percentile | Hard maximum defined before activation | MP-P5 | Opaque route/profile IDs |
 | `MP-MET-ACCESS-003` | Gate | Successful requests using revoked, expired, cross-tenant, out-of-profile, or never-approved routes | `0` | MP-P5 | Opaque IDs only |
 
-## Ranking, quality, operations, and cost
+## Evidence health, operations, and cost
 
 | ID | Kind | Definition and formula | Gate or use | Introduced | Privacy |
 | --- | --- | --- | --- | --- | --- |
-| `MP-MET-RANK-001` | Gate | Ineligible/indeterminate configurations admitted to ranker input, plus ordering divergence for identical metric snapshots/weights | `0` | MP-P6 | None |
-| `MP-MET-QUALITY-001` | Business | Task-specific metric vector with corpus/version, segment, sample size, confidence, configuration version, and evaluated instant | Rank input only when evidence is current | MP-P6 | Separate approved evaluation corpus |
+| `MP-MET-EVID-001` | Operational | Current, stale, unknown, revoked, and conflicting required facts by policy/configuration, with source and freshness version | Evidence-health action queue; never a model-quality or compliance score | MP-P6 | Opaque policy/configuration IDs |
 | `MP-MET-OPS-001` | Operational | Latency p50/p95/p99, throughput, error/retry/fallback rates, and availability over an explicit window | SLOs per profile/route class | MP-P6 | Opaque IDs and bounded numeric units |
 | `MP-MET-OPS-002` | Gate | Operational series with unbounded labels, content-bearing labels, unknown unit/window, or missing metric version | `0` | MP-P6 | None; scanner does not echo content |
-| `MP-MET-COST-001` | Business | Actual and projected total cost by passport/profile/configuration, including input/output, OCR, storage, retries, fallback, and minimum infrastructure; assumptions and price date mandatory | Budget/ranking input, never eligibility compensation | MP-P6 | Opaque IDs and monetary values |
+| `MP-MET-COST-001` | Business | Actual and projected total cost by passport/profile/configuration, including input/output, OCR, storage, retries, fallback, and minimum infrastructure; assumptions and price date mandatory | Budget review input, never automated procurement or eligibility compensation | MP-P6 | Opaque IDs and monetary values |
 
-Quality observations from provider claims and product measurements use distinct source kinds. Composite configurations carry end-to-end observations as well as component observations.
+Provider claims and product observations use distinct source kinds. The cockpit reports operational behavior of already approved routes; it does not infer model quality, compare models, or recommend procurement.
 
 ## Managed service
 
@@ -97,4 +98,4 @@ Metric producers MUST:
 7. expose cursor-bounded queries and prevent N+1 retrieval;
 8. preserve historical metric-version interpretation.
 
-Any future metric that influences eligibility requires a sourced policy/model/need fact and deterministic rule; adding it only to the cockpit or ranker cannot change a verdict.
+Any future metric that influences eligibility requires a sourced policy/model/need fact and deterministic rule; adding it only to the cockpit cannot change a verdict.

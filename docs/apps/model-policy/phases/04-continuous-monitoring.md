@@ -22,7 +22,7 @@ Re-evaluation can be triggered by:
 - evaluator qualification or revocation;
 - quality, price, latency, or availability snapshot refresh.
 
-Eligibility triggers and business-ranking triggers remain distinct. A price change cannot change rule status unless price is an explicit policy fact.
+Eligibility triggers and operational-observation triggers remain distinct. A price change cannot change rule status unless price is an explicit policy fact.
 
 ## Snapshot pipeline
 
@@ -34,28 +34,32 @@ Raw restricted payloads and credentials never enter evidence exports. Failed ref
 
 The coordinator selects every active passport whose policy or required configuration facts intersect the change, then evaluates against explicit versions and instant. Work is idempotent and bounded; duplicate events do not create divergent results. Failures are isolated and retryable without partial scope changes.
 
-Changes are asymmetric:
+Changes are asymmetric at the monitoring boundary:
 
-- `eligible → ineligible`: mark the route unusable and notify immediately;
-- `eligible → indeterminate`: fail closed for new decisions and later gateway use;
-- `ineligible/indeterminate → eligible`: show as a candidate requiring review before access broadening;
-- eligible ranking change only: update comparison evidence, not authorization;
-- revoked engine/snapshot: block new evaluation while preserving historical replay metadata.
+- `eligible → ineligible`: publish an immutable high-severity transition event immediately;
+- `eligible → indeterminate`: publish an immutable fail-closed transition event;
+- `ineligible/indeterminate → eligible`: publish only a candidate event requiring review before any later access broadening;
+- operational metric change only: update observational evidence, never authorization;
+- revoked engine/snapshot: refuse new evaluation and publish revocation state while preserving historical replay metadata.
+
+MP-P4 never creates, mutates, restricts, or broadens an access profile and never handles traffic. MP-P5 is the sole planned enforcement boundary: it consumes exact versioned transition/revocation events and applies deny-by-default profile semantics.
 
 ## Timeline and notifications
 
-Each timeline entry identifies old/new evaluation IDs, changed rule IDs, old/new sourced facts, event instant, detection instant, source, affected passports, and action state. Notifications contain no prompt, document, user-provided free text, or personal data.
+Each timeline entry identifies old/new evaluation IDs, changed rule IDs, old/new sourced facts, event instant, detection instant, source, affected passports, and action state. A remediation action records accountable role, assignee reference, severity-specific due instant, escalation path, approved disposition, and closure evidence. Notifications contain no prompt, document, user-provided free text, or personal data.
 
-Users can subscribe by role and severity. Delivery failure cannot suppress the in-product state. Acknowledgement does not change eligibility.
+Users can subscribe by role and severity. Delivery failure cannot suppress the in-product state. Acknowledgement neither changes eligibility nor closes the action; closure requires the declared evidence or an attributable accepted-risk disposition.
 
 ## Data, scale, and degraded mode
 
-Re-evaluation uses cursor-bounded queues and idempotent commands. It avoids N+1 source retrieval by importing one immutable source snapshot then evaluating affected needs locally. Backpressure may delay non-security ranking refreshes; revocation and hard-rule changes receive priority. If the freshness or revocation stores are unavailable, new authorization-impacting decisions fail closed.
+Re-evaluation uses cursor-bounded queues and idempotent commands. It avoids N+1 source retrieval by importing one immutable source snapshot then evaluating affected needs locally. Backpressure may delay non-security operational refreshes; revocation and hard-rule changes receive priority. If freshness or revocation authority is unavailable, MP-P4 reports an unavailable state and emits no permissive transition. Later authorization consumers must deny according to their own accepted contract.
 
 ## Non-goals
 
 - scraping sources without licence or destination authorization;
 - treating provider marketing pages as permanent truth;
+- creating, mutating, restricting, or broadening an access profile;
+- denying or routing runtime traffic before the MP-P5 enforcement boundary;
 - silently adding a newly eligible route to an access profile;
 - changing historical evaluation bytes;
 - sending production content to test model availability;
@@ -63,7 +67,7 @@ Re-evaluation uses cursor-bounded queues and idempotent commands. It avoids N+1 
 
 ## Metrics
 
-Required metrics are `MP-MET-WATCH-001`, `MP-MET-WATCH-002`, `MP-MET-FRESH-001`, `MP-MET-SAF-001`, and `MP-MET-PII-001`.
+Required metrics are `MP-MET-WATCH-001`, `MP-MET-WATCH-002`, `MP-MET-WATCH-003`, `MP-MET-WATCH-004`, `MP-MET-FRESH-001`, `MP-MET-SAF-001`, and `MP-MET-PII-001`.
 
 ## Exit gates
 
@@ -83,13 +87,13 @@ Tests prove every policy/fact dependency selects the relevant active passports w
 
 Each result binds exact need, policy, snapshot, engine, and instant. Historical evaluations remain byte-identical; a change creates a new result and a structured old/new link.
 
-### MP-P4-G05 — Eligibility transitions are asymmetric and fail closed
+### MP-P4-G05 — Transition events are asymmetric and fail closed
 
-Revoked, newly ineligible, and newly indeterminate routes cannot remain available for new decisions. Newly eligible routes require explicit approval before access broadening; ranking changes alone never modify scope.
+Revoked, newly ineligible, and newly indeterminate results emit exact, immutable, idempotent restriction events for authorization consumers. Newly eligible results emit candidate events only. Tests prove MP-P4 cannot mutate profiles or traffic; later MP-P5 tests prove enforcement.
 
-### MP-P4-G06 — Timeline and alerts are actionable and privacy-safe
+### MP-P4-G06 — Timeline, remediation, and alerts are accountable
 
-The cockpit shows exact changed facts/rules, freshness, severity, affected opaque IDs, required action, and acknowledgement. Notification channels expose no personal or business content and failure cannot hide in-product state.
+The cockpit shows exact changed facts/rules, freshness, severity, affected opaque IDs, accountable role, assignee, due instant, escalation, disposition, closure evidence, and acknowledgement. Material-change taxonomy and reconciliation are versioned and complete. Notification channels expose no personal or business content and failure cannot hide in-product state.
 
 ### MP-P4-G07 — Operational recovery is qualified
 
@@ -97,8 +101,8 @@ Queue backpressure, adapter outage, stale source, duplicate event, partial worke
 
 ## Dependencies and parallel work
 
-MP-P4 depends on organization policy lifecycle in MP-P3. Source-adapter qualification, re-evaluation selection, and timeline UI can proceed in parallel once event contracts and immutable snapshot semantics are accepted.
+MP-P4 depends on organization policy lifecycle in MP-P3. Source-adapter qualification, re-evaluation selection, and timeline UI can proceed in parallel only after `GOALS.md`/`STATUS.md` activation and an accepted work package plus owner-reviewed event, source-adapter, threat-model, and specification amendments. The event contract must keep enforcement exclusively in MP-P5.
 
 ## Release and rollback
 
-A monitoring release can be disabled without altering existing evaluations. Rollback stops new refresh/re-evaluation jobs, preserves queued event IDs and accepted snapshots, and resumes idempotently on the prior qualified version. It never restores a revoked route to eligible or broadens access.
+A monitoring release can be disabled without altering existing evaluations. Rollback stops new refresh/re-evaluation jobs, preserves queued event IDs and accepted snapshots, and resumes idempotently on the prior qualified version. It never emits a permissive transition for unavailable or revoked authority and has no capability to broaden access.

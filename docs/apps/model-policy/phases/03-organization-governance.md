@@ -56,9 +56,9 @@ A proposer cannot approve the same subject digest. Services and assistants may p
 
 ## Data and authorization
 
-Organization policy, needs, evaluations, and approval references are tenant-owned and protected by both application authorization and PostgreSQL RLS. Actor IDs are opaque. Audit logs contain IDs, revisions, rule IDs, timestamps, and outcomes—not policy free text containing personal content, credentials, prompts, or documents.
+Organization policy, needs, evaluations, and approval references are tenant-owned and protected by both application authorization and PostgreSQL RLS. Actor IDs are opaque. The customer keeps a role-at-time identity binding through its IdP or a signed pseudonym map so an authorized auditor can establish who approved without placing direct identities in routine logs or public exports. Binding access, retention, deletion, custody, and break-glass rules are explicit.
 
-Policy source citations follow the same sanitized public-source boundary as model facts. Private organization documents may be referenced through approved internal evidence mechanisms without being copied into public exports.
+Audit logs contain opaque actor IDs, role-at-time references, revisions, rule IDs, timestamps, and outcomes—not policy free text containing personal content, credentials, prompts, or documents. Policy source citations follow the same sanitized public-source boundary as model facts. Private organization documents may be referenced through approved internal evidence mechanisms without being copied into public exports.
 
 ## Non-goals
 
@@ -97,7 +97,7 @@ Every exception is scoped to an organization and need/rule set, has approval and
 
 ### MP-P3-G06 — Policy lifecycle evidence is exportable
 
-An auditor can inspect versions, proposal/approval separation, diffs, effective-policy derivation, exceptions, revocations, and affected evaluation IDs without receiving secrets or personal content.
+An authorized auditor can inspect versions, proposal/approval separation, role-at-time binding, diffs, effective-policy derivation, exceptions, revocations, and affected evaluation IDs without receiving secrets or personal content in routine exports.
 
 ### MP-P3-G07 — Organization governance passes role reviews
 
@@ -105,7 +105,7 @@ Business, Architecture, Security, and France/EU Privacy reviews approve the exac
 
 ## Dependencies and parallel work
 
-MP-P3 requires the Phase 1 need and evaluation journey but does not depend on LLM assistance. Policy authoring, authorization/RLS, and accessible diff UI may progress in parallel against accepted contracts with exclusive write paths.
+MP-P3 requires the Phase 1 need and evaluation journey but does not depend on LLM assistance. Policy authoring, authorization/RLS, and accessible diff UI may progress in parallel only after `GOALS.md`/`STATUS.md` activation and an accepted work package plus owner-reviewed contract/specification/ADR amendments authorize exclusive write paths.
 
 ## Release and rollback
 

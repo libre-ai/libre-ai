@@ -2,24 +2,28 @@
 
 ## Status
 
-**Authority status: proposed.** These records describe the proposed product trajectory and current evidence mapping. They grant no implementation, policy, provider-network, credential, production, deployment, or compliance authority. Global transformation status remains owned by [`GOALS.md`](../../../GOALS.md) and [`STATUS.md`](../../../STATUS.md).
+**Document status: draft planning record.** These records define a proposed product trajectory and acceptance criteria; they contain no current phase, execution status, or passed-gate claim. They grant no implementation, policy, provider-network, credential, production, deployment, commercial, or compliance authority.
 
-The machine-readable status authority for this proposed product roadmap is [`phases.v1.json`](phases.v1.json), validated by [`phases.v1.schema.json`](phases.v1.schema.json). Phase status is gate-based rather than a subjective percentage. A passed gate must link to immutable evidence under [`docs/reviews/`](../../reviews/) or [`distribution/evidence/`](../../../distribution/evidence/).
+[`GOALS.md`](../../../GOALS.md) is the sole program/phase authority and [`STATUS.md`](../../../STATUS.md) is the sole current execution authority. In particular, Model Policy remains behind owner selection, wave 4b activation, and an accepted bounded work package. An agent cannot satisfy those controls by editing this plan.
+
+The machine-readable planning record is [`phases.v1.json`](phases.v1.json), validated by [`phases.v1.schema.json`](phases.v1.schema.json). Gate evidence may be attached only through content-addressed records conforming to [`evidence-record.v1.schema.json`](evidence-record.v1.schema.json); evidence coverage is not execution status.
 
 ## Product progression
 
-| Phase | Product outcome | Depends on |
-| --- | --- | --- |
-| [MP-P0](phases/00-foundation.md) | Sourced facts, approved rules, deployment-configuration identity, and deterministic evaluator | — |
-| [MP-P1](phases/01-deterministic-qualification.md) | Explained business tunnel and configuration verdicts without an LLM | MP-P0 |
-| [MP-P2](phases/02-llm-assistance.md) | Optional, non-authoritative pre-fill and challenge assistance | MP-P1 |
-| [MP-P3](phases/03-organization-governance.md) | Versioned organization doctrine, approvals, and bounded exceptions | MP-P1 |
-| [MP-P4](phases/04-continuous-monitoring.md) | Source refresh, immutable re-evaluation, and transition alerts | MP-P3 |
-| [MP-P5](phases/05-access-gateway.md) | Approved access profiles, individual credentials, and gateway enforcement | MP-P3, MP-P4 |
-| [MP-P6](phases/06-activity-cockpit.md) | Evidence, quality, performance, cost, usage, and incident cockpit | MP-P4, MP-P5 |
-| [MP-P7](phases/07-managed-service.md) | Managed operation under customer-approved doctrine and service commitments | MP-P2–MP-P6 |
+<!-- model-policy-plan:start -->
+| Phase | Planned product outcome | Depends on | Evidence records |
+| --- | --- | --- | ---: |
+| [MP-P0](phases/00-foundation.md) | Establish the sourced facts, approved rules, and deterministic evaluator required by every later phase. | — | 0/7 |
+| [MP-P1](phases/01-deterministic-qualification.md) | Let a business user qualify a use case and inspect deterministic policy verdicts for deployment configurations without any LLM. | MP-P0 | 0/8 |
+| [MP-P2](phases/02-llm-assistance.md) | Pre-fill and challenge the deterministic tunnel while keeping every AI suggestion non-authoritative. | MP-P1 | 0/7 |
+| [MP-P3](phases/03-organization-governance.md) | Translate an organization's doctrine into approved, versioned policies and bounded exceptions. | MP-P1 | 0/7 |
+| [MP-P4](phases/04-continuous-monitoring.md) | Re-evaluate use cases when model, provider, policy, evidence, or engine facts change. | MP-P3 | 0/7 |
+| [MP-P5](phases/05-access-gateway.md) | Enforce approved model routes through revocable access profiles without exposing provider secrets. | MP-P4 | 0/8 |
+| [MP-P6](phases/06-activity-cockpit.md) | Pilot evidence health, policy state, access, operations, cost, usage, and incidents without model-quality ranking or compliance scoring. | MP-P4, MP-P5 | 0/8 |
+| [MP-P7](phases/07-managed-service.md) | Operate model-policy control under an organization's approved doctrine and explicit service commitments. | MP-P6 | 0/7 |
+<!-- model-policy-plan:end -->
 
-MP-P2 and MP-P3 can progress independently after MP-P1: LLM assistance is a usability capability, not a prerequisite for organization governance. The deterministic tunnel remains available through every later phase.
+MP-P2 is an optional extension after MP-P1, not a dependency of governance or managed operation. MP-P3 through MP-P7 form the deterministic service path. The no-LLM tunnel remains available through every later phase.
 
 ## Stable boundaries
 
@@ -35,9 +39,6 @@ Confirmed bounded need + approved organization policy
 Pure eligibility evaluator ◄── sourced deployment-configuration snapshot
          │
          ├── eligible / ineligible / indeterminate + rule evidence
-         ▼
-Eligible-only business ranker
-         │
          ▼ authorized approval command
 Versioned access profile ── per-consumer credentials ── gateway
          │
@@ -45,36 +46,46 @@ Versioned access profile ── per-consumer credentials ── gateway
 Privacy-minimized activity cockpit and evidence exports
 ```
 
-- Eligibility is not ranking, procurement, approval, or authorization.
-- Ranking never receives failed or indeterminate configurations.
+- Eligibility is not procurement, recommendation, approval, or authorization.
+- The plan adds no benchmark leaderboard, model-quality oracle, or procurement ranker.
 - An access profile is shareable; a secret credential is individual.
 - Provider credentials never leave the gateway boundary.
 - Model origin, provider entity, hosting jurisdiction, processing location, and certification evidence are separate facts.
 - Historical evidence is immutable; new facts produce new evaluations.
 - Restriction may be automatic, but access broadening requires approval.
 
+## Planning vocabulary
+
+- **Tunnel:** versioned deterministic question graph; never a conversational authority.
+- **Passport:** confirmed, digest-bound bounded need for one use case.
+- **Doctrine:** customer-owned source material from which humans approve machine policy.
+- **Deployment configuration:** complete model, provider, contractual, location, retention, and processing route—not a model name.
+- **Access profile:** approved logical permission set; never a secret.
+- **Qualified:** independently evidenced to the declared gate level; not a legal-compliance label.
+
 ## Supporting authorities
 
 - [Product specification](../model-policy.md) — current purpose, actors, protocol, contracts, and non-goals.
-- [Metric catalogue](METRICS.md) — stable definitions, formulas, sources, privacy, and gate status.
+- [Metric catalogue](METRICS.md) — stable definitions, formulas, sources, privacy, and gate use.
 - [Evidence policy](EVIDENCE.md) — evidence levels, review roles, storage, invalidation, and customer export.
 - [Policy Core v2 semantics](../../../contracts/wit/policy-core-v2/SEMANTICS.md) — deterministic eligibility boundary.
 - [Role-separated review protocol](../../reviews/AGENT-REVIEW-PROTOCOL.md) — immutable review requirements.
+- [Initial independent review remediation](../../reviews/model-policy-product-phases/REMEDIATION.md) — rejected candidate findings and integrated corrections.
 
 Architecture decisions remain in [`docs/adr/`](../../adr/), contracts remain in [`contracts/`](../../../contracts/), and non-normative evidence never silently becomes doctrine.
 
-## Status workflow
+## Planning and evidence workflow
 
 1. Define or amend a phase gate in its phase record.
-2. Implement only under an accepted bounded work package.
-3. Produce immutable evidence for the exact candidate.
-4. Run the required business, technical, architecture, security/privacy, and owner reviews.
-5. Change a gate to `passed` and link its evidence in `phases.v1.json`.
-6. Mark a phase `complete` only when every mandatory gate is passed.
-7. Regenerate the app README projection with:
+2. Obtain owner selection, wave activation, accepted work package, and any required contract/ADR/specification amendment through their existing authorities.
+3. Implement only inside the accepted write paths.
+4. Produce a content-addressed evidence record for the exact phase, gate, candidate, assertion, and achieved level.
+5. Run the required business, technical, architecture, security/privacy, operations, and owner reviews.
+6. Let `GOALS.md`/`STATUS.md` record any accepted execution-state change; this plan never self-promotes.
+7. Regenerate both README projections only after validation succeeds:
 
 ```console
-bun tools/quality/check-model-policy-phases.ts --write
+bun apps/model-policy/tools/check-product-phases.ts --write
 ```
 
-CI runs the same checker without `--write` and refuses schema, dependency, evidence, gate-definition, or README drift.
+The app phase-plan check and its repository-discovered Bun integration tests refuse schema, dependency, evidence binding/digest, path, bidirectional gate-definition, or README drift. The checker writes no projection after any validation failure.

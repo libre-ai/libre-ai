@@ -1,19 +1,27 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://libre-ai.fr/schemas/model-policy-phases.v1.schema.json",
-  "title": "Libre AI Model Policy product phases v1",
+  "title": "Libre AI Model Policy product phase plan v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "authorityStatus", "updatedAt", "currentPhase", "phases"],
+  "required": ["schemaVersion", "documentStatus", "statusAuthorities", "updatedAt", "phases"],
   "properties": {
     "schemaVersion": { "const": "libre-ai.model-policy-phases.v1" },
-    "authorityStatus": { "enum": ["proposed", "accepted", "superseded"] },
+    "documentStatus": { "enum": ["draft", "accepted_planning_record", "superseded"] },
+    "statusAuthorities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["program", "execution"],
+      "properties": {
+        "program": { "const": "GOALS.md" },
+        "execution": { "const": "STATUS.md" }
+      }
+    },
     "updatedAt": {
       "type": "string",
       "format": "date-time",
       "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$"
     },
-    "currentPhase": { "type": "string", "pattern": "^MP-P[0-9]+$" },
     "phases": {
       "type": "array",
       "minItems": 1,
@@ -28,18 +36,32 @@
       "maxLength": 512,
       "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$"
     },
+    "evidenceReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record", "sha256"],
+      "properties": {
+        "record": {
+          "type": "string",
+          "pattern": "^distribution/evidence/model-policy/[A-Za-z0-9._/-]+\\.json$"
+        },
+        "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+      }
+    },
     "gate": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "status", "evidence"],
+      "required": ["id", "requiredEvidenceLevel", "evidence"],
       "properties": {
         "id": { "type": "string", "pattern": "^MP-P[0-9]+-G[0-9]{2}$" },
-        "status": { "enum": ["pending", "passed", "blocked"] },
+        "requiredEvidenceLevel": {
+          "enum": ["declared", "implemented", "verified", "qualified", "in_service"]
+        },
         "evidence": {
           "type": "array",
           "maxItems": 32,
           "uniqueItems": true,
-          "items": { "$ref": "#/$defs/repositoryPath" }
+          "items": { "$ref": "#/$defs/evidenceReference" }
         }
       }
     },
@@ -51,18 +73,17 @@
         "title",
         "outcome",
         "document",
-        "status",
         "dependsOn",
-        "blockedBy",
+        "activationPrerequisites",
         "gates"
       ],
       "properties": {
         "id": { "type": "string", "pattern": "^MP-P[0-9]+$" },
         "title": { "type": "string", "minLength": 1, "maxLength": 100 },
-        "outcome": { "type": "string", "minLength": 1, "maxLength": 180 },
-        "document": { "$ref": "#/$defs/repositoryPath" },
-        "status": {
-          "enum": ["not_started", "in_progress", "blocked", "complete", "superseded"]
+        "outcome": { "type": "string", "minLength": 1, "maxLength": 220 },
+        "document": {
+          "type": "string",
+          "pattern": "^docs/apps/model-policy/phases/[0-9]{2}-[a-z0-9-]+\\.md$"
         },
         "dependsOn": {
           "type": "array",
@@ -70,8 +91,9 @@
           "uniqueItems": true,
           "items": { "type": "string", "pattern": "^MP-P[0-9]+$" }
         },
-        "blockedBy": {
+        "activationPrerequisites": {
           "type": "array",
+          "minItems": 1,
           "maxItems": 16,
           "uniqueItems": true,
           "items": { "type": "string", "minLength": 1, "maxLength": 256 }
