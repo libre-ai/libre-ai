@@ -6,7 +6,7 @@ This monorepo is the hub: the single authority for contracts, specifications and
 
 The hub is not the final topology. The target is **multi-repository** (I-02): product repositories plus read-only satellite mirrors and distribution repositories, created under fresh thematic names at their activation (ADR-0008 §1). Activation is an owner decision (I-17), never an agent initiative. Until then, everything shared by several products — contracts, identity/authz, data lifecycle, shared UI, proof — stays in the hub (ADR-0008 §5), and a satellite exists as a published package before it ever becomes a repository (I-16).
 
-Before acting, read `GOALS.md`, `STATUS.md`, `docs/decisions/INVARIANTS.md`, `docs/decisions/DECISION-REGISTER.md` and the prompt for the current phase. `INVARIANTS.md` is exhaustive by construction: doctrine that is absent from it does not exist, whatever another document asserts. Do not work on a later phase while its upstream gate is open.
+Before acting, read `GOALS.md`, `STATUS.md`, `docs/decisions/INVARIANTS.md`, `docs/decisions/DECISION-REGISTER.md` and the prompt for the current phase. `INVARIANTS.md` is exhaustive by construction: doctrine that is absent from it does not exist, whatever another document asserts. `ecosystem/FORGOTTEN.yaml` is its counterpart for content (I-23, ADR-0019): what it records has been evicted from the tree and is never cited as a live source — restoring it is an owner decision that removes its entry, and `bun run check:forgotten` refuses both resurrection and citation. Do not work on a later phase while its upstream gate is open.
 
 ## Stack
 
