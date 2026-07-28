@@ -76,6 +76,15 @@ The independent [business](COUNTER-REVIEW-A431EBB-BUSINESS.md) and [architecture
 | CLI summary reread the mutable worktree roadmap | Successful validation returns phase/gate counts directly from the already validated indexed roadmap. A staged-valid/unstaged-divergent test proves the callback does not reread mutable roadmap text. |
 | Direct app imports remain declared only at root | No unauthorized manifest or lockfile write was reintroduced. Ajv/Ajv Formats app autonomy remains an explicit non-blocking integrator-owned residual until an accepted work package permits a workspace dependency and lock update. |
 
+## Re-review of `7bfd688`
+
+The independent [business](COUNTER-REVIEW-7BFD688-BUSINESS.md) and [architecture](COUNTER-REVIEW-7BFD688-ARCHITECTURE.md) reviews approved the fifth remediation. The [technical review](COUNTER-REVIEW-7BFD688-TECHNICAL.md) rejected it because standard JSON materialization discarded a duplicate member before the decoded sensitive-marker traversal.
+
+| Re-review finding | Sixth remediation |
+| --- | --- |
+| A duplicate JSON member could hide an escaped sensitive value in its discarded occurrence | Added a bounded duplicate-aware JSON structural pass before any roadmap, schema, evidence, attestation, or operational record is materialized. Member names are compared after JSON string decoding, including escaped-equivalent names; duplicates fail closed without logging the member value or name. |
+| Duplicate-member bypass lacked cross-artifact regressions | Added adversarial indexed-roadmap, escaped-key evidence-record, review-attestation, and operational-authorization fixtures, plus a malformed-structure regression. The existing post-decoding traversal remains a second independent layer. |
+
 ## Intentionally not fabricated
 
 - No work package, ADR/specification amendment, owner selection, wave activation, production approval, or commercial approval is marked accepted. Those are external human-controlled prerequisites.

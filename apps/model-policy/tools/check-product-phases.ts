@@ -322,6 +322,126 @@ function decodedJsonSensitiveMarkerFailures(value: unknown, context: string): st
   return [];
 }
 
+class DuplicateJsonMemberNameError extends Error {}
+
+const JSON_SCAN_MAX_DEPTH = 64;
+
+function assertNoDuplicateJsonMemberNames(source: string): void {
+  let offset = 0;
+
+  function failStructure(): never {
+    throw new SyntaxError("invalid JSON structure");
+  }
+
+  function skipWhitespace(): void {
+    while (/\s/u.test(source[offset] ?? "")) offset += 1;
+  }
+
+  function parseStringToken(): string {
+    if (source[offset] !== '"') failStructure();
+    const start = offset;
+    offset += 1;
+    while (offset < source.length) {
+      const character = source[offset];
+      if (character === '"') {
+        offset += 1;
+        const parsed = JSON.parse(source.slice(start, offset)) as unknown;
+        if (typeof parsed !== "string") failStructure();
+        return parsed;
+      }
+      if (character === "\\") {
+        offset += 2;
+        continue;
+      }
+      offset += 1;
+    }
+    return failStructure();
+  }
+
+  function parseObject(depth: number): void {
+    if (depth > JSON_SCAN_MAX_DEPTH) throw new SyntaxError("JSON nesting limit exceeded");
+    offset += 1;
+    skipWhitespace();
+    if (source[offset] === "}") {
+      offset += 1;
+      return;
+    }
+    const memberNames = new Set<string>();
+    while (offset < source.length) {
+      const memberName = parseStringToken();
+      if (memberNames.has(memberName)) throw new DuplicateJsonMemberNameError();
+      memberNames.add(memberName);
+      skipWhitespace();
+      if (source[offset] !== ":") failStructure();
+      offset += 1;
+      parseValue(depth);
+      skipWhitespace();
+      if (source[offset] === "}") {
+        offset += 1;
+        return;
+      }
+      if (source[offset] !== ",") failStructure();
+      offset += 1;
+      skipWhitespace();
+    }
+    failStructure();
+  }
+
+  function parseArray(depth: number): void {
+    if (depth > JSON_SCAN_MAX_DEPTH) throw new SyntaxError("JSON nesting limit exceeded");
+    offset += 1;
+    skipWhitespace();
+    if (source[offset] === "]") {
+      offset += 1;
+      return;
+    }
+    while (offset < source.length) {
+      parseValue(depth);
+      skipWhitespace();
+      if (source[offset] === "]") {
+        offset += 1;
+        return;
+      }
+      if (source[offset] !== ",") failStructure();
+      offset += 1;
+      skipWhitespace();
+    }
+    failStructure();
+  }
+
+  function parsePrimitive(): void {
+    const start = offset;
+    while (offset < source.length && !/[\s,}\]]/u.test(source[offset] ?? "")) offset += 1;
+    if (start === offset) failStructure();
+    const parsed = JSON.parse(source.slice(start, offset)) as unknown;
+    if (parsed !== null && typeof parsed !== "boolean" && typeof parsed !== "number") {
+      failStructure();
+    }
+  }
+
+  function parseValue(depth: number): void {
+    skipWhitespace();
+    const character = source[offset];
+    if (character === "{") {
+      parseObject(depth + 1);
+      return;
+    }
+    if (character === "[") {
+      parseArray(depth + 1);
+      return;
+    }
+    if (character === '"') {
+      parseStringToken();
+      return;
+    }
+    parsePrimitive();
+  }
+
+  parseValue(0);
+  skipWhitespace();
+  if (offset !== source.length) failStructure();
+}
+
 async function commitExists(repoRoot: string, commit: string): Promise<boolean> {
   const process = Bun.spawn(["git", "cat-file", "-e", `${commit}^{commit}`], {
     cwd: repoRoot,
@@ -600,9 +720,15 @@ async function validateOperationalEvidenceReference(
 
   let unknownArtifact: unknown;
   try {
-    unknownArtifact = JSON.parse(new TextDecoder().decode(artifactBlob.bytes));
-  } catch {
-    failures.push(`${expectation.context}: operational evidence is not valid JSON`);
+    const artifactText = new TextDecoder().decode(artifactBlob.bytes);
+    assertNoDuplicateJsonMemberNames(artifactText);
+    unknownArtifact = JSON.parse(artifactText);
+  } catch (error) {
+    failures.push(
+      error instanceof DuplicateJsonMemberNameError
+        ? `${expectation.context} contains a duplicate JSON member name`
+        : `${expectation.context}: operational evidence is not valid JSON`,
+    );
     return failures;
   }
   const decodedMarkerFailures = decodedJsonSensitiveMarkerFailures(
@@ -706,9 +832,15 @@ async function validateEvidenceReference(
 
   let unknownRecord: unknown;
   try {
-    unknownRecord = JSON.parse(new TextDecoder().decode(evidenceBlob.bytes));
-  } catch {
-    failures.push(`${gate.id}: evidence record is not valid JSON`);
+    const evidenceText = new TextDecoder().decode(evidenceBlob.bytes);
+    assertNoDuplicateJsonMemberNames(evidenceText);
+    unknownRecord = JSON.parse(evidenceText);
+  } catch (error) {
+    failures.push(
+      error instanceof DuplicateJsonMemberNameError
+        ? `${gate.id}: evidence contains a duplicate JSON member name`
+        : `${gate.id}: evidence record is not valid JSON`,
+    );
     return failures;
   }
   const decodedRecordMarkerFailures = decodedJsonSensitiveMarkerFailures(
@@ -839,9 +971,15 @@ async function validateEvidenceReference(
 
     let unknownAttestation: unknown;
     try {
-      unknownAttestation = JSON.parse(new TextDecoder().decode(attestationBlob.bytes));
-    } catch {
-      failures.push(`${attestationContext}: record is not valid JSON`);
+      const attestationText = new TextDecoder().decode(attestationBlob.bytes);
+      assertNoDuplicateJsonMemberNames(attestationText);
+      unknownAttestation = JSON.parse(attestationText);
+    } catch (error) {
+      failures.push(
+        error instanceof DuplicateJsonMemberNameError
+          ? `${attestationContext} contains a duplicate JSON member name`
+          : `${attestationContext}: record is not valid JSON`,
+      );
       continue;
     }
     const decodedAttestationMarkerFailures = decodedJsonSensitiveMarkerFailures(
@@ -1078,16 +1216,31 @@ export async function checkProductPhaseFiles(
   let operationalEvidenceSchema: unknown;
   let unknownRoadmap: unknown;
   try {
-    roadmapSchema = JSON.parse(new TextDecoder().decode(roadmapSchemaBlob.bytes));
-    evidenceSchema = JSON.parse(new TextDecoder().decode(evidenceSchemaBlob.bytes));
-    reviewAttestationSchema = JSON.parse(
-      new TextDecoder().decode(reviewAttestationSchemaBlob.bytes),
+    const roadmapSchemaText = new TextDecoder().decode(roadmapSchemaBlob.bytes);
+    const evidenceSchemaText = new TextDecoder().decode(evidenceSchemaBlob.bytes);
+    const reviewAttestationSchemaText = new TextDecoder().decode(reviewAttestationSchemaBlob.bytes);
+    const operationalEvidenceSchemaText = new TextDecoder().decode(
+      operationalEvidenceSchemaBlob.bytes,
     );
-    operationalEvidenceSchema = JSON.parse(
-      new TextDecoder().decode(operationalEvidenceSchemaBlob.bytes),
-    );
-    unknownRoadmap = JSON.parse(new TextDecoder().decode(roadmapBlob.bytes));
+    const roadmapText = new TextDecoder().decode(roadmapBlob.bytes);
+    for (const source of [
+      roadmapSchemaText,
+      evidenceSchemaText,
+      reviewAttestationSchemaText,
+      operationalEvidenceSchemaText,
+      roadmapText,
+    ]) {
+      assertNoDuplicateJsonMemberNames(source);
+    }
+    roadmapSchema = JSON.parse(roadmapSchemaText);
+    evidenceSchema = JSON.parse(evidenceSchemaText);
+    reviewAttestationSchema = JSON.parse(reviewAttestationSchemaText);
+    operationalEvidenceSchema = JSON.parse(operationalEvidenceSchemaText);
+    unknownRoadmap = JSON.parse(roadmapText);
   } catch (error) {
+    if (error instanceof DuplicateJsonMemberNameError) {
+      return ["Model Policy plan JSON contains a duplicate member name"];
+    }
     return [
       error instanceof Error
         ? `Model Policy plan JSON read failed: ${error.message}`

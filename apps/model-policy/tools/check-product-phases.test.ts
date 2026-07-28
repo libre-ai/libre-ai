@@ -571,6 +571,32 @@ describe("checkProductPhaseFiles", () => {
     expect(failures[0]).toStartWith("Model Policy phase schema rejected:");
   });
 
+  test("rejects structurally malformed indexed JSON before materialization", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    const roadmapPath = join(repoRoot, "docs/apps/model-policy/phases.v1.json");
+    await writeFile(roadmapPath, '{"schemaVersion" "invalid"}\n');
+    await runGit(repoRoot, ["add", roadmapPath]);
+
+    expect(await checkProductPhaseFiles({ repoRoot, write: true })).toContain(
+      "Model Policy plan JSON read failed: invalid JSON structure",
+    );
+  });
+
+  test("rejects duplicate member names in an indexed roadmap", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    const roadmapPath = join(repoRoot, "docs/apps/model-policy/phases.v1.json");
+    const roadmapText = (await readFile(roadmapPath, "utf8")).replace(
+      '  "documentStatus": "draft",',
+      '  "documentStatus": "superseded",\n  "documentStatus": "draft",',
+    );
+    await writeFile(roadmapPath, roadmapText);
+    await runGit(repoRoot, ["add", roadmapPath]);
+
+    expect(await checkProductPhaseFiles({ repoRoot, write: true })).toContain(
+      "Model Policy plan JSON contains a duplicate member name",
+    );
+  });
+
   test("rejects an invalid staged schema even when the mutable worktree copy is valid", async () => {
     const repoRoot = await createFixture(validRoadmap());
     const schemaPath = join(repoRoot, "docs/apps/model-policy/phases.v1.schema.json");
@@ -686,6 +712,21 @@ describe("checkProductPhaseFiles", () => {
     expect(failures).toContain(
       "MP-P0-G01: evidence contains a sensitive marker after JSON decoding",
     );
+  });
+
+  test("rejects duplicate evidence members that hide an escaped sensitive value", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    await addEvidenceFixture(repoRoot);
+    const evidencePath = join(repoRoot, FIXTURE_EVIDENCE_PATH);
+    const evidenceText = (await readFile(evidencePath, "utf8")).replace(
+      '  "assertion": "The fixture gate has independently reproducible evidence.",',
+      '  "ass\\u0065rtion": "AKI\\u00411234567890ABCDEF",\n' +
+        '  "assertion": "The fixture gate has independently reproducible evidence.",',
+    );
+    await writeRawEvidenceFixture(repoRoot, evidenceText);
+
+    const failures = await checkProductPhaseFiles({ repoRoot, write: true });
+    expect(failures).toContain("MP-P0-G01: evidence contains a duplicate JSON member name");
   });
 
   test("rejects phase and gate identity drift inside a content-addressed record", async () => {
@@ -811,6 +852,29 @@ describe("checkProductPhaseFiles", () => {
     );
   });
 
+  test("rejects duplicate attestation members that hide escaped personal data", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    await addEvidenceFixture(repoRoot, { achievedEvidenceLevel: "qualified" });
+    const attestationPath =
+      "distribution/evidence/model-policy/reviews/mp-p0-g01-architecture.json";
+    const attestationText = (await readFile(join(repoRoot, attestationPath), "utf8")).replace(
+      '  "reviewerRef": "reviewer:architecture",',
+      '  "reviewerRef": "reviewer\\u0040example.invalid",\n' +
+        '  "reviewerRef": "reviewer:architecture",',
+    );
+    await writeFile(join(repoRoot, attestationPath), attestationText);
+    await rewriteEvidenceFixture(repoRoot, (record) => {
+      const binding = record.reviewBindings.find((candidate) => candidate.role === "architecture");
+      if (!binding) throw new Error("architecture review binding is missing");
+      binding.sha256 = sha256(attestationText);
+    });
+
+    const failures = await checkProductPhaseFiles({ repoRoot, write: true });
+    expect(failures).toContain(
+      "MP-P0-G01: architecture review attestation contains a duplicate JSON member name",
+    );
+  });
+
   test("rejects one review identity reused by multiple attestation records", async () => {
     const repoRoot = await createFixture(validRoadmap());
     await addEvidenceFixture(repoRoot, { sharedReviewId: true });
@@ -922,6 +986,31 @@ describe("checkProductPhaseFiles", () => {
     const failures = await checkProductPhaseFiles({ repoRoot, write: true });
     expect(failures).toContain(
       "MP-P0-G01: deployment authorization contains a sensitive marker after JSON decoding",
+    );
+  });
+
+  test("rejects duplicate operational members that hide an escaped credential", async () => {
+    const repoRoot = await createFixture(validRoadmap());
+    await addEvidenceFixture(repoRoot, {
+      achievedEvidenceLevel: "in_service",
+      includeServiceObservation: true,
+    });
+    const authorizationPath =
+      "distribution/evidence/model-policy/operations/mp-p0-g01-authorization.json";
+    const authorizationText = (await readFile(join(repoRoot, authorizationPath), "utf8")).replace(
+      '  "authorizationRef": "approval:fixture",',
+      '  "authorizationRef": "AKI\\u00411234567890ABCDEF",\n' +
+        '  "authorizationRef": "approval:fixture",',
+    );
+    await writeFile(join(repoRoot, authorizationPath), authorizationText);
+    await rewriteEvidenceFixture(repoRoot, (record) => {
+      if (!record.serviceObservation) throw new Error("service observation is missing");
+      record.serviceObservation.authorizationEvidenceSha256 = sha256(authorizationText);
+    });
+
+    const failures = await checkProductPhaseFiles({ repoRoot, write: true });
+    expect(failures).toContain(
+      "MP-P0-G01: deployment authorization contains a duplicate JSON member name",
     );
   });
 
