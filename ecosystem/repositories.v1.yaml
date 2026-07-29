@@ -211,9 +211,8 @@ repositories:
     visibility: public
     lifecycle: active
     exposure: spec-published
-    # Biscuit deny-by-default authorization crate (formerly crates/authz-biscuit). Declared BEFORE creation (declare, then create — K4 SDKRS-01);
-    # the repository is created right before this PR merges (§5.4.1), and
-    # its green proof lands later with its migration-index entry.
+    # Biscuit deny-by-default authorization crate (formerly crates/authz-biscuit). declared before creation (K4 SDKRS-01), born green —
+    # green proof recorded 2026-07-29 in the migration index.
     benchmark: n/a (shared brick, no external parity target)
     owns:
       - the content at the repository root
@@ -223,9 +222,8 @@ repositories:
     visibility: public
     lifecycle: active
     exposure: spec-published
-    # Ecosystem engine crate (formerly crates/ecosystem-engine). Declared BEFORE creation (declare, then create — K4 SDKRS-01);
-    # the repository is created right before this PR merges (§5.4.1), and
-    # its green proof lands later with its migration-index entry.
+    # Ecosystem engine crate (formerly crates/ecosystem-engine). declared before creation (K4 SDKRS-01), born green —
+    # green proof recorded 2026-07-29 in the migration index.
     benchmark: n/a (shared brick, no external parity target)
     owns:
       - the content at the repository root
@@ -235,9 +233,8 @@ repositories:
     visibility: public
     lifecycle: active
     exposure: spec-published
-    # Web authentication brick (formerly packages/auth-web). Declared BEFORE creation (declare, then create — K4 SDKRS-01);
-    # the repository is created right before this PR merges (§5.4.1), and
-    # its green proof lands later with its migration-index entry.
+    # Web authentication brick (formerly packages/auth-web). declared before creation (K4 SDKRS-01), born green —
+    # green proof recorded 2026-07-29 in the migration index.
     benchmark: n/a (shared brick, no external parity target)
     owns:
       - the content at the repository root
@@ -247,9 +244,8 @@ repositories:
     visibility: public
     lifecycle: active
     exposure: spec-published
-    # Data lifecycle brick (formerly packages/data). Declared BEFORE creation (declare, then create — K4 SDKRS-01);
-    # the repository is created right before this PR merges (§5.4.1), and
-    # its green proof lands later with its migration-index entry.
+    # Data lifecycle brick (formerly packages/data). declared before creation (K4 SDKRS-01), born green —
+    # green proof recorded 2026-07-29 in the migration index.
     benchmark: n/a (shared brick, no external parity target)
     owns:
       - the content at the repository root
@@ -259,9 +255,8 @@ repositories:
     visibility: public
     lifecycle: active
     exposure: spec-published
-    # Shared UI brick (formerly packages/ui, carrying packages/design-system history). Declared BEFORE creation (declare, then create — K4 SDKRS-01);
-    # the repository is created right before this PR merges (§5.4.1), and
-    # its green proof lands later with its migration-index entry.
+    # Shared UI brick (formerly packages/ui, carrying packages/design-system history). declared before creation (K4 SDKRS-01), born green —
+    # green proof recorded 2026-07-29 in the migration index.
     benchmark: n/a (shared brick, no external parity target)
     owns:
       - the content at the repository root
@@ -271,9 +266,8 @@ repositories:
     visibility: public
     lifecycle: active
     exposure: spec-published
-    # Artifact crate (formerly crates/artifact). Declared BEFORE creation (declare, then create — K4 SDKRS-01);
-    # the repository is created right before this PR merges (§5.4.1), and
-    # its green proof lands later with its migration-index entry.
+    # Artifact crate (formerly crates/artifact). declared before creation (K4 SDKRS-01), born green —
+    # green proof recorded 2026-07-29 in the migration index.
     benchmark: n/a (shared brick, no external parity target)
     owns:
       - the content at the repository root
@@ -283,9 +277,8 @@ repositories:
     visibility: public
     lifecycle: active
     exposure: spec-published
-    # Agent orchestration brick (formerly crates/agent-orchestrator, with tools/review and its proof surface). Declared BEFORE creation (declare, then create — K4 SDKRS-01);
-    # the repository is created right before this PR merges (§5.4.1), and
-    # its green proof lands later with its migration-index entry.
+    # Agent orchestration brick (formerly crates/agent-orchestrator, with tools/review and its proof surface). declared before creation (K4 SDKRS-01), born green —
+    # green proof recorded 2026-07-29 in the migration index.
     benchmark: n/a (shared brick, no external parity target)
     owns:
       - the content at the repository root
@@ -295,9 +288,8 @@ repositories:
     visibility: public
     lifecycle: active
     exposure: spec-published
-    # Starter templates (formerly distribution/templates/starter and bun-app). Declared BEFORE creation (declare, then create — K4 SDKRS-01);
-    # the repository is created right before this PR merges (§5.4.1), and
-    # its green proof lands later with its migration-index entry.
+    # Starter templates (formerly distribution/templates/starter and bun-app). declared before creation (K4 SDKRS-01), born green —
+    # green proof recorded 2026-07-29 in the migration index.
     benchmark: n/a (shared brick, no external parity target)
     owns:
       - the content at the repository root
