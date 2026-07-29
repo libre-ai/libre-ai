@@ -236,6 +236,13 @@ entries:
     hub_removal_commit: pending
     notes: renamed to the repository root
 
+  - hub_path: crates/contract-types/
+    destination: libre-ai/sdk-rs
+    destination_commit: c0e64450a721a6178eea9aabf97e1a241ae5e91f
+    verified_at_commit: 02214613c5cb0549d0618484d9b479c4cfb3c7ce
+    hub_removal_commit: pending
+    notes: crate renamed to the repository root; authority schemas vendored under a byte-exact drift gate (61 files), vector fixtures from the pinned contracts git-dep — born green first try (CI 2/2)
+
 # Remplacements tracés hors chemins (workflows et machineries éteints avec le
 # hub, jamais orphelins — design §4.5) :
 replacements: []

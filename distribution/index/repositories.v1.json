@@ -60,6 +60,33 @@
       ]
     },
     {
+      "repository": "libre-ai/classification",
+      "name": "classification",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
+      "repository": "libre-ai/collab-core",
+      "name": "collab-core",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
+      "repository": "libre-ai/collab-relay",
+      "name": "collab-relay",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
       "repository": "libre-ai/contracts",
       "name": "contracts",
       "layer": "transverse",
@@ -108,6 +135,15 @@
       "visibility": "public",
       "lifecycle": "active",
       "exposure": "usable-verifiable"
+    },
+    {
+      "repository": "libre-ai/knowledge",
+      "name": "knowledge",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
     },
     {
       "repository": "libre-ai/libre-ai",
@@ -160,6 +196,33 @@
         "apps/model-policy",
         "crates/policy-core"
       ]
+    },
+    {
+      "repository": "libre-ai/provenance",
+      "name": "provenance",
+      "layer": "couche-3",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
+      "repository": "libre-ai/rgpd-kit",
+      "name": "rgpd-kit",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
+      "repository": "libre-ai/sdk-rs",
+      "name": "sdk-rs",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "usable-verifiable"
     },
     {
       "repository": "libre-ai/sdk-ts",
