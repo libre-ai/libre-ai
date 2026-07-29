@@ -243,6 +243,44 @@ entries:
     hub_removal_commit: pending
     notes: crate renamed to the repository root; authority schemas vendored under a byte-exact drift gate (61 files), vector fixtures from the pinned contracts git-dep — born green first try (CI 2/2)
 
+  # γ 3.4 — independent satellites, each born green FIRST TRY (CI 2/2).
+  - hub_path: packages/provenance/
+    destination: libre-ai/provenance
+    destination_commit: 684302633d68ad31bcac50e55c00ad9c93b73d6f
+    verified_at_commit: 684302633d68ad31bcac50e55c00ad9c93b73d6f
+    hub_removal_commit: pending
+    notes: renamed to the repository root
+  - hub_path: packages/knowledge/
+    destination: libre-ai/knowledge
+    destination_commit: 5eca11029b46a36eb48c54fad10bbc502b4b7e0f
+    verified_at_commit: 5eca11029b46a36eb48c54fad10bbc502b4b7e0f
+    hub_removal_commit: pending
+    notes: renamed to the repository root; canonical ecosystem schemas resolve from the pinned governance git-dep
+  - hub_path: packages/rgpd-kit/
+    destination: libre-ai/rgpd-kit
+    destination_commit: 64b9da3f5dd2ca7a35377e0206ff72a40b8240c5
+    verified_at_commit: 64b9da3f5dd2ca7a35377e0206ff72a40b8240c5
+    hub_removal_commit: pending
+    notes: renamed to the repository root
+  - hub_path: packages/classification/
+    destination: libre-ai/classification
+    destination_commit: e6c1ef68f543d633aa9207f7023cc776ca3f9d65
+    verified_at_commit: e6c1ef68f543d633aa9207f7023cc776ca3f9d65
+    hub_removal_commit: pending
+    notes: renamed to the repository root
+  - hub_path: packages/collab-core/
+    destination: libre-ai/collab-core
+    destination_commit: c9b10b03321eeebace7ec12b78563df277dae630
+    verified_at_commit: c9b10b03321eeebace7ec12b78563df277dae630
+    hub_removal_commit: pending
+    notes: renamed to the repository root
+  - hub_path: packages/collab-relay/
+    destination: libre-ai/collab-relay
+    destination_commit: 995edc8e2142e25dabbaa15a9ee1027ca9bd5257
+    verified_at_commit: 995edc8e2142e25dabbaa15a9ee1027ca9bd5257
+    hub_removal_commit: pending
+    notes: renamed to the repository root
+
 # Remplacements tracés hors chemins (workflows et machineries éteints avec le
 # hub, jamais orphelins — design §4.5) :
 replacements: []
