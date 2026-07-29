@@ -45,7 +45,7 @@
     {
       "repository": "libre-ai/auth",
       "name": "auth",
-      "layer": "couche-3",
+      "layer": "couche-4",
       "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",
@@ -318,7 +318,7 @@
     {
       "repository": "libre-ai/starter",
       "name": "starter",
-      "layer": "transverse",
+      "layer": "couche-4",
       "role": "satellite",
       "visibility": "public",
       "lifecycle": "active",

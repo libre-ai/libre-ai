@@ -231,7 +231,7 @@ repositories:
       - the content at the repository root
   - repository: libre-ai/auth
     role: satellite
-    layer: couche-3
+    layer: couche-4
     visibility: public
     lifecycle: active
     exposure: spec-published
@@ -291,7 +291,7 @@ repositories:
       - the content at the repository root
   - repository: libre-ai/starter
     role: satellite
-    layer: transverse
+    layer: couche-4
     visibility: public
     lifecycle: active
     exposure: spec-published
