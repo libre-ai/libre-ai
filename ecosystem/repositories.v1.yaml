@@ -205,6 +205,102 @@ repositories:
     benchmark: n/a (shared brick, no external parity target)
     owns:
       - the package at the repository root (formerly packages/collab-relay)
+  - repository: libre-ai/authz-biscuit
+    role: satellite
+    layer: couche-3
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Biscuit deny-by-default authorization crate (formerly crates/authz-biscuit). Declared BEFORE creation (declare, then create — K4 SDKRS-01);
+    # the repository is created right before this PR merges (§5.4.1), and
+    # its green proof lands later with its migration-index entry.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the content at the repository root
+  - repository: libre-ai/ecosystem-engine
+    role: satellite
+    layer: transverse
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Ecosystem engine crate (formerly crates/ecosystem-engine). Declared BEFORE creation (declare, then create — K4 SDKRS-01);
+    # the repository is created right before this PR merges (§5.4.1), and
+    # its green proof lands later with its migration-index entry.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the content at the repository root
+  - repository: libre-ai/auth
+    role: satellite
+    layer: couche-3
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Web authentication brick (formerly packages/auth-web). Declared BEFORE creation (declare, then create — K4 SDKRS-01);
+    # the repository is created right before this PR merges (§5.4.1), and
+    # its green proof lands later with its migration-index entry.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the content at the repository root
+  - repository: libre-ai/data
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Data lifecycle brick (formerly packages/data). Declared BEFORE creation (declare, then create — K4 SDKRS-01);
+    # the repository is created right before this PR merges (§5.4.1), and
+    # its green proof lands later with its migration-index entry.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the content at the repository root
+  - repository: libre-ai/ui
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Shared UI brick (formerly packages/ui, carrying packages/design-system history). Declared BEFORE creation (declare, then create — K4 SDKRS-01);
+    # the repository is created right before this PR merges (§5.4.1), and
+    # its green proof lands later with its migration-index entry.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the content at the repository root
+  - repository: libre-ai/artifacts
+    role: satellite
+    layer: couche-3
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Artifact crate (formerly crates/artifact). Declared BEFORE creation (declare, then create — K4 SDKRS-01);
+    # the repository is created right before this PR merges (§5.4.1), and
+    # its green proof lands later with its migration-index entry.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the content at the repository root
+  - repository: libre-ai/orchestrator
+    role: satellite
+    layer: couche-2
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Agent orchestration brick (formerly crates/agent-orchestrator, with tools/review and its proof surface). Declared BEFORE creation (declare, then create — K4 SDKRS-01);
+    # the repository is created right before this PR merges (§5.4.1), and
+    # its green proof lands later with its migration-index entry.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the content at the repository root
+  - repository: libre-ai/starter
+    role: satellite
+    layer: transverse
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Starter templates (formerly distribution/templates/starter and bun-app). Declared BEFORE creation (declare, then create — K4 SDKRS-01);
+    # the repository is created right before this PR merges (§5.4.1), and
+    # its green proof lands later with its migration-index entry.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the content at the repository root
   - repository: libre-ai/db-inspect
     role: standalone-tool
     layer: transverse
