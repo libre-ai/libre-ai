@@ -76,6 +76,50 @@ repositories:
     owns:
       - canonical contract authorities and vectors (contracts/)
       - contract catalog and compatibility policy
+  - repository: libre-ai/sdk-ts
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: usable-verifiable
+    # TypeScript SDK projection of the locked contracts (fail-closed validators, generated types). Born from the hub dismantling (γ 3.4), history carried by git
+    # filter-repo; consumed as a sha-pinned GitHub git-dep.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the package at the repository root (formerly packages/contracts)
+  - repository: libre-ai/envelope
+    role: satellite
+    layer: couche-3
+    visibility: public
+    lifecycle: active
+    exposure: usable-verifiable
+    # Integrity envelope for untrusted content (K3 kernel). Born from the hub dismantling (γ 3.4), history carried by git
+    # filter-repo; consumed as a sha-pinned GitHub git-dep.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the package at the repository root (formerly packages/envelope)
+  - repository: libre-ai/web-platform
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: usable-verifiable
+    # Shared web platform brick (Bun.serve foundations). Born from the hub dismantling (γ 3.4), history carried by git
+    # filter-repo; consumed as a sha-pinned GitHub git-dep.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the package at the repository root (formerly packages/web-platform)
+  - repository: libre-ai/testing
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: usable-verifiable
+    # Shared testing brick. Born from the hub dismantling (γ 3.4), history carried by git
+    # filter-repo; consumed as a sha-pinned GitHub git-dep.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the package at the repository root (formerly packages/testing)
   - repository: libre-ai/db-inspect
     role: standalone-tool
     layer: transverse

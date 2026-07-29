@@ -78,6 +78,15 @@
       "exposure": "usable-verifiable"
     },
     {
+      "repository": "libre-ai/envelope",
+      "name": "envelope",
+      "layer": "couche-3",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "usable-verifiable"
+    },
+    {
       "repository": "libre-ai/feed-radar",
       "name": "Radar",
       "layer": "couche-1",
@@ -153,6 +162,15 @@
       ]
     },
     {
+      "repository": "libre-ai/sdk-ts",
+      "name": "sdk-ts",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "usable-verifiable"
+    },
+    {
       "repository": "libre-ai/sessions",
       "name": "Sessions",
       "layer": "couche-1",
@@ -179,6 +197,24 @@
       "canonical_paths": [
         "apps/specifications"
       ]
+    },
+    {
+      "repository": "libre-ai/testing",
+      "name": "testing",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "usable-verifiable"
+    },
+    {
+      "repository": "libre-ai/web-platform",
+      "name": "web-platform",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "usable-verifiable"
     },
     {
       "repository": "libre-ai/website",
