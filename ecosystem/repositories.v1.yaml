@@ -139,10 +139,9 @@ repositories:
     visibility: public
     lifecycle: active
     exposure: spec-published
-    # Content provenance brick. History carried by git filter-repo (γ 3.4); bootstrap in
-    # progress — declared as soon as observable so the inventory never lies
-    # (K4 SDKRS-01: declare, then create). Green proof lands with its
-    # migration-index entry.
+    # Content provenance brick. History carried by git filter-repo (γ 3.4); born green
+    # first try — green proof recorded 2026-07-29 in the migration index
+    # (declared before proof per K4 SDKRS-01: declare, then create).
     benchmark: n/a (shared brick, no external parity target)
     owns:
       - the package at the repository root (formerly packages/provenance)
@@ -152,10 +151,9 @@ repositories:
     visibility: public
     lifecycle: active
     exposure: spec-published
-    # Knowledge objects brick. History carried by git filter-repo (γ 3.4); bootstrap in
-    # progress — declared as soon as observable so the inventory never lies
-    # (K4 SDKRS-01: declare, then create). Green proof lands with its
-    # migration-index entry.
+    # Knowledge objects brick. History carried by git filter-repo (γ 3.4); born green
+    # first try — green proof recorded 2026-07-29 in the migration index
+    # (declared before proof per K4 SDKRS-01: declare, then create).
     benchmark: n/a (shared brick, no external parity target)
     owns:
       - the package at the repository root (formerly packages/knowledge)
@@ -165,10 +163,9 @@ repositories:
     visibility: public
     lifecycle: active
     exposure: spec-published
-    # GDPR lifecycle brick. History carried by git filter-repo (γ 3.4); bootstrap in
-    # progress — declared as soon as observable so the inventory never lies
-    # (K4 SDKRS-01: declare, then create). Green proof lands with its
-    # migration-index entry.
+    # GDPR lifecycle brick. History carried by git filter-repo (γ 3.4); born green
+    # first try — green proof recorded 2026-07-29 in the migration index
+    # (declared before proof per K4 SDKRS-01: declare, then create).
     benchmark: n/a (shared brick, no external parity target)
     owns:
       - the package at the repository root (formerly packages/rgpd-kit)
@@ -178,10 +175,9 @@ repositories:
     visibility: public
     lifecycle: active
     exposure: spec-published
-    # Content classification brick. History carried by git filter-repo (γ 3.4); bootstrap in
-    # progress — declared as soon as observable so the inventory never lies
-    # (K4 SDKRS-01: declare, then create). Green proof lands with its
-    # migration-index entry.
+    # Content classification brick. History carried by git filter-repo (γ 3.4); born green
+    # first try — green proof recorded 2026-07-29 in the migration index
+    # (declared before proof per K4 SDKRS-01: declare, then create).
     benchmark: n/a (shared brick, no external parity target)
     owns:
       - the package at the repository root (formerly packages/classification)
@@ -191,10 +187,9 @@ repositories:
     visibility: public
     lifecycle: active
     exposure: spec-published
-    # Collaboration core brick. History carried by git filter-repo (γ 3.4); bootstrap in
-    # progress — declared as soon as observable so the inventory never lies
-    # (K4 SDKRS-01: declare, then create). Green proof lands with its
-    # migration-index entry.
+    # Collaboration core brick. History carried by git filter-repo (γ 3.4); born green
+    # first try — green proof recorded 2026-07-29 in the migration index
+    # (declared before proof per K4 SDKRS-01: declare, then create).
     benchmark: n/a (shared brick, no external parity target)
     owns:
       - the package at the repository root (formerly packages/collab-core)
@@ -204,10 +199,9 @@ repositories:
     visibility: public
     lifecycle: active
     exposure: spec-published
-    # Collaboration relay brick. History carried by git filter-repo (γ 3.4); bootstrap in
-    # progress — declared as soon as observable so the inventory never lies
-    # (K4 SDKRS-01: declare, then create). Green proof lands with its
-    # migration-index entry.
+    # Collaboration relay brick. History carried by git filter-repo (γ 3.4); born green
+    # first try — green proof recorded 2026-07-29 in the migration index
+    # (declared before proof per K4 SDKRS-01: declare, then create).
     benchmark: n/a (shared brick, no external parity target)
     owns:
       - the package at the repository root (formerly packages/collab-relay)
