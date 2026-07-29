@@ -173,6 +173,25 @@ describe("validateCard", () => {
     expect(validateCard(impossible).length).toBeGreaterThan(0);
   });
 
+  test("tolerates tomorrow (timezone skew) but rejects the day after", () => {
+    // The CI runs in UTC while cards are written in local time: a one-day
+    // tolerance makes the gate deterministic wherever it executes, while
+    // still refusing genuinely future-dated evidence.
+    const isoDaysFromNow = (days: number): string => {
+      const date = new Date();
+      date.setDate(date.getDate() + days);
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${date.getFullYear()}-${month}-${day}`;
+    };
+    const tomorrow = minimalCard();
+    (tomorrow.freshness as { last_verified_on: string }).last_verified_on = isoDaysFromNow(1);
+    expect(validateCard(tomorrow)).toEqual([]);
+    const dayAfter = minimalCard();
+    (dayAfter.freshness as { last_verified_on: string }).last_verified_on = isoDaysFromNow(2);
+    expect(validateCard(dayAfter).length).toBeGreaterThan(0);
+  });
+
   test("rejects an incomplete mission statement", () => {
     const card = minimalCard();
     // biome-ignore lint/suspicious/noExplicitAny: test mutates raw shapes
@@ -369,25 +388,59 @@ describe("renderStatusSection and its divergence check", () => {
 });
 
 describe("collectPathReferences", () => {
-  test("returns repo-path-looking evidence references and skips PR-style ones", () => {
+  function cardWithReference(reference: string): Record<string, unknown> {
     const card = minimalCard();
     // biome-ignore lint/suspicious/noExplicitAny: test mutates raw shapes
     (card.phases as any)[0].exit_criteria = [
       {
-        id: "with-path",
-        text: "Un critère adossé à un fichier d'évidence du dépôt.",
+        id: "with-ref",
+        text: "Un critère adossé à une référence d'évidence.",
         weight: 1,
         status: "accepted",
-        evidence: { date: "2026-07-28", reference: "distribution/evidence/some-proof.md" },
-      },
-      {
-        id: "with-pr",
-        text: "Un critère adossé à une PR.",
-        weight: 1,
-        status: "accepted",
-        evidence: { date: "2026-07-28", reference: "PR #273, gate-acceptance-log ligne 3.1" },
+        evidence: { date: "2026-07-28", reference },
       },
     ];
-    expect(collectPathReferences(card)).toEqual(["distribution/evidence/some-proof.md"]);
+    return card;
+  }
+
+  test("extracts a bare repo path", () => {
+    expect(collectPathReferences(cardWithReference("distribution/evidence/some-proof.md"))).toEqual(
+      ["distribution/evidence/some-proof.md"],
+    );
+  });
+
+  test("extracts a path embedded in prose — the house citation style", () => {
+    expect(
+      collectPathReferences(
+        cardWithReference("voir distribution/evidence/some-proof.md (ligne 3)"),
+      ),
+    ).toEqual(["distribution/evidence/some-proof.md"]);
+  });
+
+  test("extracts a ./-prefixed path, an uppercase extension and a directory", () => {
+    expect(collectPathReferences(cardWithReference("./docs/adr/0020-act.MD"))).toEqual([
+      "docs/adr/0020-act.MD",
+    ]);
+    expect(collectPathReferences(cardWithReference("docs/reviews/wp-g2-q01"))).toEqual([
+      "docs/reviews/wp-g2-q01",
+    ]);
+  });
+
+  test("strips trailing sentence punctuation from an embedded path", () => {
+    expect(
+      collectPathReferences(cardWithReference("la preuve vit sous docs/adr/0020-act.md.")),
+    ).toEqual(["docs/adr/0020-act.md"]);
+  });
+
+  test("ignores PR-style references, fractions and URLs", () => {
+    expect(
+      collectPathReferences(
+        cardWithReference("PR #273, gate-acceptance-log 2026-07-28 (ligne 3.1)"),
+      ),
+    ).toEqual([]);
+    expect(collectPathReferences(cardWithReference("20/80 = 25 % du périmètre"))).toEqual([]);
+    expect(
+      collectPathReferences(cardWithReference("https://github.com/libre-ai/libre-ai/pull/273")),
+    ).toEqual([]);
   });
 });

@@ -30,31 +30,36 @@ function safeError(error: ErrorObject): string {
 }
 
 /**
- * Local calendar date — evidence is dated where the owner works, and UTC
- * would flag a same-day proof as "future" before noon in Europe/Paris.
+ * Latest acceptable evidence date: tomorrow in the local calendar of the
+ * process. Cards are written in local time while the CI runs in UTC, so a
+ * strict "today" bound makes the same repository green on one machine and
+ * red on another around midnight; a one-day tolerance absorbs any timezone
+ * skew and keeps the gate deterministic wherever it executes, while still
+ * refusing genuinely future-dated evidence.
  */
-function todayLocalIso(): string {
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${now.getFullYear()}-${month}-${day}`;
+function latestAcceptableIso(): string {
+  const date = new Date();
+  date.setDate(date.getDate() + 1);
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
 }
 
-/** Evidence dated after today is a claim, not a proof (design §6.6, §7.3). */
+/** Evidence dated in the future is a claim, not a proof (design §6.6, §7.3). */
 function futureDateErrors(value: unknown): string[] {
   const card = value as CardShape;
-  const today = todayLocalIso();
+  const latest = latestAcceptableIso();
   const errors: string[] = [];
-  if (card.freshness.last_verified_on > today) {
+  if (card.freshness.last_verified_on > latest) {
     errors.push(
-      `/freshness/last_verified_on: ${card.freshness.last_verified_on} est dans le futur (aujourd'hui : ${today})`,
+      `/freshness/last_verified_on: ${card.freshness.last_verified_on} est dans le futur (borne : ${latest})`,
     );
   }
   for (const phase of card.phases) {
     for (const criterion of phase.exit_criteria) {
-      if (criterion.evidence && criterion.evidence.date > today) {
+      if (criterion.evidence && criterion.evidence.date > latest) {
         errors.push(
-          `/phases/${phase.id}/exit_criteria/${criterion.id}/evidence/date: ${criterion.evidence.date} est dans le futur (aujourd'hui : ${today})`,
+          `/phases/${phase.id}/exit_criteria/${criterion.id}/evidence/date: ${criterion.evidence.date} est dans le futur (borne : ${latest})`,
         );
       }
     }
@@ -221,6 +226,13 @@ function countOccurrences(haystack: string, needle: string): number {
  * pasted anywhere else — the most natural drift gesture — is refused.
  */
 export function checkStatusSection(readme: string, card: unknown): string[] {
+  // Fail safely on an invalid card instead of letting the render throw: when
+  // this gate runs across ~34 repositories in phase 3.6, a readable failure
+  // beats an uncaught exception.
+  const cardErrors = validateCard(card);
+  if (cardErrors.length > 0) {
+    return cardErrors.map((error) => `project.v1.yaml invalide — ${error}`);
+  }
   const beginCount = countOccurrences(readme, STATUS_SECTION_BEGIN);
   const endCount = countOccurrences(readme, STATUS_SECTION_END);
   if (beginCount === 0 || endCount === 0) {
@@ -242,19 +254,37 @@ export function checkStatusSection(readme: string, card: unknown): string[] {
 }
 
 /**
+ * Repo-path-looking tokens extracted from a reference string, anywhere in it
+ * — the house citation style is « chemin.md (ligne N) », so an anchored
+ * whole-string match would miss exactly the class this guard exists for.
+ * A token qualifies when its first segment starts with a letter and carries
+ * no dot (which excludes URLs' domains and numeric fractions); directories
+ * qualify (no extension required); trailing sentence punctuation is stripped.
+ */
+function extractPathTokens(reference: string): string[] {
+  const normalized = reference.replace(/(^|[\s"'«»()[\]])\.\//g, "$1");
+  const token = /(?:^|[\s"'«»()[\]])([A-Za-z][A-Za-z0-9_-]*(?:\/[A-Za-z0-9._-]+)+)/g;
+  const tokens: string[] = [];
+  for (const match of normalized.matchAll(token)) {
+    const captured = match[1];
+    if (captured !== undefined) tokens.push(captured.replace(/[.,;:!?)\]]+$/, ""));
+  }
+  return tokens;
+}
+
+/**
  * Evidence references that look like repo paths, for existence checking by
  * the gate (a dangling reference was found during phase 3.1 review — this is
- * the guard that finding called for). PR/gate-log style references are
- * checked by humans and review passes, not by the filesystem.
+ * the guard that finding called for). PR/gate-log style references without a
+ * path remain checked by humans and review passes, not by the filesystem.
  */
 export function collectPathReferences(value: unknown): string[] {
   const card = value as CardShape;
-  const pathLike = /^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)+\.[a-z0-9]+$/;
   const references: string[] = [];
   for (const phase of card.phases) {
     for (const criterion of phase.exit_criteria) {
       const reference = criterion.evidence?.reference;
-      if (reference !== undefined && pathLike.test(reference)) references.push(reference);
+      if (reference !== undefined) references.push(...extractPathTokens(reference));
     }
   }
   return references;

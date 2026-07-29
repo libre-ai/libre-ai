@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+
 import { aggregateProgress, collectPathReferences, validateCard } from "./project-cards";
 
 /**
@@ -32,8 +34,9 @@ for (const path of paths.sort()) {
   }
   // A path-looking evidence reference must resolve: a dangling reference was
   // found during phase 3.1 review, and this gate is the guard it called for.
+  // existsSync, not Bun.file().exists(): a directory is a verifiable target.
   for (const reference of collectPathReferences(value)) {
-    if (!(await Bun.file(reference).exists())) {
+    if (!existsSync(reference)) {
       failures.push(`${path}: evidence reference does not resolve: ${reference}`);
     }
   }

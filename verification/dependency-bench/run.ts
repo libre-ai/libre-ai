@@ -244,7 +244,7 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-libre-ai-artifact = { git = "https://github.com/libre-ai/libre-ai.git", rev = "5c1bf05a08bb1c3f974a5249a04dbfd7b3c1cd44" }
+libre-ai-artifact = { git = "https://github.com/libre-ai/libre-ai.git", rev = "5c1bf0523b8e81476096bc4a8fe888b1758d72f4" }
 
 [workspace]
 `,
