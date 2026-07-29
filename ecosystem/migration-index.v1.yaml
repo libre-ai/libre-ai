@@ -12,6 +12,10 @@
 # le contenu migré a une destination vivante.
 #
 # Entrées de forme :
+# Un hub_path peut apparaître dans PLUSIEURS entrées (une par couple
+# chemin × destination) : l'outillage partagé essaime — le gate d'orphelins
+# vérifie qu'un chemin a AU MOINS une destination, cette carte les liste
+# TOUTES pour décrire la topologie réelle (finding K4 AUTH-02).
 #   - hub_path: <chemin du hub, préfixe>
 #     destination: libre-ai/<repo>
 #     destination_commit: <SHA du premier commit de destination>
@@ -152,16 +156,26 @@ entries:
     destination: libre-ai/governance
     destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
     hub_removal_commit: pending
-  # γ 3.3 — contracts authority (destination CI pending at index time; the
+  # γ 3.3 — contracts authority (CI 2/2 green at destination_commit; the
   # hub removal only happens after green proof, per the hard flip rule).
   - hub_path: contracts/
     destination: libre-ai/contracts
-    destination_commit: e3904c3e77dd471b71902b632f32889bfe185202
+    destination_commit: 64092261884df4ef2fb0220c36227c4bad05956e
     hub_removal_commit: pending
   - hub_path: docs/API-STABILITY.md
     destination: libre-ai/contracts
-    destination_commit: e3904c3e77dd471b71902b632f32889bfe185202
+    destination_commit: 64092261884df4ef2fb0220c36227c4bad05956e
     hub_removal_commit: pending
+  - hub_path: tools/quality/ # the self-verification subset contracts carries
+    destination: libre-ai/contracts
+    destination_commit: 64092261884df4ef2fb0220c36227c4bad05956e
+    hub_removal_commit: pending
+    notes: >-
+      check-contracts, policy-core-raw-inputs, public-source-scanner(+test)
+      only — the repository's own gate. The bun floor, security scanners and
+      licensing gate are CONSUMED from governance (reusable workflows +
+      pinned git-dep, design §5.3), never duplicated (K4 AUTH-01 closed)
+
 
 # Remplacements tracés hors chemins (workflows et machineries éteints avec le
 # hub, jamais orphelins — design §4.5) :
