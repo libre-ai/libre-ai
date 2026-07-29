@@ -95,7 +95,16 @@ jobs:
           # ADR-0020 (2026-07-28) extends the motifs to newly superseded doctrine
           # statements; the superseding acts, the origin ADRs and the bannered
           # historical sequencing document may cite them, nothing else may.
-          matches=$(grep -rn -E "projections à sens unique|repositories spécialisés sont des projections|unique source modifiable|Daidalos|free-ai\.fr|libre-ia\.fr|Libre IA|partagé par plusieurs produits vit au socle|One .?bun\.lock.?, one Cargo workspace|One Bun and one Cargo workspace|source unique(\*\*)? de la topologie publique" \
+          # Two families, one deny-list (2026-07-29, K4 finding on inert
+          # motifs). SUPERSEDED motifs are derived from the exact origin
+          # texts and must keep matching them somewhere in the tree —
+          # tools/quality/check-doctrine-patterns.test.ts fails on any motif
+          # that matches nothing (an inert paraphrase protects nothing).
+          # PREVENTIVE motifs ban brands and domains outright: zero matches
+          # is their healthy state (purge complete).
+          superseded="projections à sens unique|repositories spécialisés sont des projections|unique source modifiable|partagé par plusieurs produits vit au socle|One .?bun\.lock.?, one Cargo workspace|One Bun and one Cargo workspace|source unique(\*\*)? de la topologie publique"
+          preventive="Daidalos|free-ai\.fr|libre-ia\.fr|Libre IA"
+          matches=$(grep -rn -E "$superseded|$preventive" \
             --include='*.md' . \
             | grep -v 'docs/reviews/' \
             | grep -v 'docs/adr/0008-' \
