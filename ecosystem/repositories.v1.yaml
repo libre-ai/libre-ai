@@ -133,6 +133,84 @@ repositories:
     benchmark: n/a (shared brick, no external parity target)
     owns:
       - the crate at the repository root (formerly crates/contract-types)
+  - repository: libre-ai/provenance
+    role: satellite
+    layer: couche-3
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Content provenance brick. History carried by git filter-repo (γ 3.4); bootstrap in
+    # progress — declared as soon as observable so the inventory never lies
+    # (K4 SDKRS-01: declare, then create). Green proof lands with its
+    # migration-index entry.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the package at the repository root (formerly packages/provenance)
+  - repository: libre-ai/knowledge
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Knowledge objects brick. History carried by git filter-repo (γ 3.4); bootstrap in
+    # progress — declared as soon as observable so the inventory never lies
+    # (K4 SDKRS-01: declare, then create). Green proof lands with its
+    # migration-index entry.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the package at the repository root (formerly packages/knowledge)
+  - repository: libre-ai/rgpd-kit
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # GDPR lifecycle brick. History carried by git filter-repo (γ 3.4); bootstrap in
+    # progress — declared as soon as observable so the inventory never lies
+    # (K4 SDKRS-01: declare, then create). Green proof lands with its
+    # migration-index entry.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the package at the repository root (formerly packages/rgpd-kit)
+  - repository: libre-ai/classification
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Content classification brick. History carried by git filter-repo (γ 3.4); bootstrap in
+    # progress — declared as soon as observable so the inventory never lies
+    # (K4 SDKRS-01: declare, then create). Green proof lands with its
+    # migration-index entry.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the package at the repository root (formerly packages/classification)
+  - repository: libre-ai/collab-core
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Collaboration core brick. History carried by git filter-repo (γ 3.4); bootstrap in
+    # progress — declared as soon as observable so the inventory never lies
+    # (K4 SDKRS-01: declare, then create). Green proof lands with its
+    # migration-index entry.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the package at the repository root (formerly packages/collab-core)
+  - repository: libre-ai/collab-relay
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: spec-published
+    # Collaboration relay brick. History carried by git filter-repo (γ 3.4); bootstrap in
+    # progress — declared as soon as observable so the inventory never lies
+    # (K4 SDKRS-01: declare, then create). Green proof lands with its
+    # migration-index entry.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the package at the repository root (formerly packages/collab-relay)
   - repository: libre-ai/db-inspect
     role: standalone-tool
     layer: transverse
