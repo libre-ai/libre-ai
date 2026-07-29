@@ -36,7 +36,7 @@ Convention transverse (fixée par cette carte) :
 
 - **Repo satellite** : nom de brique nu sous l'organisation (`libre-ai/<brique>`).
 - **Package npm** : `@libre-ai/<brique>` (exceptions listées, conservées pour exactitude de contenu).
-- **Crate Rust** : `libre-ai-<brique>` (les sept crates du workspace sont conformes — correction ADR-0020 : `policy-core`, né le 2026-07-23, rejoint le décompte).
+- **Crate Rust** : `libre-ai-<brique>` (six des sept crates du workspace sont conformes — correction ADR-0020 : le septième, `policy-core`, né le 2026-07-23 sans le préfixe, est conservé tel quel comme **quatrième exception** du §5 ; il rejoint le repo produit `policy`, pas un satellite).
 
 ### 2.1 Couche 4 — atelier applicatif (vague 1)
 
@@ -134,7 +134,7 @@ Le décompte des produits n'est pas gravé ici (I-14) : l'inventaire `ecosystem/
 - **Domaine `libre-ai.fr`** (finding N-02 de la revue K4) : vérification empirique du 2026-07-20 (whois + RDAP AFNIC) — le domaine est **enregistré et actif** (registrar Infomaniak, titulaire anonymisé, pratique AFNIC normale pour un particulier). L'anonymisation empêche de prouver le contrôle par le titulaire de ce dépôt : la **confirmation nominative du contrôle** est un point de décision propriétaire du dossier Phase 0 — cette carte ne la présume pas.
 - **Familles plateforme/preuve/distribution (`ui`, `proof`, `artifacts`, `starter`, `sdk-ts`, `sdk-rs`, `mcp-server`, `corpus`, `docs`)** : reprises **à l'identique** de l'annexe non normative d'ADR-0008 — cette carte est l'acte qui les fige (l'annexe prévoyait « fixés à l'activation, par décision propriétaire ») ; zéro nom nouveau inventé.
 - **Briques couches 2-3 (`orchestrator`, `harness`, `envelope`, `provenance`, `memory`)** : reprises à l'identique d'ADR-0009 §2 (topologie ratifiée) ; zéro nom nouveau inventé.
-- **Cohérence de famille** : un seul patron pour toute la constellation — repo = nom nu, npm = `@libre-ai/<nom>`, crate = `libre-ai-<nom>` ; trois exceptions conservées pour exactitude de contenu (`@libre-ai/auth-web`, `@libre-ai/contracts`, `libre-ai-agent-orchestrator`), une correction requise (`@libre-ai/design-system` → `@libre-ai/ui`).
+- **Cohérence de famille** : un seul patron pour toute la constellation — repo = nom nu, npm = `@libre-ai/<nom>`, crate = `libre-ai-<nom>` ; quatre exceptions conservées pour exactitude de contenu (`@libre-ai/auth-web`, `@libre-ai/contracts`, `libre-ai-agent-orchestrator`, et — depuis l'amendement ADR-0020 — le crate `policy-core`, qui rejoint le repo produit `policy`), une correction requise (`@libre-ai/design-system` → `@libre-ai/ui`, réalisée en vague 1).
 
 ## 6. Marques mortes et deny-list
 
@@ -181,7 +181,7 @@ Porté par la pull request de l'ADR-0020, même procédure que la signature de c
 | `collab-core` | `libre-ai/collab-core` | `@libre-ai/collab-core` | `packages/collab-core` |
 | `collab-relay` | `libre-ai/collab-relay` | `@libre-ai/collab-relay` | `packages/collab-relay` |
 | — | rejoint le repo produit `policy` | `@libre-ai/policy-core-ref` | `packages/policy-core-ref` |
-| — | rejoint le repo produit `policy` | crate `libre-ai-policy-core` | `crates/policy-core` |
+| — | rejoint le repo produit `policy` | crate `policy-core` (conservé sans préfixe — quatrième exception, §5) | `crates/policy-core` |
 
 ### 8.3 Promotions par renversement du §2.5
 

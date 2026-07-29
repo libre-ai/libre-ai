@@ -95,7 +95,7 @@ jobs:
           # ADR-0020 (2026-07-28) extends the motifs to newly superseded doctrine
           # statements; the superseding acts, the origin ADRs and the bannered
           # historical sequencing document may cite them, nothing else may.
-          matches=$(grep -rn -E "projections à sens unique|repositories spécialisés sont des projections|unique source modifiable|Daidalos|free-ai\.fr|libre-ia\.fr|Libre IA|tout le partagé reste au socle|One Bun and one Cargo workspace|source unique de la topologie publique et des états d.exposition" \
+          matches=$(grep -rn -E "projections à sens unique|repositories spécialisés sont des projections|unique source modifiable|Daidalos|free-ai\.fr|libre-ia\.fr|Libre IA|partagé par plusieurs produits vit au socle|One .?bun\.lock.?, one Cargo workspace|One Bun and one Cargo workspace|source unique(\*\*)? de la topologie publique" \
             --include='*.md' . \
             | grep -v 'docs/reviews/' \
             | grep -v 'docs/adr/0008-' \

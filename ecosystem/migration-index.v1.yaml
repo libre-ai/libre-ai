@@ -18,7 +18,7 @@
 #     hub_removal_commit: <SHA du commit du hub qui retire le chemin>
 #     notes: <bornes, exemptions tracées — ex. borne DCO de greffe>
 
-version: 1
+schema_version: libre-ai.migration-index.v1
 
 hub_state: dismantling-pending  # → dismantling-in-progress à la première bascule → archived (acte propriétaire)
 
