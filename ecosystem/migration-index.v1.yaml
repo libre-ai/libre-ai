@@ -192,17 +192,17 @@ entries:
   - hub_path: contracts/
     destination: libre-ai/contracts
     destination_commit: e3904c3e77dd471b71902b632f32889bfe185202
-    verified_at_commit: 64092261884df4ef2fb0220c36227c4bad05956e
+    verified_at_commit: ee144f03cf7d3deeda02a9fcd5e10377c2e99cb4
     hub_removal_commit: pending
   - hub_path: docs/API-STABILITY.md
     destination: libre-ai/contracts
     destination_commit: e3904c3e77dd471b71902b632f32889bfe185202
-    verified_at_commit: 64092261884df4ef2fb0220c36227c4bad05956e
+    verified_at_commit: ee144f03cf7d3deeda02a9fcd5e10377c2e99cb4
     hub_removal_commit: pending
   - hub_path: tools/quality/ # the self-verification subset contracts carries
     destination: libre-ai/contracts
     destination_commit: e3904c3e77dd471b71902b632f32889bfe185202
-    verified_at_commit: 64092261884df4ef2fb0220c36227c4bad05956e
+    verified_at_commit: ee144f03cf7d3deeda02a9fcd5e10377c2e99cb4
     hub_removal_commit: pending
     notes: >-
       check-contracts, policy-core-raw-inputs, public-source-scanner(+test)
