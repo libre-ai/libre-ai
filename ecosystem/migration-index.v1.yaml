@@ -281,7 +281,10 @@ entries:
     hub_removal_commit: pending
     notes: renamed to the repository root
 
-  # γ 3.4 — wave B/C and Rust satellites: the nineteen are ALL born green.
+  # γ 3.4 — wave B/C and Rust satellites. Seventeen of the nineteen were
+  # born green first try; two (ui, ecosystem-engine) were greened at the
+  # next commit — nineteen green, no red masked (the destination/verified
+  # split states exactly which is which).
   - hub_path: packages/auth-web/
     destination: libre-ai/auth
     destination_commit: d23fcb7edc6108429247fd9b52f9fdd3d62d07fe
