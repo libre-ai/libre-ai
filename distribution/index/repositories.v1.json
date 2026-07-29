@@ -34,6 +34,33 @@
       ]
     },
     {
+      "repository": "libre-ai/artifacts",
+      "name": "artifacts",
+      "layer": "couche-3",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
+      "repository": "libre-ai/auth",
+      "name": "auth",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
+      "repository": "libre-ai/authz-biscuit",
+      "name": "authz-biscuit",
+      "layer": "couche-3",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
       "repository": "libre-ai/boussole-politique",
       "name": "Boussole Politique",
       "layer": "couche-1",
@@ -96,6 +123,15 @@
       "exposure": "usable-verifiable"
     },
     {
+      "repository": "libre-ai/data",
+      "name": "data",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
       "repository": "libre-ai/db-inspect",
       "name": "db-inspect",
       "layer": "transverse",
@@ -103,6 +139,15 @@
       "visibility": "public",
       "lifecycle": "active",
       "exposure": "usable-verifiable"
+    },
+    {
+      "repository": "libre-ai/ecosystem-engine",
+      "name": "ecosystem-engine",
+      "layer": "transverse",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
     },
     {
       "repository": "libre-ai/envelope",
@@ -184,6 +229,15 @@
       ]
     },
     {
+      "repository": "libre-ai/orchestrator",
+      "name": "orchestrator",
+      "layer": "couche-2",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
       "repository": "libre-ai/policy",
       "name": "Model Policy",
       "layer": "couche-1",
@@ -262,6 +316,15 @@
       ]
     },
     {
+      "repository": "libre-ai/starter",
+      "name": "starter",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
+    },
+    {
       "repository": "libre-ai/testing",
       "name": "testing",
       "layer": "couche-4",
@@ -269,6 +332,15 @@
       "visibility": "public",
       "lifecycle": "active",
       "exposure": "usable-verifiable"
+    },
+    {
+      "repository": "libre-ai/ui",
+      "name": "ui",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "spec-published"
     },
     {
       "repository": "libre-ai/web-platform",
