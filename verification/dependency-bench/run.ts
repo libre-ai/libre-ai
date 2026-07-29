@@ -55,7 +55,7 @@ async function write(path: string, content: string): Promise<void> {
   await Bun.write(join(bench, path), content);
 }
 
-// --- Case 1: GitHub transport. The positive half is proven in production:
+// --- Case 1: GitHub transport. The positive half is proven by real use:
 // contracts/bun.lock pins github:libre-ai/governance#<full sha> WITH an
 // integrity hash, re-verified by every `bun install --frozen-lockfile` of
 // its CI — stronger than any one-shot fixture (K4 CLOSE33-01). What needs a
@@ -69,7 +69,7 @@ async function caseOne(): Promise<void> {
       title: "Bun git-dep SHA-pin over GitHub transport",
       outcome: "SKIP",
       detail:
-        "Positive half proven in production (contracts/bun.lock pins the full sha with an " +
+        "Positive half proven by real use (contracts/bun.lock pins the full sha with an " +
         "integrity hash, re-verified each CI install). Counter-proof (unreachable sha must " +
         "fail) requires network — replay with --online.",
     });
@@ -98,7 +98,7 @@ async function caseOne(): Promise<void> {
     title: "Bun git-dep SHA-pin over GitHub transport — counter-proof",
     outcome: failedToResolve ? "PASS" : "FAIL",
     detail: failedToResolve
-      ? "an unreachable sha fails the install (exit non-zero, « failed to resolve ») — the pin is enforced, never silently bypassed; positive half carried by contracts/bun.lock in production"
+      ? "an unreachable sha fails the install (exit non-zero, « failed to resolve ») — the pin is enforced, never silently bypassed; positive half carried by contracts/bun.lock, re-verified by its real CI"
       : `expected failure, got exit=${install.exitCode}: ${install.stderr.toString().slice(0, 200)}`,
   });
 }
