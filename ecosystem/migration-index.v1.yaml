@@ -210,6 +210,32 @@ entries:
       licensing gate are CONSUMED from governance (reusable workflows +
       pinned git-dep, design §5.3), never duplicated (K4 AUTH-01 closed)
 
+  # γ 3.4 — wave-A Bun satellites (each verified green in its own CI).
+  - hub_path: packages/contracts/
+    destination: libre-ai/sdk-ts
+    destination_commit: c1c90491207bfdf24f78b91c7900596c9f05cbec
+    verified_at_commit: da9d510cce0c28283837bfb6c9efe82641cbe083
+    hub_removal_commit: pending
+    notes: package renamed to the repository root (a pinned git-dep installs the root); vendored schemas re-proven byte-exact against the contracts authority pin
+  - hub_path: packages/envelope/
+    destination: libre-ai/envelope
+    destination_commit: 5571b6e5e75086a204798cda267d84d6c1ef5a1f
+    verified_at_commit: ad0e1a6d014ee531dd1938ed04c6b678c605dc9c
+    hub_removal_commit: pending
+    notes: renamed to the repository root
+  - hub_path: packages/web-platform/
+    destination: libre-ai/web-platform
+    destination_commit: 9ee1c02fbe5fd52e0570335ef15b7b63766a7c03
+    verified_at_commit: a0754b69b4205e31a0c560f9729bd8d2d8556357
+    hub_removal_commit: pending
+    notes: renamed to the repository root
+  - hub_path: packages/testing/
+    destination: libre-ai/testing
+    destination_commit: 2390b8cb9a30298fe3020ad8acf92fd15d3248f8
+    verified_at_commit: 28a317462660898f069974009ab4a1ff99bb9dac
+    hub_removal_commit: pending
+    notes: renamed to the repository root
+
 # Remplacements tracés hors chemins (workflows et machineries éteints avec le
 # hub, jamais orphelins — design §4.5) :
 replacements: []
