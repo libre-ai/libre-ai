@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   aggregateProgress,
   checkStatusSection,
+  collectPathReferences,
   renderStatusSection,
   STATUS_SECTION_BEGIN,
   STATUS_SECTION_END,
@@ -133,6 +134,45 @@ describe("validateCard", () => {
     expect(validateCard(card).length).toBeGreaterThan(0);
   });
 
+  test("rejects calendar-impossible dates that match the ISO shape", () => {
+    for (const date of ["2026-13-45", "0000-00-00", "2026-02-30"]) {
+      const card = minimalCard();
+      // biome-ignore lint/suspicious/noExplicitAny: test mutates raw shapes
+      (card.phases as any)[0].exit_criteria[0] = {
+        id: "x-crit",
+        text: "Un critère daté n'accepte que des dates calendaires réelles.",
+        weight: 1,
+        status: "accepted",
+        evidence: { date, reference: "PR #1" },
+      };
+      expect(validateCard(card).length).toBeGreaterThan(0);
+    }
+  });
+
+  test("rejects evidence dated in the future", () => {
+    const card = minimalCard();
+    // biome-ignore lint/suspicious/noExplicitAny: test mutates raw shapes
+    (card.phases as any)[0].exit_criteria[0] = {
+      id: "x-crit",
+      text: "Une preuve ne peut pas être datée dans le futur.",
+      weight: 1,
+      status: "accepted",
+      evidence: { date: "2099-01-01", reference: "PR #1" },
+    };
+    const errors = validateCard(card);
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors.join("\n")).toContain("futur");
+  });
+
+  test("rejects a freshness date in the future or calendar-impossible", () => {
+    const future = minimalCard();
+    (future.freshness as { last_verified_on: string }).last_verified_on = "2099-01-01";
+    expect(validateCard(future).length).toBeGreaterThan(0);
+    const impossible = minimalCard();
+    (impossible.freshness as { last_verified_on: string }).last_verified_on = "2026-13-45";
+    expect(validateCard(impossible).length).toBeGreaterThan(0);
+  });
+
   test("rejects an incomplete mission statement", () => {
     const card = minimalCard();
     // biome-ignore lint/suspicious/noExplicitAny: test mutates raw shapes
@@ -177,6 +217,74 @@ describe("aggregateProgress", () => {
     expect(report.computable).toBe(false);
     if (report.computable) throw new Error("unreachable");
     expect(report.display).toBe("Avancement non calculable — périmètre à clarifier");
+  });
+
+  test("never displays 100 % while any criterion is still pending", () => {
+    // 199 accepted over 200 applicable: Math.round would say 100 %.
+    const card = minimalCard();
+    // biome-ignore lint/suspicious/noExplicitAny: test mutates raw shapes
+    (card.phases as any)[0].exit_criteria = [
+      {
+        id: "big-one",
+        text: "Le premier gros critère est accepté avec preuve datée.",
+        weight: 100,
+        status: "accepted",
+        evidence: { date: "2026-07-29", reference: "PR #999" },
+      },
+      {
+        id: "big-two",
+        text: "Le second gros critère est accepté avec preuve datée.",
+        weight: 99,
+        status: "accepted",
+        evidence: { date: "2026-07-29", reference: "PR #999" },
+      },
+      {
+        id: "last-mile",
+        text: "Le dernier critère reste ouvert.",
+        weight: 1,
+        status: "pending",
+      },
+    ];
+    const report = aggregateProgress(card);
+    expect(report.computable).toBe(true);
+    if (!report.computable) throw new Error("unreachable");
+    expect(report.overall_ratio).toBeLessThan(1);
+    expect(report.display).toBe("99 % du périmètre actuellement déclaré");
+  });
+
+  test("never displays 0 % while any criterion is accepted", () => {
+    // 1 accepted over 301 applicable: Math.round would say 0 %.
+    const card = minimalCard();
+    // biome-ignore lint/suspicious/noExplicitAny: test mutates raw shapes
+    (card.phases as any)[0].exit_criteria = [
+      {
+        id: "tiny-win",
+        text: "Un petit critère est réellement accepté avec preuve datée.",
+        weight: 1,
+        status: "accepted",
+        evidence: { date: "2026-07-29", reference: "PR #999" },
+      },
+      { id: "big-a", text: "Un gros critère encore ouvert.", weight: 100, status: "pending" },
+      { id: "big-b", text: "Un gros critère encore ouvert.", weight: 100, status: "pending" },
+      { id: "big-c", text: "Un gros critère encore ouvert.", weight: 100, status: "pending" },
+    ];
+    const report = aggregateProgress(card);
+    expect(report.computable).toBe(true);
+    if (!report.computable) throw new Error("unreachable");
+    expect(report.overall_ratio).toBeGreaterThan(0);
+    expect(report.display).toBe("1 % du périmètre actuellement déclaré");
+  });
+
+  test("throws on a card the schema rejects instead of aggregating it", () => {
+    const empty = minimalCard();
+    // biome-ignore lint/suspicious/noExplicitAny: test mutates raw shapes
+    (empty.phases as any) = [];
+    expect(() => aggregateProgress(empty)).toThrow(/invalid/);
+    const negative = minimalCard();
+    // biome-ignore lint/suspicious/noExplicitAny: test mutates raw shapes
+    (negative.phases as any)[0].exit_criteria[0].weight = -5;
+    expect(() => aggregateProgress(negative)).toThrow(/invalid/);
+    expect(() => aggregateProgress(null)).toThrow(/invalid/);
   });
 
   test("weights aggregate across phases", () => {
@@ -240,5 +348,46 @@ describe("renderStatusSection and its divergence check", () => {
     const card = minimalCard();
     const failures = checkStatusSection("# Envelope\n\nNo section here.\n", card);
     expect(failures.length).toBeGreaterThan(0);
+  });
+
+  test("checkStatusSection flags a duplicated section pasted after the fresh one", () => {
+    const card = minimalCard();
+    const fresh = renderStatusSection(card);
+    const stale = fresh.replace("0 %", "99 %").replace("high", "low");
+    const readme = `# Envelope\n\n${fresh}\n\nProse.\n\n${stale}\n`;
+    const failures = checkStatusSection(readme, card);
+    expect(failures.length).toBeGreaterThan(0);
+    expect(failures.join("\n")).toContain("dupliqu");
+  });
+
+  test("the rendered section carries the honest current situation", () => {
+    const card = minimalCard();
+    const section = renderStatusSection(card);
+    expect(section).toContain("Situation actuelle :");
+    expect(section).toContain("Contrat envelope-v1 verrouillé");
+  });
+});
+
+describe("collectPathReferences", () => {
+  test("returns repo-path-looking evidence references and skips PR-style ones", () => {
+    const card = minimalCard();
+    // biome-ignore lint/suspicious/noExplicitAny: test mutates raw shapes
+    (card.phases as any)[0].exit_criteria = [
+      {
+        id: "with-path",
+        text: "Un critère adossé à un fichier d'évidence du dépôt.",
+        weight: 1,
+        status: "accepted",
+        evidence: { date: "2026-07-28", reference: "distribution/evidence/some-proof.md" },
+      },
+      {
+        id: "with-pr",
+        text: "Un critère adossé à une PR.",
+        weight: 1,
+        status: "accepted",
+        evidence: { date: "2026-07-28", reference: "PR #273, gate-acceptance-log ligne 3.1" },
+      },
+    ];
+    expect(collectPathReferences(card)).toEqual(["distribution/evidence/some-proof.md"]);
   });
 });

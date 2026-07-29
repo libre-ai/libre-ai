@@ -16,7 +16,7 @@ statement:
     - aucun registre de paquets nouveau, aucun compte nouveau
 summary: Le hub en démantèlement — archive + index de migration en fin de jalon γ (ADR-0020).
 current_situation: >-
-  Phases γ 3.0 et 3.1 closes (évidence du 2026-07-28 et ADR-0020 signé le 2026-07-29) ;
+  Phases γ 3.0 et 3.1 closes (évidence du 2026-07-28 et ADR-0020 signé le 2026-07-28) ;
   aucun repo créé, aucun chemin n'a quitté le hub.
 scope:
   - statuer et migrer chaque chemin du hub vers son repo responsable
@@ -57,13 +57,15 @@ phases:
         weight: 10
         status: accepted
         evidence:
-          date: "2026-07-29"
+          date: "2026-07-28"
           reference: "PR #273, gate-acceptance-log 2026-07-28 (ligne 3.1)"
   - id: card-system
     title: γ 3.2 — Système de fiches
     exit_criteria:
       - id: schema-validator-aggregator
-        text: Schéma project.v1 + validateur + agrégateur + générateur + gate de divergence, TDD verts.
+        text: >-
+          Schéma project.v1 + validateur + agrégateur + générateur + primitive du gate de
+          divergence, TDD verts (le câblage du gate sur les README réels est la phase 3.6).
         weight: 6
         status: pending
       - id: dependency-bench

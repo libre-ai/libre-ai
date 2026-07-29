@@ -29,16 +29,51 @@ function safeError(error: ErrorObject): string {
   return `${error.instancePath || "/"}: ${message} (${error.keyword})`;
 }
 
+/**
+ * Local calendar date — evidence is dated where the owner works, and UTC
+ * would flag a same-day proof as "future" before noon in Europe/Paris.
+ */
+function todayLocalIso(): string {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
+/** Evidence dated after today is a claim, not a proof (design §6.6, §7.3). */
+function futureDateErrors(value: unknown): string[] {
+  const card = value as CardShape;
+  const today = todayLocalIso();
+  const errors: string[] = [];
+  if (card.freshness.last_verified_on > today) {
+    errors.push(
+      `/freshness/last_verified_on: ${card.freshness.last_verified_on} est dans le futur (aujourd'hui : ${today})`,
+    );
+  }
+  for (const phase of card.phases) {
+    for (const criterion of phase.exit_criteria) {
+      if (criterion.evidence && criterion.evidence.date > today) {
+        errors.push(
+          `/phases/${phase.id}/exit_criteria/${criterion.id}/evidence/date: ${criterion.evidence.date} est dans le futur (aujourd'hui : ${today})`,
+        );
+      }
+    }
+  }
+  return errors;
+}
+
 export function validateCard(value: unknown): string[] {
-  if (validate(value)) return [];
-  const errors = (validate.errors ?? []).map(safeError);
-  // Ajv reports a failed if/then as a bare "must match then schema" on the
-  // criterion; make the accepted-without-evidence case name its rule.
-  return errors.map((error) =>
-    error.includes('"then"') || error.includes("then")
-      ? `${error} — an accepted criterion requires dated evidence`
-      : error,
-  );
+  if (!validate(value)) {
+    const errors = (validate.errors ?? []).map(safeError);
+    // Ajv reports a failed if/then as a bare "must match then schema" on the
+    // criterion; make the accepted-without-evidence case name its rule.
+    return errors.map((error) =>
+      error.includes('"then"') || error.includes("then")
+        ? `${error} — an accepted criterion requires dated evidence`
+        : error,
+    );
+  }
+  return futureDateErrors(value);
 }
 
 interface ExitCriterion {
@@ -61,6 +96,7 @@ interface CardShape {
   readonly exposure: string;
   readonly freshness: { readonly last_verified_on: string };
   readonly project: string;
+  readonly current_situation: string;
 }
 
 export interface PhaseProgress {
@@ -82,11 +118,31 @@ export type ProgressReport =
 export const NOT_COMPUTABLE_DISPLAY = "Avancement non calculable — périmètre à clarifier";
 
 /**
+ * Rounded percent with two hard guards: never « 100 % » while anything is
+ * still pending, never « 0 % » while anything is accepted (design §7.5 —
+ * planned capability is never presented as available, and real progress is
+ * never erased by rounding).
+ */
+function displayPercent(overall: number): string {
+  let percent = Math.round(overall * 100);
+  if (overall < 1) percent = Math.min(percent, 99);
+  if (overall > 0) percent = Math.max(percent, 1);
+  return `${percent} % du périmètre actuellement déclaré`;
+}
+
+/**
  * Progress = accepted weights over applicable weights, per phase then over
  * the whole card. Only an `accepted` criterion counts, and the validator
- * guarantees every accepted criterion carries dated evidence.
+ * guarantees every accepted criterion carries dated evidence. The input is
+ * re-validated here: this function is public API and will be consumed
+ * cross-repo by the governance fleet aggregator, which nothing forces
+ * through `validateCard` first.
  */
 export function aggregateProgress(value: unknown): ProgressReport {
+  const errors = validateCard(value);
+  if (errors.length > 0) {
+    throw new Error(`aggregateProgress: invalid card — ${errors.join("; ")}`);
+  }
   const card = value as CardShape;
   if (card.scope_stability === "unstable") {
     return { computable: false, display: NOT_COMPUTABLE_DISPLAY };
@@ -105,12 +161,17 @@ export function aggregateProgress(value: unknown): ProgressReport {
   });
   const applicableTotal = phases.reduce((sum, p) => sum + p.applicable_weight, 0);
   const acceptedTotal = phases.reduce((sum, p) => sum + p.accepted_weight, 0);
-  const overall = applicableTotal === 0 ? 0 : acceptedTotal / applicableTotal;
+  // Unreachable through the schema (minItems 1, weight ≥ 1) — kept as
+  // defence in depth: a scope with no applicable weight has no ratio.
+  if (applicableTotal === 0) {
+    return { computable: false, display: NOT_COMPUTABLE_DISPLAY };
+  }
+  const overall = acceptedTotal / applicableTotal;
   return {
     computable: true,
     phases,
     overall_ratio: overall,
-    display: `${Math.round(overall * 100)} % du périmètre actuellement déclaré`,
+    display: displayPercent(overall),
   };
 }
 
@@ -129,6 +190,10 @@ export function renderStatusSection(value: unknown): string {
     STATUS_SECTION_BEGIN,
     "<!-- Section générée depuis project.v1.yaml — ne pas éditer à la main. -->",
     "",
+    // The honest present state always travels with the statement: a render
+    // showing the mission without the current situation would present a
+    // planned capability as available (§7.5).
+    `- Situation actuelle : ${card.current_situation.trim()}`,
     `- Maturité : ${card.maturity}`,
     `- Exposition : ${card.exposure}`,
     `- Confiance : ${card.confidence}`,
@@ -140,20 +205,57 @@ export function renderStatusSection(value: unknown): string {
   return lines.join("\n");
 }
 
+function countOccurrences(haystack: string, needle: string): number {
+  let count = 0;
+  let index = haystack.indexOf(needle);
+  while (index !== -1) {
+    count += 1;
+    index = haystack.indexOf(needle, index + needle.length);
+  }
+  return count;
+}
+
 /**
- * Divergence gate primitive: the README must contain exactly the freshly
- * rendered section between the sentinels.
+ * Divergence gate primitive: the README must contain exactly one generated
+ * section, byte-identical to a fresh render of the card. A second block
+ * pasted anywhere else — the most natural drift gesture — is refused.
  */
 export function checkStatusSection(readme: string, card: unknown): string[] {
-  const begin = readme.indexOf(STATUS_SECTION_BEGIN);
-  const end = readme.indexOf(STATUS_SECTION_END);
-  if (begin === -1 || end === -1) {
+  const beginCount = countOccurrences(readme, STATUS_SECTION_BEGIN);
+  const endCount = countOccurrences(readme, STATUS_SECTION_END);
+  if (beginCount === 0 || endCount === 0) {
     return ["README: generated project-status section missing (sentinels not found)"];
   }
+  if (beginCount > 1 || endCount > 1) {
+    return [
+      "README: section statut dupliquée — une seule paire de sentinelles project-status est admise",
+    ];
+  }
+  const begin = readme.indexOf(STATUS_SECTION_BEGIN);
+  const end = readme.indexOf(STATUS_SECTION_END);
   const committed = readme.slice(begin, end + STATUS_SECTION_END.length);
   const fresh = renderStatusSection(card);
   if (committed !== fresh) {
     return ["README: la section statut générée diverge de la fiche project.v1.yaml"];
   }
   return [];
+}
+
+/**
+ * Evidence references that look like repo paths, for existence checking by
+ * the gate (a dangling reference was found during phase 3.1 review — this is
+ * the guard that finding called for). PR/gate-log style references are
+ * checked by humans and review passes, not by the filesystem.
+ */
+export function collectPathReferences(value: unknown): string[] {
+  const card = value as CardShape;
+  const pathLike = /^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)+\.[a-z0-9]+$/;
+  const references: string[] = [];
+  for (const phase of card.phases) {
+    for (const criterion of phase.exit_criteria) {
+      const reference = criterion.evidence?.reference;
+      if (reference !== undefined && pathLike.test(reference)) references.push(reference);
+    }
+  }
+  return references;
 }

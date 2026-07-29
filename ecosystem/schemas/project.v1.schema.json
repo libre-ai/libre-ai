@@ -85,6 +85,7 @@
     },
     "users": {
       "type": "array",
+      "description": "Optional refinement only: the required statement.for already names the user, and the final coherence report (design §7.3) reads statement.for — a card without this field is NOT « sans utilisateur ».",
       "items": {
         "type": "string",
         "minLength": 3
@@ -96,7 +97,8 @@
       "description": "Honest present state \u2014 planned capability is never written in the present tense."
     },
     "target_outcome": {
-      "type": "string"
+      "type": "string",
+      "description": "Optional refinement only: the required statement.enables already names the observable outcome, and the final coherence report (design §7.3) reads statement.enables — a card without this field is NOT « sans résultat »."
     },
     "scope": {
       "type": "array",
@@ -155,8 +157,9 @@
       "properties": {
         "last_verified_on": {
           "type": "string",
+          "format": "date",
           "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
-          "description": "Date the evidence below was last re-verified."
+          "description": "Date the evidence below was last re-verified. Real calendar date (ajv-formats full mode); the validator additionally refuses future dates."
         }
       }
     },
@@ -299,7 +302,9 @@
                   "properties": {
                     "date": {
                       "type": "string",
-                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      "format": "date",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                      "description": "Real calendar date (ajv-formats full mode); the validator additionally refuses future dates."
                     },
                     "reference": {
                       "type": "string",

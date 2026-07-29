@@ -1,4 +1,4 @@
-import { aggregateProgress, validateCard } from "./project-cards";
+import { aggregateProgress, collectPathReferences, validateCard } from "./project-cards";
 
 /**
  * γ phase 3.2 — card validation gate (`bun run check:cards`).
@@ -29,6 +29,13 @@ for (const path of paths.sort()) {
   if (errors.length > 0) {
     for (const error of errors) failures.push(`${path}${error}`);
     continue;
+  }
+  // A path-looking evidence reference must resolve: a dangling reference was
+  // found during phase 3.1 review, and this gate is the guard it called for.
+  for (const reference of collectPathReferences(value)) {
+    if (!(await Bun.file(reference).exists())) {
+      failures.push(`${path}: evidence reference does not resolve: ${reference}`);
+    }
   }
   const report = aggregateProgress(value);
   const name = (value as { project?: string }).project ?? path;

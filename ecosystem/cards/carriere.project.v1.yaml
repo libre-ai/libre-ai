@@ -40,7 +40,10 @@ promotion_criteria:
 kill_predicates:
   - id: no-spec-after-activation
     predicate: aucun périmètre clarifié après la décision d'activation du produit
-    source: fiche project.v1.yaml du repo (ce fichier)
+    source: >-
+      revue propriétaire du périmètre — aucun fichier de mesure n'existe encore ;
+      à réancrer sur une source mesurable dès qu'une spécification existe
+
 benchmark:
   none: aucun comparable retenu tant que le périmètre n'est pas clarifié
 scope_stability: unstable
