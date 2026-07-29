@@ -162,6 +162,15 @@
       ]
     },
     {
+      "repository": "libre-ai/sdk-rs",
+      "name": "sdk-rs",
+      "layer": "couche-4",
+      "role": "satellite",
+      "visibility": "public",
+      "lifecycle": "active",
+      "exposure": "usable-verifiable"
+    },
+    {
       "repository": "libre-ai/sdk-ts",
       "name": "sdk-ts",
       "layer": "couche-4",

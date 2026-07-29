@@ -120,6 +120,19 @@ repositories:
     benchmark: n/a (shared brick, no external parity target)
     owns:
       - the package at the repository root (formerly packages/testing)
+  - repository: libre-ai/sdk-rs
+    role: satellite
+    layer: couche-4
+    visibility: public
+    lifecycle: active
+    exposure: usable-verifiable
+    # Rust SDK projection of the locked contracts — compile-time embedded
+    # schemas under a byte-exact drift gate. Born from the hub dismantling
+    # (γ 3.4), history carried by git filter-repo; consumed as a sha-pinned
+    # Cargo git-dep.
+    benchmark: n/a (shared brick, no external parity target)
+    owns:
+      - the crate at the repository root (formerly crates/contract-types)
   - repository: libre-ai/db-inspect
     role: standalone-tool
     layer: transverse
