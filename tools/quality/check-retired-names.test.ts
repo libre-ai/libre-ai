@@ -37,14 +37,12 @@ describe("scanForRetiredNames", () => {
     // ADR-0020 nominatively regularises the `website` activation (the name left
     // the dead list), while `benchmarks` joined the guard: the in-hub
     // destinations that once justified its absence no longer exist in the tree.
+    expect(scanForRetiredNames([{ location: "apps/website", identifier: "website" }])).toEqual([]);
     expect(
-      scanForRetiredNames([{ location: "apps/website", identifier: "website" }]),
-    ).toEqual([]);
-    expect(
-      scanForRetiredNames([
-        { location: "verification/benchmarks", identifier: "benchmarks" },
-      ]),
-    ).toEqual([{ location: "verification/benchmarks", identifier: "benchmarks", retired: "benchmarks" }]);
+      scanForRetiredNames([{ location: "verification/benchmarks", identifier: "benchmarks" }]),
+    ).toEqual([
+      { location: "verification/benchmarks", identifier: "benchmarks", retired: "benchmarks" },
+    ]);
   });
 
   test("matches whole identifiers, never substrings", () => {
