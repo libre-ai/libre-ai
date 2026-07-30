@@ -9,7 +9,7 @@
       "title": "Jalon γ — phase 3.6 présentation : fiches, README générés, README org, site, comparaisons",
       "status": "CLOS",
       "artifact": "distribution/evidence/gate-acceptance-log.md",
-      "reference": "PR #286/#287 (3.5), governance@c64ea95d (gate + projection + v2), website@89ebe44b, `ecosystem/migration-index.v1.yaml` (86 entrées)"
+      "reference": "governance@c64ea95d (gate + projection + v2), website@89ebe44b, `.github`@5e6fb9a, `ecosystem/migration-index.v1.yaml` (86 entrées) ; contexte 3.5 : PR #286/#287"
     },
     {
       "id": "gate-2026-07-30-jalon-phase-3-5-produits-sept-repos-produits-porteurs-de-cod",

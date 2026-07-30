@@ -10,7 +10,7 @@ des verdicts reste le journal des gates (`distribution/evidence/gate-acceptance-
 
 - Statut : CLOS
 - Source : [`distribution/evidence/gate-acceptance-log.md`](../../distribution/evidence/gate-acceptance-log.md)
-- Référence : PR #286/#287 (3.5), governance@c64ea95d (gate + projection + v2), website@89ebe44b, `ecosystem/migration-index.v1.yaml` (86 entrées)
+- Référence : governance@c64ea95d (gate + projection + v2), website@89ebe44b, `.github`@5e6fb9a, `ecosystem/migration-index.v1.yaml` (86 entrées) ; contexte 3.5 : PR #286/#287
 
 ## 2026-07-30 — [gate] Jalon γ — phase 3.5 produits : sept repos produits porteurs de code et l'app missions greffés, verts et dégelés
 

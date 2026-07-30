@@ -13,7 +13,7 @@
     <updated>2026-07-30T00:00:00Z</updated>
     <link rel="alternate" href="https://github.com/libre-ai/libre-ai/blob/main/distribution/evidence/gate-acceptance-log.md"/>
     <category term="gate"/>
-    <summary>CLOS — PR #286/#287 (3.5), governance@c64ea95d (gate + projection + v2), website@89ebe44b, `ecosystem/migration-index.v1.yaml` (86 entrées)</summary>
+    <summary>CLOS — governance@c64ea95d (gate + projection + v2), website@89ebe44b, `.github`@5e6fb9a, `ecosystem/migration-index.v1.yaml` (86 entrées) ; contexte 3.5 : PR #286/#287</summary>
   </entry>
   <entry>
     <id>tag:libre-ai.github.io,2026:evidence/gate-2026-07-30-jalon-phase-3-5-produits-sept-repos-produits-porteurs-de-cod</id>
