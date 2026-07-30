@@ -565,15 +565,31 @@ entries:
     hub_removal_commit: pending
     notes: flat copy with the criteria-acceptance commit (K4 PIDX-02 closed); history stays readable in the hub archive
 
+  - hub_path: tools/ops/run-retention.ts
+    destination: libre-ai/data
+    destination_commit: 57c163f5c1552f434712d5079dfb0697099c4cce
+    verified_at_commit: 338b55e7a57b7b594a2517f63b0eefa4f89479a0
+    hub_removal_commit: pending
+    notes: history-only — adapted into src/retention-sweep.ts at destination (returned product surface, γ 3.3 refinement); content not byte-identical by design
+  - hub_path: tools/ops/run-retention.test.ts
+    destination: libre-ai/data
+    destination_commit: 57c163f5c1552f434712d5079dfb0697099c4cce
+    verified_at_commit: 338b55e7a57b7b594a2517f63b0eefa4f89479a0
+    hub_removal_commit: pending
+    notes: history-only — adapted into the retention-sweep tests at destination; content not byte-identical by design
+
 # Remplacements tracés hors chemins (workflows et machineries éteints avec le
 # hub, jamais orphelins — design §4.5) :
 replacements:
-  - hub_paths: [apps/README.md, crates/README.md]
+  - hub_paths: [apps/README.md, crates/README.md, packages/README.md]
     replaced_by: the org profile README and the per-repository project cards (γ 3.6)
     removed_in: γ 3.7 removal wave 1
     notes: directory indexes of the hub workspaces — presentation surfaces, superseded by the constellation presentation system (K4 PIDX-03)
   - hub_paths: [.github/workflows/release.yml]
     replaced_by: nothing — manual npm release machinery for the departed packages; registry distribution was never required (git-deps, design §8)
+    removed_in: γ 3.7 removal wave 1
+  - hub_paths: [LICENSES/MIT.txt, LICENSES/W3C-20150513.txt]
+    replaced_by: nothing — licence texts whose last SPDX attribution left with wave 1 (REUSE flags unused grants); each repository carries its own LICENSES/
     removed_in: γ 3.7 removal wave 1
   - hub_paths: [.github/workflows/adoption-proof.yml, .github/workflows/sovereignty-report.yml]
     replaced_by: governance carries verification/ (adoption, sovereignty) — the recurring proofs re-arm there when scheduled
