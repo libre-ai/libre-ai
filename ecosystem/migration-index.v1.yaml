@@ -310,9 +310,9 @@ entries:
     destination_path: . # renamed to the repository root
     destination: libre-ai/data
     destination_commit: 57c163f5c1552f434712d5079dfb0697099c4cce
-    verified_at_commit: 57c163f5c1552f434712d5079dfb0697099c4cce
+    verified_at_commit: 338b55e7a57b7b594a2517f63b0eefa4f89479a0
     hub_removal_commit: pending
-    notes: renamed to the repository root; retention contract resolves from the pinned contracts authority
+    notes: renamed to the repository root; retention contract resolves from the contracts authority through module resolution (fix surfaced by the sessions graft, authority now an explicit peer dependency)
   - hub_path: packages/ui/
     destination_path: . # renamed to the repository root
     destination: libre-ai/ui
@@ -388,6 +388,174 @@ entries:
     verified_at_commit: 0462e0a16d50c8db1702bf2f6ac2dcd7db8988dd
     hub_removal_commit: pending
     notes: both templates consume the four workshop bricks as sha-pinned git-deps; auth's peerDependencies pattern fixed fleet-wide after the bun same-pin dedupe repro
+
+  # γ 3.5 — products. Each entry's destination_commit is the hub-content
+  # graft merge in the frozen-home repository (full history via git
+  # filter-repo split); that same SHA is the repository's reusable-licensing
+  # dco_boundary. verified_at_commit is the measured CI-green main.
+  - hub_path: apps/notebook/
+    destination: libre-ai/notebook
+    destination_commit: 3b1c10d6c5a308256b16d99fd05c425a4d7f237b
+    verified_at_commit: 947f99e8d351b7a1f63903b1242fbda5517b7632
+    hub_removal_commit: pending
+    notes: graft DCO boundary 3b1c10d6; app pinned on ui and web-platform
+  - hub_path: crates/notebook-core/
+    destination: libre-ai/notebook
+    destination_commit: 3b1c10d6c5a308256b16d99fd05c425a4d7f237b
+    verified_at_commit: 947f99e8d351b7a1f63903b1242fbda5517b7632
+    hub_removal_commit: pending
+    notes: notebook-core-v2 WIT vendored under the byte-exact drift gate
+  - hub_path: third_party/rustcrypto-aes-0.8.4/
+    destination: libre-ai/notebook
+    destination_commit: 3b1c10d6c5a308256b16d99fd05c425a4d7f237b
+    verified_at_commit: 947f99e8d351b7a1f63903b1242fbda5517b7632
+    hub_removal_commit: pending
+    notes: audited aes fork consumed via [patch.crates-io] by the notebook workspace
+  - hub_path: third_party/dtcg-format-2025.10/
+    destination: libre-ai/ui
+    destination_commit: 65455c3c2fa23c4ecad1c79a0c8d821fbcd2277d
+    verified_at_commit: 46fa2956fcc86731f40772bcd3dff129c3792c46
+    hub_removal_commit: pending
+    notes: entry was missing from the 3.4 wave (only noted under packages/ui); presence measured at both SHAs during the 3.5 index audit
+  - hub_path: third_party/dtcg-format-2025.10/
+    destination: libre-ai/notebook
+    destination_commit: 3b1c10d6c5a308256b16d99fd05c425a4d7f237b
+    verified_at_commit: 947f99e8d351b7a1f63903b1242fbda5517b7632
+    hub_removal_commit: pending
+    notes: travelled with the notebook split; canonical consumer is ui
+  - hub_path: docs/apps/notebook.md
+    destination: libre-ai/notebook
+    destination_commit: 3b1c10d6c5a308256b16d99fd05c425a4d7f237b
+    verified_at_commit: 947f99e8d351b7a1f63903b1242fbda5517b7632
+    hub_removal_commit: pending
+  - hub_path: docs/apps/notebook-resource-floor.md
+    destination: libre-ai/notebook
+    destination_commit: 3b1c10d6c5a308256b16d99fd05c425a4d7f237b
+    verified_at_commit: 947f99e8d351b7a1f63903b1242fbda5517b7632
+    hub_removal_commit: pending
+  - hub_path: tools/qualification/notebook-core-v2/
+    destination: libre-ai/notebook
+    destination_commit: 3b1c10d6c5a308256b16d99fd05c425a4d7f237b
+    verified_at_commit: 947f99e8d351b7a1f63903b1242fbda5517b7632
+    hub_removal_commit: pending
+    notes: product-proof surface returned to its product (refinement traced in the 3.3 governance entry)
+  - hub_path: apps/model-policy/
+    destination: libre-ai/policy
+    destination_commit: 598aa0b2a977c3c027a94ff851b9441f0c5795dd
+    verified_at_commit: 3e92447b408d484075fec092c5ad60bcae89d6f8
+    hub_removal_commit: pending
+    notes: graft DCO boundary 598aa0b2; phase-checker planning record required tracked (docs/apps/model-policy)
+  - hub_path: packages/policy-core-ref/
+    destination: libre-ai/policy
+    destination_commit: 598aa0b2a977c3c027a94ff851b9441f0c5795dd
+    verified_at_commit: 3e92447b408d484075fec092c5ad60bcae89d6f8
+    hub_removal_commit: pending
+    notes: exposed to external consumers through the repository root exports facade (bun git-deps cannot target a subdirectory)
+  - hub_path: crates/policy-core/
+    destination: libre-ai/policy
+    destination_commit: 598aa0b2a977c3c027a94ff851b9441f0c5795dd
+    verified_at_commit: 3e92447b408d484075fec092c5ad60bcae89d6f8
+    hub_removal_commit: pending
+    notes: policy-core-v1 WIT vendored under the byte-exact drift gate; conformance fixtures resolve through the contracts-authority git-dep
+  - hub_path: docs/apps/model-policy.md
+    destination: libre-ai/policy
+    destination_commit: 598aa0b2a977c3c027a94ff851b9441f0c5795dd
+    verified_at_commit: 3e92447b408d484075fec092c5ad60bcae89d6f8
+    hub_removal_commit: pending
+  - hub_path: docs/apps/model-policy/
+    destination: libre-ai/policy
+    destination_commit: 1a1e99dc251d4f7676ae208c9e06825e591688a6
+    verified_at_commit: 3e92447b408d484075fec092c5ad60bcae89d6f8
+    hub_removal_commit: pending
+    notes: flat copy in the bootstrap commit; the filter-repo split missed the directory, its history stays readable in the hub
+  - hub_path: tools/quality/build-policy-core-wasm.ts
+    destination: libre-ai/policy
+    destination_commit: 598aa0b2a977c3c027a94ff851b9441f0c5795dd
+    verified_at_commit: 3e92447b408d484075fec092c5ad60bcae89d6f8
+    hub_removal_commit: pending
+    notes: product-proof surface returned to its product (refinement traced in the 3.3 governance entry)
+  - hub_path: tools/quality/policy-core-raw-inputs.ts
+    destination: libre-ai/policy
+    destination_commit: 598aa0b2a977c3c027a94ff851b9441f0c5795dd
+    verified_at_commit: 3e92447b408d484075fec092c5ad60bcae89d6f8
+    hub_removal_commit: pending
+  - hub_path: tools/quality/policy-core-wasm-conformance.ts
+    destination: libre-ai/policy
+    destination_commit: 598aa0b2a977c3c027a94ff851b9441f0c5795dd
+    verified_at_commit: 3e92447b408d484075fec092c5ad60bcae89d6f8
+    hub_removal_commit: pending
+  - hub_path: apps/radar/
+    destination: libre-ai/feed-radar
+    destination_commit: 4576b553d2072b83e7dd83105308335befe85904
+    verified_at_commit: 4f584e2eb420bb0877bd8d6e351397ab3e4de1db
+    hub_removal_commit: pending
+    notes: graft DCO boundary 4576b553; policy-core-ref consumed through the policy repository exports facade, pinned by SHA
+  - hub_path: docs/apps/radar.md
+    destination: libre-ai/feed-radar
+    destination_commit: 4576b553d2072b83e7dd83105308335befe85904
+    verified_at_commit: 4f584e2eb420bb0877bd8d6e351397ab3e4de1db
+    hub_removal_commit: pending
+  - hub_path: apps/boussole/
+    destination: libre-ai/boussole-politique
+    destination_commit: c9286036260fd62a85c10c4d11785b8883bd3e51
+    verified_at_commit: 84e386325d05ab5d7d1eac4a79c90abec180786b
+    hub_removal_commit: pending
+    notes: graft DCO boundary c9286036; local-only no-transmission guard travels with the app tests
+  - hub_path: docs/apps/boussole.md
+    destination: libre-ai/boussole-politique
+    destination_commit: c9286036260fd62a85c10c4d11785b8883bd3e51
+    verified_at_commit: 84e386325d05ab5d7d1eac4a79c90abec180786b
+    hub_removal_commit: pending
+  - hub_path: apps/practices/
+    destination: libre-ai/ai-practices
+    destination_commit: 85c2cb637233478af1c45cffeac3db9b1e202310
+    verified_at_commit: 311c6688f9c614118da65abd1bce0d94ae0cf563
+    hub_removal_commit: pending
+    notes: graft DCO boundary 85c2cb63; local-only no-transmission guard travels with the app tests
+  - hub_path: docs/apps/practices.md
+    destination: libre-ai/ai-practices
+    destination_commit: 85c2cb637233478af1c45cffeac3db9b1e202310
+    verified_at_commit: 311c6688f9c614118da65abd1bce0d94ae0cf563
+    hub_removal_commit: pending
+  - hub_path: apps/sessions/
+    destination: libre-ai/sessions
+    destination_commit: b7b5e69b084747c00ceb8a7b7ed5f7c5dd1cd64c
+    verified_at_commit: d68bc96288f422e9e48e4bbaa6742ff0606e69b0
+    hub_removal_commit: pending
+    notes: graft DCO boundary b7b5e69b; first consumer of the data brick as a git-dep, surfaced and consumed the module-resolution fix (libre-ai/data@338b55e7)
+  - hub_path: docs/apps/sessions.md
+    destination: libre-ai/sessions
+    destination_commit: b7b5e69b084747c00ceb8a7b7ed5f7c5dd1cd64c
+    verified_at_commit: d68bc96288f422e9e48e4bbaa6742ff0606e69b0
+    hub_removal_commit: pending
+  - hub_path: apps/specifications/
+    destination: libre-ai/spec-studio
+    destination_commit: cb55105d528d079b630a4c839f7bed5c53afdbcc
+    verified_at_commit: 894bc17921c27a2523dd36348dc6bd9e75efe933
+    hub_removal_commit: pending
+    notes: graft DCO boundary cb55105d; integration tests close their PGlite instance, standalone bun test surfaces the leak the hub run masked
+  - hub_path: docs/apps/specifications.md
+    destination: libre-ai/spec-studio
+    destination_commit: cb55105d528d079b630a4c839f7bed5c53afdbcc
+    verified_at_commit: 894bc17921c27a2523dd36348dc6bd9e75efe933
+    hub_removal_commit: pending
+  - hub_path: apps/missions/
+    destination: libre-ai/missions
+    destination_commit: 36b322d66994a812af44e7576629f56027d25b4c
+    verified_at_commit: bd89fe3912013e71f1599c6f14bc3f1750c5ccb5
+    hub_removal_commit: pending
+    notes: graft DCO boundary 36b322d6; datalog conformance reads missions-v1 through the contracts authority
+  - hub_path: docs/apps/missions.md
+    destination: libre-ai/missions
+    destination_commit: 36b322d66994a812af44e7576629f56027d25b4c
+    verified_at_commit: bd89fe3912013e71f1599c6f14bc3f1750c5ccb5
+    hub_removal_commit: pending
+  - hub_path: docs/apps/agent-board.md
+    destination: libre-ai/missions
+    destination_commit: 36b322d66994a812af44e7576629f56027d25b4c
+    verified_at_commit: bd89fe3912013e71f1599c6f14bc3f1750c5ccb5
+    hub_removal_commit: pending
+    notes: agent-board is the historical name (ADR-0008 as amended; LEXICON section 8)
 
 # Remplacements tracés hors chemins (workflows et machineries éteints avec le
 # hub, jamais orphelins — design §4.5) :
