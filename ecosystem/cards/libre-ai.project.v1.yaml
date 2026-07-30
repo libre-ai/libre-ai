@@ -16,11 +16,11 @@ statement:
     - aucun registre de paquets nouveau, aucun compte nouveau
 summary: Le hub en démantèlement — archive + index de migration en fin de jalon γ (ADR-0020).
 current_situation: >-
-  Phases γ 3.0 à 3.6 closes — constellation active : 33 fiches d'état sous
-  gate de flotte, README générés, index topologique v2, README org, site
-  (état calculé + comparaisons datées), plus aucune description gelée ;
-  aucun chemin n'a encore été retiré du hub (retraits tracés pending à
-  l'index de migration, gate d'orphelins et rapport final en 3.7).
+  Phases γ 3.0 à 3.7 closes — le hub est à sa forme d'archive (50 fichiers
+  trackés, chaîne minimale verte) : deux vagues de retrait sous K4, 0
+  orphelin au gate (50/50 rendus compte), rapport de cohérence final
+  publié chez governance ; reste l'acte propriétaire d'archivage (3.8),
+  jamais auto-prononcé.
 scope:
   - statuer et migrer chaque chemin du hub vers son repo responsable
   - photographier la chaîne de référence et préserver l'archive
@@ -133,7 +133,10 @@ phases:
       - id: cross-repo-gate-report
         text: Gate cross-repo vert partout, rapport final produit, trois niveaux de lecture vérifiés.
         weight: 6
-        status: pending
+        status: accepted
+        evidence:
+          date: "2026-07-30"
+          reference: "gate-acceptance-log governance 2026-07-30 (ligne 3.7), governance@a547bfb1 (gate d'orphelins 50/50, rapport final), PRs hub #289/#291
   - id: archive
     title: γ 3.8 — Archivage du hub
     exit_criteria:

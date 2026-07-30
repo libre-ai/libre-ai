@@ -47,28 +47,28 @@ entries:
     destination: libre-ai/governance
     destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
     verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
     notes: docs/apps/* migrate with their products (γ 3.5); docs/API-STABILITY.md with contracts
   - hub_path: GOALS.md
     destination: libre-ai/governance
     destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
     verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: STATUS.md
     destination: libre-ai/governance
     destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
     verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: ROADMAP.md
     destination: libre-ai/governance
     destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
     verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: vision.md
     destination: libre-ai/governance
     destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
     verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: ecosystem/
     destination: libre-ai/governance
     destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
@@ -115,7 +115,7 @@ entries:
     destination: libre-ai/governance
     destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
     verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
     notes: distribution/templates/* → starter (γ 3.4)
   - hub_path: toolchains/
     destination: libre-ai/governance
@@ -127,22 +127,22 @@ entries:
     destination: libre-ai/governance
     destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
     verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: LICENSING.md
     destination: libre-ai/governance
     destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
     verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: TRADEMARKS.md
     destination: libre-ai/governance
     destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
     verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: DATA-PROVENANCE.md
     destination: libre-ai/governance
     destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
     verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: REUSE.toml
     destination: libre-ai/governance
     destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
@@ -159,27 +159,27 @@ entries:
     destination: libre-ai/governance
     destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
     verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: .github/workflows/doctrine-governance.yml
     destination: libre-ai/governance
     destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
     verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: .github/workflows/inventory-drift.yml
     destination: libre-ai/governance
     destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
     verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: .github/workflows/truth-drift.yml
     destination: libre-ai/governance
     destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
     verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: .github/workflows/feeds-freshness.yml
     destination: libre-ai/governance
     destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
     verified_at_commit: 6eae09b597be52800d462400d2b9ecf5479407fd
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: .github/workflows/adoption-proof.yml
     destination: libre-ai/governance
     destination_commit: b8b741c0ab39a0b806911110dfe7e3b84dc54a05
@@ -196,12 +196,12 @@ entries:
     destination: libre-ai/contracts
     destination_commit: e3904c3e77dd471b71902b632f32889bfe185202
     verified_at_commit: ee144f03cf7d3deeda02a9fcd5e10377c2e99cb4
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: docs/API-STABILITY.md
     destination: libre-ai/contracts
     destination_commit: e3904c3e77dd471b71902b632f32889bfe185202
     verified_at_commit: ee144f03cf7d3deeda02a9fcd5e10377c2e99cb4
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: tools/quality/ # the self-verification subset contracts carries
     destination: libre-ai/contracts
     destination_commit: e3904c3e77dd471b71902b632f32889bfe185202
@@ -370,17 +370,17 @@ entries:
     destination: libre-ai/orchestrator
     destination_commit: fbfca74b17b655ae812a27b8dde43bd10ac6acfe
     verified_at_commit: fbfca74b17b655ae812a27b8dde43bd10ac6acfe
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: docs/apps/memory.md
     destination: libre-ai/orchestrator
     destination_commit: fbfca74b17b655ae812a27b8dde43bd10ac6acfe
     verified_at_commit: fbfca74b17b655ae812a27b8dde43bd10ac6acfe
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: docs/apps/orchestrator.md
     destination: libre-ai/orchestrator
     destination_commit: fbfca74b17b655ae812a27b8dde43bd10ac6acfe
     verified_at_commit: fbfca74b17b655ae812a27b8dde43bd10ac6acfe
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: distribution/templates/
     destination_path: . # renamed to the repository root
     destination: libre-ai/starter
@@ -427,12 +427,12 @@ entries:
     destination: libre-ai/notebook
     destination_commit: 3b1c10d6c5a308256b16d99fd05c425a4d7f237b
     verified_at_commit: 947f99e8d351b7a1f63903b1242fbda5517b7632
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: docs/apps/notebook-resource-floor.md
     destination: libre-ai/notebook
     destination_commit: 3b1c10d6c5a308256b16d99fd05c425a4d7f237b
     verified_at_commit: 947f99e8d351b7a1f63903b1242fbda5517b7632
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: tools/qualification/notebook-core-v2/
     destination: libre-ai/notebook
     destination_commit: 3b1c10d6c5a308256b16d99fd05c425a4d7f237b
@@ -461,12 +461,12 @@ entries:
     destination: libre-ai/policy
     destination_commit: 598aa0b2a977c3c027a94ff851b9441f0c5795dd
     verified_at_commit: 3e92447b408d484075fec092c5ad60bcae89d6f8
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: docs/apps/model-policy/
     destination: libre-ai/policy
     destination_commit: 1a1e99dc251d4f7676ae208c9e06825e591688a6
     verified_at_commit: 3e92447b408d484075fec092c5ad60bcae89d6f8
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
     notes: flat copy in the bootstrap commit; the filter-repo split missed the directory, its history stays readable in the hub
   - hub_path: tools/quality/build-policy-core-wasm.ts
     destination: libre-ai/policy
@@ -494,7 +494,7 @@ entries:
     destination: libre-ai/feed-radar
     destination_commit: 4576b553d2072b83e7dd83105308335befe85904
     verified_at_commit: 4f584e2eb420bb0877bd8d6e351397ab3e4de1db
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: apps/boussole/
     destination: libre-ai/boussole-politique
     destination_commit: c9286036260fd62a85c10c4d11785b8883bd3e51
@@ -505,7 +505,7 @@ entries:
     destination: libre-ai/boussole-politique
     destination_commit: c9286036260fd62a85c10c4d11785b8883bd3e51
     verified_at_commit: 84e386325d05ab5d7d1eac4a79c90abec180786b
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: apps/practices/
     destination: libre-ai/ai-practices
     destination_commit: 85c2cb637233478af1c45cffeac3db9b1e202310
@@ -516,7 +516,7 @@ entries:
     destination: libre-ai/ai-practices
     destination_commit: 85c2cb637233478af1c45cffeac3db9b1e202310
     verified_at_commit: 311c6688f9c614118da65abd1bce0d94ae0cf563
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: apps/sessions/
     destination: libre-ai/sessions
     destination_commit: b7b5e69b084747c00ceb8a7b7ed5f7c5dd1cd64c
@@ -527,7 +527,7 @@ entries:
     destination: libre-ai/sessions
     destination_commit: b7b5e69b084747c00ceb8a7b7ed5f7c5dd1cd64c
     verified_at_commit: d68bc96288f422e9e48e4bbaa6742ff0606e69b0
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: apps/specifications/
     destination: libre-ai/spec-studio
     destination_commit: cb55105d528d079b630a4c839f7bed5c53afdbcc
@@ -538,7 +538,7 @@ entries:
     destination: libre-ai/spec-studio
     destination_commit: cb55105d528d079b630a4c839f7bed5c53afdbcc
     verified_at_commit: 894bc17921c27a2523dd36348dc6bd9e75efe933
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: apps/missions/
     destination: libre-ai/missions
     destination_commit: 36b322d66994a812af44e7576629f56027d25b4c
@@ -549,12 +549,12 @@ entries:
     destination: libre-ai/missions
     destination_commit: 36b322d66994a812af44e7576629f56027d25b4c
     verified_at_commit: bd89fe3912013e71f1599c6f14bc3f1750c5ccb5
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
   - hub_path: docs/apps/agent-board.md
     destination: libre-ai/missions
     destination_commit: 36b322d66994a812af44e7576629f56027d25b4c
     verified_at_commit: bd89fe3912013e71f1599c6f14bc3f1750c5ccb5
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
     notes: agent-board is the historical name (ADR-0008 as amended; LEXICON section 8)
 
   # γ 3.6 — présentation.
@@ -562,7 +562,7 @@ entries:
     destination: libre-ai/website
     destination_commit: 89ebe44bfd6a66f2ff17b9e9ddced9d7fdbaa238
     verified_at_commit: 89ebe44bfd6a66f2ff17b9e9ddced9d7fdbaa238
-    hub_removal_commit: pending
+    hub_removal_commit: 42dffb473c06f940c8873c2f7e9b6e875d9abd2f
     notes: flat copy with the criteria-acceptance commit (K4 PIDX-02 closed); history stays readable in the hub archive
 
   - hub_path: tools/ops/run-retention.ts
