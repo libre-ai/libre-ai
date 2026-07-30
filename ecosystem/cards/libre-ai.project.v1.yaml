@@ -16,9 +16,9 @@ statement:
     - aucun registre de paquets nouveau, aucun compte nouveau
 summary: Le hub en démantèlement — archive + index de migration en fin de jalon γ (ADR-0020).
 current_situation: >-
-  Phases γ 3.0 à 3.3 closes — governance et contracts nés verts le 2026-07-29
-  (premier flip, gabarit consommé par SHA épinglé) ; aucun chemin n'a encore été
-  retiré du hub (retraits tracés pending à l'index de migration).
+  Phases γ 3.0 à 3.4 closes — deux autorités et dix-neuf satellites nés verts
+  (26 repos verts, gabarit de flotte épinglé et surveillé) ; aucun chemin n'a
+  encore été retiré du hub (retraits tracés pending à l'index de migration).
 scope:
   - statuer et migrer chaque chemin du hub vers son repo responsable
   - photographier la chaîne de référence et préserver l'archive
@@ -96,9 +96,15 @@ phases:
     title: γ 3.4 — Satellites de code partagé
     exit_criteria:
       - id: nineteen-satellites
-        text: Les 19 repos satellites naissent dans l'ordre du graphe, git-deps épinglées, chemins retirés du hub.
+        text: >-
+          Les 19 repos satellites naissent verts dans l'ordre du graphe, git-deps épinglées
+          (retraits des chemins du hub : pending à l'index, étalés jusqu'à 3.8 selon la
+          règle dure de bascule).
         weight: 10
-        status: pending
+        status: accepted
+        evidence:
+          date: "2026-07-29"
+          reference: "PRs #279-#283 (merge d3cfcc47), gate-acceptance-log 2026-07-29 (ligne 3.4)" 
   - id: products
     title: γ 3.5 — Repos produits et application missions
     exit_criteria:
