@@ -6,6 +6,12 @@ d'adoption, rapport de souveraineté, mesure de couverture), la plus récente
 en tête. Chaque entrée lie son artefact source ; l'autorité de formulation
 des verdicts reste le journal des gates (`distribution/evidence/gate-acceptance-log.md`).
 
+## 2026-07-30 — [gate] Jalon γ — phase 3.5 produits : sept repos produits porteurs de code et l'app missions greffés, verts et dégelés
+
+- Statut : CLOS
+- Source : [`distribution/evidence/gate-acceptance-log.md`](../../distribution/evidence/gate-acceptance-log.md)
+- Référence : PR #286 (merge e53b720), `ecosystem/migration-index.v1.yaml` (85 entrées), verdict K4 sur la PR
+
 ## 2026-07-29 — [gate] Jalon γ — phase 3.4 satellites : les dix-neuf repos de code partagé nés verts
 
 - Statut : CLOS

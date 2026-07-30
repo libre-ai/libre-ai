@@ -3,10 +3,18 @@
   <id>tag:libre-ai.github.io,2026:evidence</id>
   <title>Libre AI — evidence feed</title>
   <subtitle>Gate verdicts, adoption attestations, sovereignty reports and coverage measurements, projected from the public evidence directory.</subtitle>
-  <updated>2026-07-29T00:00:00Z</updated>
+  <updated>2026-07-30T00:00:00Z</updated>
   <author><name>Libre AI</name></author>
   <link rel="alternate" type="text/html" href="https://github.com/libre-ai/libre-ai/blob/main/distribution/feeds/changelog.md"/>
   <link rel="self" type="application/atom+xml" href="https://raw.githubusercontent.com/libre-ai/libre-ai/main/distribution/feeds/evidence.atom.xml"/>
+  <entry>
+    <id>tag:libre-ai.github.io,2026:evidence/gate-2026-07-30-jalon-phase-3-5-produits-sept-repos-produits-porteurs-de-cod</id>
+    <title>Jalon γ — phase 3.5 produits : sept repos produits porteurs de code et l&apos;app missions greffés, verts et dégelés</title>
+    <updated>2026-07-30T00:00:00Z</updated>
+    <link rel="alternate" href="https://github.com/libre-ai/libre-ai/blob/main/distribution/evidence/gate-acceptance-log.md"/>
+    <category term="gate"/>
+    <summary>CLOS — PR #286 (merge e53b720), `ecosystem/migration-index.v1.yaml` (85 entrées), verdict K4 sur la PR</summary>
+  </entry>
   <entry>
     <id>tag:libre-ai.github.io,2026:evidence/gate-2026-07-29-jalon-phase-3-4-satellites-les-dix-neuf-repos-de-code-partag</id>
     <title>Jalon γ — phase 3.4 satellites : les dix-neuf repos de code partagé nés verts</title>

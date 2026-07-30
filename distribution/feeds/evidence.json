@@ -3,6 +3,15 @@
   "repository": "libre-ai/libre-ai",
   "events": [
     {
+      "id": "gate-2026-07-30-jalon-phase-3-5-produits-sept-repos-produits-porteurs-de-cod",
+      "date": "2026-07-30",
+      "type": "gate",
+      "title": "Jalon γ — phase 3.5 produits : sept repos produits porteurs de code et l'app missions greffés, verts et dégelés",
+      "status": "CLOS",
+      "artifact": "distribution/evidence/gate-acceptance-log.md",
+      "reference": "PR #286 (merge e53b720), `ecosystem/migration-index.v1.yaml` (85 entrées), verdict K4 sur la PR"
+    },
+    {
       "id": "gate-2026-07-29-jalon-phase-3-4-satellites-les-dix-neuf-repos-de-code-partag",
       "date": "2026-07-29",
       "type": "gate",
