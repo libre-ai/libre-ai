@@ -412,9 +412,12 @@ if (import.meta.main) {
   for (const entry of excluded) console.log(`  excluded ${entry.path}: ${entry.reason}`);
 
   const failures: string[] = [];
+  // γ 3.7 (design §5.4.2): the publishable packages left with their
+  // repositories, each carrying its own licence gate — zero inputs is the
+  // legitimate shape of the emptying hub, not a lost-input failure.
   if (targets.length === 0) {
-    failures.push(
-      "examined 0 publishable packages — the gate lost its inputs and cannot prove anything",
+    console.log(
+      "no publishable package left in the hub — declared-licence proof lives with each repository",
     );
   }
   for (const path of unreadable) failures.push(`unreadable manifest, cannot classify: ${path}`);

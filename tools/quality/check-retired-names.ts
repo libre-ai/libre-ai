@@ -58,7 +58,15 @@ if (import.meta.main) {
   // Workspace directories: the three families ADR-0008 §3 names (package, crate,
   // application). A directory is scanned whatever it contains — an orphan left
   // by a rename is exactly the drift this guard exists to catch.
+  // γ 3.7 (design §5.4.2): the workspace families leave with their
+  // repositories — scan only the families still present in the shrinking hub.
   for (const family of ["apps", "crates", "packages"]) {
+    if (
+      !(await Bun.file(`${family}/.keep`).exists()) &&
+      !(await Array.fromAsync(new Bun.Glob(`${family}/*`).scan({ cwd: ".", onlyFiles: false })))
+        .length
+    )
+      continue;
     const glob = new Bun.Glob("*");
     for await (const name of glob.scan({ cwd: family, onlyFiles: false })) {
       if (name.includes("/") || name.includes(".")) continue;

@@ -26,7 +26,9 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --quiet origin "$GITHUB_BASE_REF"
-          touched=$(git diff --name-only "origin/$GITHUB_BASE_REF"...HEAD -- 'apps/**' || true)
+          # γ 3.7 (design §5.4.2): pure deletions are dismantling, not product
+          # work — the I-08 gate keeps guarding modifications and additions.
+          touched=$(git diff --name-only --diff-filter=d "origin/$GITHUB_BASE_REF"...HEAD -- 'apps/**' || true)
           if [ -z "$touched" ]; then
             echo "no product paths touched"
             exit 0
