@@ -33,7 +33,7 @@
 
 schema_version: libre-ai.migration-index.v1
 
-hub_state: dismantling-in-progress  # première bascule : γ 3.3, autorités nées vertes (2026-07-29) → archived (acte propriétaire)
+hub_state: archived  # acte propriétaire du 2026-07-30 (GO donné par avance dans la session γ) — exécuté immédiatement après le merge de cette révision ; daté à la ligne 3.8 du gate-acceptance-log de governance
 
 entries:
   # γ 3.3 — governance authority (CI 5/5 green at destination_commit).
