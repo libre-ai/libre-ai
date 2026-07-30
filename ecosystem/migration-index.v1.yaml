@@ -567,4 +567,18 @@ entries:
 
 # Remplacements tracés hors chemins (workflows et machineries éteints avec le
 # hub, jamais orphelins — design §4.5) :
-replacements: []
+replacements:
+  - hub_paths: [apps/README.md, crates/README.md]
+    replaced_by: the org profile README and the per-repository project cards (γ 3.6)
+    removed_in: γ 3.7 removal wave 1
+    notes: directory indexes of the hub workspaces — presentation surfaces, superseded by the constellation presentation system (K4 PIDX-03)
+  - hub_paths: [.github/workflows/release.yml]
+    replaced_by: nothing — manual npm release machinery for the departed packages; registry distribution was never required (git-deps, design §8)
+    removed_in: γ 3.7 removal wave 1
+  - hub_paths: [.github/workflows/adoption-proof.yml, .github/workflows/sovereignty-report.yml]
+    replaced_by: governance carries verification/ (adoption, sovereignty) — the recurring proofs re-arm there when scheduled
+    removed_in: γ 3.7 removal wave 1
+  - hub_paths: [Cargo.toml, Cargo.lock, rust-toolchain.toml, deny.toml, .cargo/config.toml]
+    replaced_by: each Rust-bearing repository owns its workspace manifests (D07 as amended by ADR-0020)
+    removed_in: γ 3.7 removal wave 1
+    notes: hub build manifests, not migrated content — no orphan, their object left with the crates

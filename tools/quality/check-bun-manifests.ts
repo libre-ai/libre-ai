@@ -102,7 +102,8 @@ for (const path of [...manifestPaths].sort()) {
   }
 }
 
-if (manifestPaths.size === 0) failures.push("No Bun package or template manifests found");
+// γ 3.7 (design §5.4.2): the workspaces left with their repositories — the
+// root manifest alone is now the legitimate hub shape while it empties.
 
 if (failures.length > 0) {
   for (const failure of failures) console.error(failure);
