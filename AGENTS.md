@@ -16,10 +16,11 @@ registers below. Archiving is pronounced by the owner, never by an agent.
 ## What this archive still owns
 
 - `ecosystem/migration-index.v1.yaml` — the migration map: destination,
-  first carrying commit, last verified-green commit, and removal commit
-  for every path that lived here. `history-only` entries and the
-  forgetting register's `recoverable_at` anchors resolve against this
-  repository's history.
+  first carrying commit and last verified-green commit for every path
+  that lived here; the removal commit joins the entry when its path
+  leaves the tree (in-flight removals stay `pending`). `history-only`
+  entries and the forgetting register's `recoverable_at` anchors resolve
+  against this repository's history.
 - `ecosystem/FORGOTTEN.yaml` — evicted content (I-23): recoverable at
   the recorded commits, never citable as a living source.
 - `ecosystem/cards/libre-ai.project.v1.yaml` — this repository's own
