@@ -40,7 +40,7 @@ contrats, décisions, benchmarks et preuves locales.
 
 L’organisation actuelle a permis d’explorer :
 
-- Rust-first et Dioxus ;
+- Rust-first et Bun ;
 - orchestration agentique ;
 - contract-first et verification-first ;
 - ingestion, contexte et local-first ;
@@ -56,7 +56,7 @@ Elle reflète cependant une succession d’explorations et de refontes :
 - documentation et statuts dupliqués ;
 - plusieurs chaînes de build et lockfiles ;
 - dépendances inter-repositories épinglées par SHA ;
-- Dioxus, Axum, Tokio et SQLx présents dans des produits qui peuvent désormais
+- Bun, Axum, Tokio et SQLx présents dans des produits qui peuvent désormais
   être servis plus directement par une stack Bun/TypeScript ;
 - contrats utiles mélangés à des implémentations qui ne constituent plus la
   cible ;
@@ -554,8 +554,6 @@ Le détail est décomposé par autorité (vague 0, ADR-0009) :
 - migrer les outils Rust spécialisés sans bénéfice ;
 - ajouter un framework serveur au-dessus de Bun.serve ;
 - utiliser un hyperscaler américain ;
-- conserver Dioxus dans la cible ;
-- rouvrir Bun vs Dioxus sans blocage factuel majeur ;
 - utiliser des APIs privées ou `wip` de Bake ;
 - confondre reconstruction greenfield et perte de données, de licences ou
   d’invariants explicitement sélectionnés.
