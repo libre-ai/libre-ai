@@ -581,6 +581,15 @@ entries:
 # Remplacements tracés hors chemins (workflows et machineries éteints avec le
 # hub, jamais orphelins — design §4.5) :
 replacements:
+  - hub_paths: [CONTRIBUTING.md, SECURITY.md, README.fr.md]
+    replaced_by: the org-level CONTRIBUTING.md and SECURITY.md live in libre-ai/.github; the hub banner is monolingual by design (the constellation presentation is bilingual at the org profile)
+    removed_in: γ 3.7 removal wave 2
+  - hub_paths: [toolchains/notebook-qualification.json, toolchains/notebook-resource-classes.json]
+    replaced_by: the notebook qualification surfaces left with tools/qualification (wave 1); their policy files follow their consumers
+    removed_in: γ 3.7 removal wave 2
+  - hub_paths: [.github/workflows/doctrine-governance.yml, .github/workflows/feeds-freshness.yml, .github/workflows/truth-drift.yml, .github/workflows/inventory-drift.yml]
+    replaced_by: the fleet gates run from libre-ai/governance (inventory-drift with fleet pins, migration drift, fleet presentation, feeds freshness); the hub archive keeps ci and context-hygiene only
+    removed_in: γ 3.7 removal wave 2
   - hub_paths: [apps/README.md, crates/README.md, packages/README.md]
     replaced_by: the org profile README and the per-repository project cards (γ 3.6)
     removed_in: γ 3.7 removal wave 1

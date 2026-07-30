@@ -9,9 +9,10 @@ agent).
 ## Où est passé le contenu
 
 - **[`ecosystem/migration-index.v1.yaml`](./ecosystem/migration-index.v1.yaml)**
-  est la carte complète : chaque chemin qui a quitté ce dépôt y porte sa
-  destination, le premier commit qui l'a portée, le dernier commit vérifié
-  vert, et le commit de retrait. Un chemin n'a quitté ce moyeu qu'après
+  est la carte complète : chaque chemin migré y porte sa destination, le
+  premier commit qui l'a portée et le dernier commit vérifié vert ; le
+  commit de retrait s'y ajoute quand le chemin a quitté l'arbre (les
+  retraits en cours restent `pending`). Un chemin n'a quitté ce moyeu qu'après
   preuve verte à destination — jamais de fenêtre où un contenu n'existait
   nulle part en vert.
 - **[`ecosystem/FORGOTTEN.yaml`](./ecosystem/FORGOTTEN.yaml)** est
