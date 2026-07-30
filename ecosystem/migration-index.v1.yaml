@@ -39,8 +39,9 @@ entries:
   # γ 3.3 — governance authority (CI 5/5 green at destination_commit).
   # Perimeter refinements vs design §4.1, each traced in the destination
   # history: product-proof surfaces returned to the hub pipeline
-  # (tools/qualification/notebook-core-v2 → notebook, tools/quality/
-  # build-policy-core-wasm.ts → policy, tools/ops/run-retention* → data),
+  # (tools/qualification/notebook-core-v2 → notebook; tools/quality/
+  # build-policy-core-wasm.ts, policy-core-raw-inputs.ts and
+  # policy-core-wasm-conformance.ts → policy; tools/ops/run-retention* → data),
   # contract-vector verifiers stay hub-owned until sdk-ts;
   # verification/dependency-bench (born in γ 3.2) travels with governance.
   - hub_path: docs/ # everything except docs/apps/ and docs/API-STABILITY.md

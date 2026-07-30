@@ -136,7 +136,7 @@ phases:
         status: accepted
         evidence:
           date: "2026-07-30"
-          reference: "gate-acceptance-log governance 2026-07-30 (ligne 3.7), governance@a547bfb1 (gate d'orphelins 50/50, rapport final), PRs hub #289/#291
+          reference: "gate-acceptance-log governance 2026-07-30 (ligne 3.7), governance@a547bfb1 (gate d'orphelins 50/50, rapport final), PRs hub #289/#291"
   - id: archive
     title: γ 3.8 — Archivage du hub
     exit_criteria:
