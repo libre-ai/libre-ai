@@ -14,10 +14,6 @@ describe("canonical bootstrap", () => {
     expect(toolchain.minimumVersion).toBe("1.4.0");
   });
 
-  test("declares one canonical Knowledge Object schema", async () => {
-    const schema = (await Bun.file("ecosystem/schemas/knowledge-object.schema.json").json()) as {
-      $id?: string;
-    };
-    expect(schema.$id).toBe("https://libre-ai.fr/schemas/knowledge-object.v1.json");
-  });
+  // γ 3.7: the Knowledge Object schema left with ecosystem/schemas — its
+  // canonical home is governance; the archive keeps no local copy to assert.
 });
