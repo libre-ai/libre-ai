@@ -557,6 +557,14 @@ entries:
     hub_removal_commit: pending
     notes: agent-board is the historical name (ADR-0008 as amended; LEXICON section 8)
 
+  # γ 3.6 — présentation.
+  - hub_path: docs/apps/website.md
+    destination: libre-ai/website
+    destination_commit: 89ebe44bfd6a66f2ff17b9e9ddced9d7fdbaa238
+    verified_at_commit: 89ebe44bfd6a66f2ff17b9e9ddced9d7fdbaa238
+    hub_removal_commit: pending
+    notes: flat copy with the criteria-acceptance commit (K4 PIDX-02 closed); history stays readable in the hub archive
+
 # Remplacements tracés hors chemins (workflows et machineries éteints avec le
 # hub, jamais orphelins — design §4.5) :
 replacements: []

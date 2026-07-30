@@ -16,12 +16,11 @@ statement:
     - aucun registre de paquets nouveau, aucun compte nouveau
 summary: Le hub en démantèlement — archive + index de migration en fin de jalon γ (ADR-0020).
 current_situation: >-
-  Phases γ 3.0 à 3.5 closes — deux autorités et dix-neuf satellites nés verts,
-  puis sept repos produits porteurs de code et l'app missions greffés, verts et
-  dégelés (34 repos verts, gabarit de flotte épinglé et surveillé) ; carriere,
-  8e produit ratifié, n'a aucun code au hub par construction (fiche en 3.6) ;
-  aucun chemin n'a encore été retiré du hub (retraits tracés pending à l'index
-  de migration).
+  Phases γ 3.0 à 3.6 closes — constellation active : 33 fiches d'état sous
+  gate de flotte, README générés, index topologique v2, README org, site
+  (état calculé + comparaisons datées), plus aucune description gelée ;
+  aucun chemin n'a encore été retiré du hub (retraits tracés pending à
+  l'index de migration, gate d'orphelins et rapport final en 3.7).
 scope:
   - statuer et migrer chaque chemin du hub vers son repo responsable
   - photographier la chaîne de référence et préserver l'archive
@@ -124,7 +123,10 @@ phases:
       - id: cards-readmes-site
         text: Fiches dans chaque repo, README générés, README org, page d'accueil, comparaisons datées, descriptions GitHub.
         weight: 10
-        status: pending
+        status: accepted
+        evidence:
+          date: "2026-07-30"
+          reference: "gate-acceptance-log 2026-07-30 (ligne 3.6), governance@c64ea95d, website@89ebe44b"
   - id: coherence
     title: γ 3.7 — Cohérence et rapport final
     exit_criteria:
