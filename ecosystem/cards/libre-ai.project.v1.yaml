@@ -16,9 +16,12 @@ statement:
     - aucun registre de paquets nouveau, aucun compte nouveau
 summary: Le hub en démantèlement — archive + index de migration en fin de jalon γ (ADR-0020).
 current_situation: >-
-  Phases γ 3.0 à 3.4 closes — deux autorités et dix-neuf satellites nés verts
-  (26 repos verts, gabarit de flotte épinglé et surveillé) ; aucun chemin n'a
-  encore été retiré du hub (retraits tracés pending à l'index de migration).
+  Phases γ 3.0 à 3.5 closes — deux autorités et dix-neuf satellites nés verts,
+  puis sept repos produits porteurs de code et l'app missions greffés, verts et
+  dégelés (34 repos verts, gabarit de flotte épinglé et surveillé) ; carriere,
+  8e produit ratifié, n'a aucun code au hub par construction (fiche en 3.6) ;
+  aucun chemin n'a encore été retiré du hub (retraits tracés pending à l'index
+  de migration).
 scope:
   - statuer et migrer chaque chemin du hub vers son repo responsable
   - photographier la chaîne de référence et préserver l'archive
@@ -30,7 +33,7 @@ maturity: usable
 confidence: high
 exposure: usable-verifiable
 freshness:
-  last_verified_on: "2026-07-29"
+  last_verified_on: "2026-07-30"
 scope_stability: stable
 phases:
   - id: housekeeping
@@ -91,7 +94,7 @@ phases:
         status: accepted
         evidence:
           date: "2026-07-29"
-          reference: "PR #277 (merge 52f567d9), gate-acceptance-log 2026-07-29 (ligne 3.3)" 
+          reference: "PR #277 (merge 52f567d9), gate-acceptance-log 2026-07-29 (ligne 3.3)"
   - id: satellites
     title: γ 3.4 — Satellites de code partagé
     exit_criteria:
@@ -104,17 +107,17 @@ phases:
         status: accepted
         evidence:
           date: "2026-07-29"
-          reference: "PRs #279-#283 (merge d3cfcc47), gate-acceptance-log 2026-07-29 (ligne 3.4)" 
+          reference: "PRs #279-#283 (merge d3cfcc47), gate-acceptance-log 2026-07-29 (ligne 3.4)"
   - id: products
     title: γ 3.5 — Repos produits et application missions
     exit_criteria:
       - id: products-grafted
-        text: Les 8 repos produits + missions reçoivent leur contenu par greffe sans force push, bannières retirées.
+        text: Les sept repos produits porteurs de code et l'app missions (couche 2) reçoivent leur contenu par greffe sans force push, bannières retirées — carriere, 8e produit ratifié, n'a aucun code au hub par construction.
         weight: 10
         status: accepted
         evidence:
           date: "2026-07-30"
-          reference: "PR #286 (merge e53b720), gate-acceptance-log 2026-07-30 (ligne 3.5)" 
+          reference: "PR #286 (merge e53b720), gate-acceptance-log 2026-07-30 (ligne 3.5)"
   - id: presentation
     title: γ 3.6 — Présentation
     exit_criteria:

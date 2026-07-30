@@ -6,7 +6,7 @@ d'adoption, rapport de souveraineté, mesure de couverture), la plus récente
 en tête. Chaque entrée lie son artefact source ; l'autorité de formulation
 des verdicts reste le journal des gates (`distribution/evidence/gate-acceptance-log.md`).
 
-## 2026-07-30 — [gate] Jalon γ — phase 3.5 produits : les huit repos produits greffés, verts et dégelés
+## 2026-07-30 — [gate] Jalon γ — phase 3.5 produits : sept repos produits porteurs de code et l'app missions greffés, verts et dégelés
 
 - Statut : CLOS
 - Source : [`distribution/evidence/gate-acceptance-log.md`](../../distribution/evidence/gate-acceptance-log.md)
