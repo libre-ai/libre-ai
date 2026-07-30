@@ -1,10 +1,11 @@
-# libre-ai/libre-ai — moyeu en démantèlement
+# libre-ai/libre-ai — archive du hub
 
 Ce dépôt a été le monorepo de reconstruction de Libre AI. **L'activation
 générale multi-repo est en vigueur** (ADR-0020, 2026-07-28) : chaque
-contenu vit désormais dans son dépôt de la constellation, et ce moyeu
-s'achemine vers l'archivage (prononcé par le propriétaire, jamais par un
-agent).
+contenu vit dans son dépôt de la constellation, et ce dépôt est
+l'archive du hub — archivage prononcé par le propriétaire le 2026-07-30
+(GO donné par avance, référence : ligne 3.8 du gate-acceptance-log de
+`governance`).
 
 ## Où est passé le contenu
 
