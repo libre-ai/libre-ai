@@ -15,19 +15,8 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "skipLibCheck": true,
-    "types": ["bun", "react", "react-dom", "emscripten"]
+    "types": ["bun"]
   },
-  "include": [
-    "apps/**/*.ts",
-    "apps/**/*.tsx",
-    "ecosystem/**/*.ts",
-    "packages/**/*.ts",
-    "packages/**/*.tsx",
-    "tools/**/*.ts",
-    "verification/**/*.ts",
-    "distribution/*.ts",
-    "distribution/templates/**/*.ts",
-    "distribution/templates/**/*.tsx"
-  ],
+  "include": ["ecosystem/**/*.ts", "tools/**/*.ts"],
   "exclude": ["node_modules", "dist", "target", ".tools"]
 }
