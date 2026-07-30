@@ -14,7 +14,7 @@ statement:
     - une archive clonable portant l'histoire et les preuves
   without_depending_on:
     - aucun registre de paquets nouveau, aucun compte nouveau
-summary: Le hub en démantèlement — archive + index de migration en fin de jalon γ (ADR-0020).
+summary: L'archive du hub — histoire intégrale, index de migration et registre d'oubli (jalon γ complet, ADR-0020).
 current_situation: >-
   Jalon γ complet — ce dépôt est l'archive du hub : 50 fichiers trackés,
   0 orphelin au gate (index de migration 88 entrées, registre d'oubli,
@@ -146,4 +146,4 @@ phases:
         status: accepted
         evidence:
           date: "2026-07-30"
-          reference: "GO propriétaire donné par avance (session γ) ; préconditions mesurées (50 fichiers, gate d'orphelins 50/50, bannière, rapport final) ; l'acte GitHub suit ce merge et est daté à la ligne 3.8 du gate-acceptance-log de governance"
+          reference: "gate-acceptance-log governance 2026-07-30 (ligne 3.8, mergée avant l'acte : governance@c5a96d0b) — GO propriétaire donné par avance, préconditions mesurées (50 fichiers, gate d'orphelins 50/50, bannière, rapport final)"
